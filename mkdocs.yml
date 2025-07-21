@@ -2,7 +2,7 @@ site_name: MetaRPC MT4 Golang Documentation
 
 nav:
   - Home: index.md
-
+  - API Reference: api.md
 theme:
   name: material
   palette:
