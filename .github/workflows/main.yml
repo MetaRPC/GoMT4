@@ -48,8 +48,9 @@ jobs:
 
       - name: Generate Go API docs (Markdown)
         run: |
-          mkdir -p docs
-          ~/go/bin/godoc2md git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go > docs/api.md
+          cd examples
+          mkdir -p ../docs
+          ~/go/bin/godoc2md . > ../docs/api.md
       # --- GODOC2MD SECTION ENDS HERE ---
 
       - name: Deploy Docs to GitHub Pages
