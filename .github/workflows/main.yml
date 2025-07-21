@@ -44,7 +44,7 @@ jobs:
           go-version: '1.22'  # Or any current Go version you need
 
       - name: Install golds (Go API doc generator)
-        run: go install github.com/go101/golds@latest
+        run: go install go101.org/golds@latest
 
       - name: Generate Go API docs with golds
         run: |
