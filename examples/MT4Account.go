@@ -1,4 +1,4 @@
-package main
+package mt4go
 
 import (
 	"context"
