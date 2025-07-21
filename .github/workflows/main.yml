@@ -37,20 +37,20 @@ jobs:
 
       - run: pip install mkdocs-material pymdown-extensions
 
-      # --- GOLDs SECTION STARTS HERE ---
+      # --- GODOC2MD SECTION STARTS HERE ---
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'  # Or any current Go version you need
+          go-version: '1.22'
 
-      - name: Install golds (Go API doc generator)
-        run: go install go101.org/golds@latest
+      - name: Install godoc2md
+        run: go install github.com/davecheney/godoc2md@latest
 
-      - name: Generate Go API docs with golds
+      - name: Generate Go API docs (Markdown)
         run: |
-          mkdir -p docs/api
-          ~/go/bin/golds -m -o ./docs/api ./examples
-      # --- GOLDs SECTION ENDS HERE ---
+          mkdir -p docs
+          ~/go/bin/godoc2md ./examples > docs/api.md
+      # --- GODOC2MD SECTION ENDS HERE ---
 
       - name: Deploy Docs to GitHub Pages
         run: mkdocs gh-deploy --force --clean
