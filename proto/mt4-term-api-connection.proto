@@ -1,0 +1,249 @@
+syntax = "proto3";
+option csharp_namespace = "mt4_term_api";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "mrpc-mt4-error.proto";
+
+package mt4_term_api;
+option go_package = "GoMT4/pb";
+
+service Connection {
+  // Creates terminal connection to the MT5 server by MT cluster name, waits for connection and returns Guid of it 
+  rpc ConnectEx (ConnectExRequest) returns (ConnectExReply) {
+    option (google.api.http) = {
+      get: "/ConnectEx"
+    };
+  }
+  // Creates terminal connection to the MT4 server and returns Guid of it
+  // [DefaultValues]
+  // {
+  //   "user": "501401178",
+  //   "password": "v8gctta",
+  //   "host": "mt4-demo.roboforex.com",
+  //   "port": "443",
+  //   "baseChartSymbol": "EURUSD",  
+  //   "waitForTerminalIsAlive": "true"
+  // }
+  rpc Connect (ConnectRequest) returns (ConnectReply){
+    option (google.api.http) = {
+      get: "/Connect"
+    };
+    // Returns terminal connection unique identifier
+  };
+  // Connect to account with user, password, host, port.
+  // [DefaultValues] 
+  // { 
+  //  "user": "500476959", 
+  //  "password": "ehj4bod", 
+  //  "host": "mt4-demo.roboforex.com", 
+  //  "port": "443",
+  //  "proxyUser": "ProxyUser123", 
+  //  "proxyPassword": "qwerty123", 
+  //  "proxyHost": "65.108.126.217", 
+  //  "proxyPort": "1080", 
+  //  "proxyType": "Socks5" 
+  // }
+  rpc ConnectProxy (ConnectProxyRequest) returns (ConnectProxyReply){
+    option (google.api.http) = {
+      get: "/ConnectProxy"
+    };    
+  }  
+  // Checks if terminal connection to MT4 server is alive
+  rpc CheckConnect (CheckConnectRequest) returns (CheckConnectReply){
+    option (google.api.http) = {
+      get: "/CheckConnect"
+    };
+    // Do not forget to add header 'mt-sticky-session-header' with terminal connection unique identifier
+  };
+  // Close terminal connection to MT4 server
+  rpc Disconnect (DisconnectRequest) returns (DisconnectReply){
+    option (google.api.http) = {
+      get: "/Disconnect"
+    };
+    // Do not forget to add header 'mt-sticky-session-header' with terminal connection unique identifier
+  };
+  // If you need to recreate terminal instance with the same id
+  rpc Reconnect (ReconnectRequest) returns (ReconnectReply) {
+    option (google.api.http) = {
+      get: "/Reconnect"
+    };
+  }
+}
+message ConnectExRequest {
+  uint64 user = 1; // Account number. [Required]
+  string password = 2; // Password. [Required]
+  string mt_cluster_name = 3; // MT cluster name. [Required]
+  optional string base_chart_symbol = 4;  // Base chart symbol [Optional]
+  optional int32 terminal_readiness_waiting_timeout_seconds = 5;  // Readiness timeout seconds. Default = 100 seconds [Optional]
+  repeated ExpertAdviser experts_to_add = 6; // EA files to add to terminal instance [Optional]
+}
+message ConnectExReply {
+  oneof response {
+    ConnectData data = 1;
+    Error error = 2;
+  }
+}
+
+message ReconnectRequest {
+  optional bool force_reconnection = 1;   // Recreate a terminal instance even if current instance is alive
+  optional int32 terminal_readiness_waiting_timeout_seconds = 2;   // optional waiting getting alive for terminal
+}
+message ReconnectReply {
+  oneof response {
+      ReconnectData data = 1;
+      Error error = 2;
+  }
+}
+message ReconnectData {
+  bool terminal_was_recreated = 1;
+  TerminalType terminal_type = 2;
+  string terminal_instance_guid = 3;
+  int64 old_terminal_full_live_time_seconds = 4;
+  repeated LogFileInfo old_log_files = 5;
+}
+
+message ConnectRequest {
+  uint64 user = 1; // Account number. [Required]
+  string password = 2; // Password. [Required]
+  string host = 3;   // Host - ip address or dns name. [Required]
+  int32 port = 4;   // Port. [Required]
+  optional string base_chart_symbol = 5;
+  optional bool wait_for_terminal_is_alive = 6;
+  optional int32 terminal_readiness_waiting_timeout_seconds = 7;
+  repeated ExpertAdviser experts_to_add = 8;
+}
+
+message ExpertAdviser
+{
+  string file_name = 1;
+  bytes file_content = 2;  // File content as a byte array
+}
+
+message ConnectReply {
+  oneof response {
+    ConnectData data = 1;
+    Error error = 2;
+  }
+}
+message ConnectData {
+  // Connection unique identifier - use this in the 'mt-sticky-session-header' value
+  string terminal_instance_guid = 1;
+  // Terminal type MT5 or MT4 (Temporary only MT5)
+  TerminalType terminal_type = 3;
+}
+
+// Specifies the type of proxy servers that an instance of the ProxySocket class can use.
+enum ProxyTypes {
+  // No proxy server; the ProxySocket object behaves exactly like an ordinary Socket object.
+  None = 0;
+  // A HTTPS (CONNECT) proxy server.
+  Https = 1;
+  // A SOCKS4[A] proxy server.
+  Socks4 = 2;
+  // A SOCKS5 proxy server.
+  Socks5 = 3;
+}
+
+// [DefaultValues]
+// {
+//  "user": "21455",
+//  "password": "1nJeS+Ae",
+//  "host": "95.217.147.61",
+//  "port": "443",
+//  "proxyUser": "ProxyUser123",
+//  "proxyPassword": "qwerty123",
+//  "proxyHost": "65.108.126.217",
+//  "proxyPort": "1080",
+//  "proxyType": "Socks5"
+// }
+message ConnectProxyRequest {
+  // Account number. [Required]
+  uint64 user = 1;
+  // Password. [Required]
+  string password = 2;
+  // Host - ip adddress or dns name. [Required]
+  string host = 3;
+  // Port. [Required]
+  int32 port = 4;
+  // Proxy user [Required]
+  string proxyUser = 5;
+  // Proxy password [Required]
+  string proxyPassword = 6;
+  // Proxy server ip adddress [Required]
+  string proxyHost = 7;
+  // Proxy port [Required]
+  uint32 proxyPort = 8;
+  // Proxy type. Put 'Socks5' for default parameters [Required]
+  ProxyTypes proxyType = 9;
+  optional string base_chart_symbol = 10;
+  optional bool wait_for_terminal_is_alive = 11;
+  optional int32 terminal_readiness_waiting_timeout_seconds = 12;
+  repeated ExpertAdviser experts_to_add = 13;
+}
+
+message ConnectProxyReply {
+  oneof response {
+      ConnectProxyData data = 1;
+      Error error = 2;
+  }
+}
+message ConnectProxyData {
+  // Connection unique identifier - use this in the header 'mrpc-terminal-guid' value
+  string unique_identifier = 1;
+  // Terminal type MT5 or MT4 (Temporary only MT5)
+  TerminalType terminal_type = 2;
+}
+
+enum TerminalType {
+  MT4 = 0;
+  MT5 = 1;
+}
+
+// Do not forget to add header 'mt-sticky-session-header' with a Connection unique identifier value
+message CheckConnectRequest {
+}
+
+message CheckConnectReply {
+    oneof response {
+      CheckConnectData data = 1;
+      Error error = 2;
+    }
+}
+message CheckConnectData {
+  // Connection unique identifier. Reflects value from header 'mt-sticky-session-header'
+  string unique_identifier = 1;
+  // Connection health status
+  TerminalHealthCheck health_check = 2;
+}
+
+message TerminalHealthCheck
+{
+  // Connection is alive
+  bool is_alive = 1;
+  // Error message
+  google.protobuf.StringValue ErrorMessage = 2;
+  // Error code
+  google.protobuf.StringValue ErrorCode = 3;
+  // Stack trace
+  google.protobuf.StringValue StackTrace = 4;
+  bool has_authorization_error = 5;
+  bool api_is_alive = 6;
+  bool terminal_is_connected_to_mt_server = 7;
+}
+
+// Do not forget to add header 'mt-sticky-session-header' with a Connection unique identifier value
+message DisconnectRequest {
+}
+
+message DisconnectReply {
+  oneof response {
+      DisconnectData data = 1;
+      Error error = 2;
+  }
+}
+
+message DisconnectData {
+  // Identifier of closed connection. Reflects value from header 'mt-sticky-session-header'
+  string unique_identifier = 1;
+  int64 full_life_time_seconds = 2;
+}

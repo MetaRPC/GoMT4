@@ -1,0 +1,159 @@
+﻿syntax = "proto3";
+option csharp_namespace = "mt4_term_api";
+import "google/protobuf/timestamp.proto";
+import "mrpc-mt4-error.proto";
+
+
+package mt4_term_api;
+option go_package = "GoMT4/pb";
+
+service SubscriptionService {
+  rpc OnTrade(OnTradeRequest) returns (stream OnTradeReply);
+  rpc OnOpenedOrdersTickets(OnOpenedOrdersTicketsRequest) returns (stream OnOpenedOrdersTicketsReply); 
+  rpc OnOpenedOrdersProfit(OnOpenedOrdersProfitRequest) returns (stream OnOpenedOrdersProfitReply);
+  rpc OnSymbolTick(OnSymbolTickRequest) returns (stream OnSymbolTickReply);
+}
+
+message OnSymbolTickRequest {
+  repeated string symbol_names = 1;
+}
+message OnSymbolTickReply {
+  oneof response {
+    OnSymbolTickData data = 1;
+    Error error = 2;
+  }
+}
+message OnSymbolTickData {
+  OnSymbolMqlTickInfo symbol_tick = 1;
+  string terminal_instance_guid_id = 2;
+}
+
+message OnSymbolMqlTickInfo {
+  google.protobuf.Timestamp time = 1;            // Time of the last prices update (Unix timestamp)
+  double bid = 2;          // Current Bid price
+  double ask = 3;          // Current Ask price
+  double last = 4;         // Price of the last deal (Last)
+  uint64 volume = 5;       // Volume for the current Last price
+  int64 time_msc = 6;      // Time of a price last update in milliseconds
+  string symbol = 7;
+}
+
+message OnTradeRequest {}
+message OnTradeReply {
+  oneof response {
+      OnTradeData data = 1; 
+      Error error = 2;
+  }
+}
+message OnTradeData {
+  MT4_SUB_ENUM_EVENT_GROUP_TYPE type = 1;  
+  OnTadeEventData event_data = 2;
+  OnEventAccountInfo account_info = 3;
+  string terminal_instance_guid_id = 4;
+}
+message OnTadeEventData {
+  repeated OnTradeOrderInfo new_orders = 1;
+  repeated OnTradeUpdatedOrderInfo updated_orders = 2;
+  repeated OnTradeOrderInfo removed_orders = 3;
+  repeated OnTradeOrderInfo new_history_orders = 4;
+  // repeated OnTradeUpdatedOrderInfo updated_history_orders = 5;
+  // repeated OnTradeOrderInfo removed_history_orders = 6;
+}
+message OnTradeOrderInfo {
+  int32 index = 1;
+  int32 ticket = 2;
+  bool is_history = 3;
+  string comment = 4;
+  double commission = 5;
+  google.protobuf.Timestamp expiration = 6;
+  double lots = 7;
+  int32 magic_number = 8;
+  double open_price = 9;
+  google.protobuf.Timestamp open_time = 10;
+  double order_profit = 11;
+  double stop_loss = 12;
+  double swap = 13;
+  string symbol = 14;
+  double take_profit = 15;
+  SUB_ORDER_OPERATION_TYPE type = 16;
+  double close_price = 17;   // Only for closed orders (history)
+  google.protobuf.Timestamp close_time = 18;  // Only for closed orders (history)
+  int64 account_login = 19;
+}
+message OnTradeUpdatedOrderInfo {
+  OnTradeOrderInfo previous = 1;
+  OnTradeOrderInfo current = 2;
+}
+
+message OnOpenedOrdersTicketsRequest {
+  int32 pull_interval_milliseconds = 1;
+}
+message OnOpenedOrdersTicketsReply {
+  oneof response {
+      OnOpenedOrdersTicketsData data = 1;
+      Error error = 2;
+  }
+}
+message OnOpenedOrdersTicketsData {
+  repeated int32 position_tickets = 1;
+  repeated int32 pending_order_tickets = 2;
+  google.protobuf.Timestamp server_time = 3;
+  string terminal_instance_guid_id = 5;
+}
+
+message OnOpenedOrdersProfitRequest {
+  int32 timer_period_milliseconds = 1;
+}
+message OnOpenedOrdersProfitReply {
+  oneof response {
+      OnOpenedOrdersProfitData data = 1;
+      Error error = 2;
+  }
+}
+message OnOpenedOrdersProfitData {
+  MT4_SUB_ENUM_EVENT_GROUP_TYPE type = 1;
+  repeated OnOpenedOrdersProfitOrderInfo opened_orders_with_profit_updated = 2;
+  OnEventAccountInfo account_info = 3;
+  string terminal_instance_guid_id = 4;
+}
+message OnEventAccountInfo {
+  double balance = 1;
+  double credit = 2;
+  double equity = 3;
+  double margin = 4;
+  double free_margin = 5;
+  double profit = 6;
+  double margin_level = 7;
+  int64 login = 8;
+}
+message OnOpenedOrdersProfitOrderInfo {
+  int32 index = 1;
+  int32 ticket = 2;
+  string comment = 3;
+  double commission = 4;
+  google.protobuf.Timestamp expiration = 5;
+  double lots = 6;
+  int32 magic_number = 7;
+  double open_price = 8;
+  google.protobuf.Timestamp open_time = 9;
+  double order_profit = 10;
+  double stop_loss = 11;
+  double swap = 12;
+  string symbol = 13;
+  double take_profit = 14;
+  SUB_ORDER_OPERATION_TYPE type = 15;
+}
+
+enum SUB_ORDER_OPERATION_TYPE {
+  SUB_OP_BUY = 0;
+  SUB_OP_SELL = 1;
+  SUB_OP_BUYLIMIT = 2;
+  SUB_OP_SELLLIMIT = 3;
+  SUB_OP_BUYSTOP = 4;
+  SUB_OP_SELLSTOP = 5;
+}
+
+enum MT4_SUB_ENUM_EVENT_GROUP_TYPE {
+  OrderProfit = 0;
+  OrderUpdate = 1;
+}

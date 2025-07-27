@@ -1,0 +1,121 @@
+﻿syntax = "proto3";
+option csharp_namespace = "mt4_term_api";
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "mrpc-mt4-error.proto";
+
+package mt4_term_api;
+option go_package = "GoMT4/pb";
+
+service MarketInfo {
+  // Get quote
+  rpc Quote (QuoteRequest) returns (QuoteReply){
+    option (google.api.http) = {
+      get: "/Quote"
+    };
+  }
+  // Latest quote for the specified symbol
+  rpc QuoteMany (QuoteManyRequest) returns (QuoteManyReply)
+  {
+    option (google.api.http) = {
+      get: "/QuoteMany"
+    };    
+  }
+  rpc Symbols (SymbolsRequest) returns (SymbolsReply)
+  {
+    option (google.api.http) = {
+      get: "/Symbols"
+    };
+  }
+  rpc QuoteHistory (QuoteHistoryRequest) returns (QuoteHistoryReply)
+  {
+    option (google.api.http) = {
+      get: "/QuoteHistory"
+    };
+  }      
+}
+message QuoteRequest {
+  string symbol = 1;
+  // optional int32 not_older_milliseconds = 2;
+}
+message QuoteReply {
+  oneof response {
+    QuoteData data = 1;
+    Error error = 2;
+  }
+}
+message QuoteData {
+  string symbol = 1;
+  double bid = 2;
+  double ask = 3;
+  google.protobuf.Timestamp date_time = 4;
+  double high = 5;
+  double low = 6;
+}
+
+message QuoteManyRequest {
+  repeated string symbols = 1;
+}
+message QuoteManyReply {
+  oneof response {
+    QuoteManyData data = 1;
+    Error error = 2;
+  }
+}
+message QuoteManyData {
+  repeated QuoteData quotes = 1;
+}
+
+message SymbolsRequest {}
+message SymbolsReply {
+  oneof response {
+    SymbolsData data = 1;
+    Error error = 2;
+  }
+}
+message SymbolsData {
+  repeated SymbolNameInfo SymbolNameInfos = 1;
+}
+message SymbolNameInfo {
+  string symbol_name = 1;
+  int32 symbol_index = 2;
+}
+
+message QuoteHistoryRequest {
+  string symbol = 1;
+  ENUM_QUOTE_HISTORY_TIMEFRAME timeframe = 2;
+  google.protobuf.Timestamp fromTime = 3;
+  google.protobuf.Timestamp toTime = 4;
+}
+message QuoteHistoryReply {
+  oneof response {
+    QuoteHistoryData data = 1;
+    Error error = 2;
+  }
+}
+message QuoteHistoryData {
+  repeated HistoryQuote historical_quotes = 1;
+}
+message HistoryQuote {
+  string symbol = 1;
+  int32 index = 2;
+  google.protobuf.Timestamp time = 3;
+  double open = 4;
+  double close = 5;
+  double high = 6;
+  double low = 7;
+  int64 real_volume = 8;
+  int64 tick_volume = 9;
+  int32 spread = 10;
+}
+enum ENUM_QUOTE_HISTORY_TIMEFRAME {
+  QH_PERIOD_M1 = 0; // 1 minute
+  QH_PERIOD_M5 = 1; // 5 minutes
+  QH_PERIOD_M15 = 2; //15 minutes
+  QH_PERIOD_M30 = 3; //30 minutes
+  QH_PERIOD_H1 = 4; // 1 hour
+  QH_PERIOD_H4 = 5; //4 hours
+  QH_PERIOD_D1 = 6; // 1 day
+  QH_PERIOD_W1 = 7; //1 week
+  QH_PERIOD_MN1 = 8; // 1 month
+}

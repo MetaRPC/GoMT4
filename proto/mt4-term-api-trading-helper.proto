@@ -1,0 +1,130 @@
+﻿syntax = "proto3";
+option csharp_namespace = "mt4_term_api";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "mrpc-mt4-error.proto";
+
+package mt4_term_api;
+option go_package = "GoMT4/pb";
+
+service TradingHelper {
+  // Send market or pending order
+  rpc OrderSend (OrderSendRequest) returns (OrderSendReply)
+  {
+    option (google.api.http) =
+    {
+      get: "/OrderSend"
+    };
+  }
+  // Modify market or pending order
+  rpc OrderModify (OrderModifyRequest) returns (OrderModifyReply)
+  {
+    option (google.api.http) =
+    {
+      get: "/OrderModify"
+    };    
+  }
+  // Close market or pending order
+  rpc OrderCloseDelete (OrderCloseDeleteRequest) returns (OrderCloseDeleteReply)
+  {
+    option (google.api.http) =
+    {
+      get: "/OrderCloseDelete"
+    };
+  }
+  // Close market order with opposite market order
+  rpc OrderCloseBy (OrderCloseByRequest) returns (OrderCloseByReply)
+  {
+    option (google.api.http) =
+    {
+      get: "/OrderCloseBy"
+    };
+  }      
+}
+message OrderCloseByRequest{
+  int32 ticket_to_close = 1;
+  int32 opposite_ticket_closing_by = 2;
+}
+
+message OrderCloseByReply {
+  oneof response {
+    OrderCloseByData data = 1;
+    Error error = 2;
+  }
+}
+message OrderCloseByData {
+  double close_price = 1;
+  double profit = 2;
+  google.protobuf.Timestamp close_time = 3;
+}
+
+message OrderSendRequest {
+  string symbol = 1; // Required, NOT EMPTY string 
+  OrderSendOperationType operation_type = 2; // required
+  double volume = 3; //Required
+  optional double price = 4; // NOT required in case of Mt4_OP_BUY = 0; Mt4_OP_SELL = 1;
+  optional int32 slippage = 5; // not required default 0
+  optional double stoploss = 6; // not required default 0
+  optional double takeprofit = 7; // not required default 0
+  optional string comment = 8; // not required default null
+  optional int32 magic_number = 9; // not required default 0
+  optional google.protobuf.Timestamp expiration = 10; // not required default null
+}
+message OrderSendReply {
+  oneof response {
+    OrderSendData data = 1;
+    Error error = 2;
+  }
+}
+message OrderSendData {
+  int32 ticket = 1;
+  double volume = 2;
+  double price = 3;
+  google.protobuf.Timestamp open_time = 4;
+}
+enum OrderSendOperationType {
+  OC_OP_BUY = 0;               // Buy operation
+  OC_OP_SELL = 1;              // Sell operation
+  OC_OP_BUYLIMIT = 2;          // Buy limit pending order
+  OC_OP_SELLLIMIT = 3;         // Sell limit pending order
+  OC_OP_BUYSTOP = 4;           // Buy stop pending order
+  OC_OP_SELLSTOP = 5;          // Sell stop pending order
+}
+
+message OrderModifyRequest {
+  int32 order_ticket = 1;
+  optional double new_price = 2;
+  optional double new_stop_loss = 3;
+  optional double new_take_profit = 4;
+  optional google.protobuf.Timestamp new_expiration = 5;
+}
+message OrderModifyReply {
+  oneof response {
+    OrderModifyData data = 1;
+    Error error = 2;
+  }
+}
+message OrderModifyData {
+  bool order_was_modified = 1;
+}
+
+message OrderCloseDeleteRequest {
+  int32 order_ticket = 1;
+  optional double lots = 2;
+  optional double closing_price = 3;
+  optional int32 slippage = 4;
+}
+message OrderCloseDeleteReply {
+  oneof response {
+    OrderCloseDeleteData data = 1;
+    Error error = 2;
+  }
+}
+message OrderCloseDeleteData {
+  OrderCloseDeleteMode mode = 1;
+  optional string history_order_comment = 2;
+}
+enum OrderCloseDeleteMode {
+  OCD_MARKET_ORDER = 0;
+  OCD_PENDING_ORDER = 1;
+}

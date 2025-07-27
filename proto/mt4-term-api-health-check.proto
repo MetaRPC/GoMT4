@@ -1,0 +1,24 @@
+syntax = "proto3";
+option csharp_namespace = "mt4_term_api";
+
+package mt4_term_api;
+option go_package = "GoMT4/pb";
+
+service HealthService
+{
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckReply);
+  rpc CloseTerminal(CloseTerminalRequest) returns (CloseTerminalReply);
+}
+
+message HealthCheckRequest{
+}
+message HealthCheckReply {
+  bool connected = 1;
+  int64 serverTimeMsc = 2;
+}
+
+message CloseTerminalRequest {
+}
+message CloseTerminalReply {
+}
+
