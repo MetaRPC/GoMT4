@@ -1220,6 +1220,10 @@ type OnOpenedOrdersProfitData struct {
 	sizeCache                     protoimpl.SizeCache
 }
 
+func (x *OnOpenedOrdersProfitData) GetProfitInfo() any {
+	panic("unimplemented")
+}
+
 func (x *OnOpenedOrdersProfitData) Reset() {
 	*x = OnOpenedOrdersProfitData{}
 	mi := &file_mt4_term_api_subscriptions_proto_msgTypes[15]

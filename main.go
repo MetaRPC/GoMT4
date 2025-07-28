@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	pb "GoMT4.local/pb"
-	accountpkg "GoMT4.local/internal/account"
-	servicepkg "GoMT4.local/internal/service"
+	"github.com/google/uuid"
+    
+   accountpkg "github.com/MetaRPC/GoMT4/internal/account"
+   servicepkg "github.com/MetaRPC/GoMT4/internal/service"
 )
 
 func main() {
@@ -31,6 +32,9 @@ func main() {
 	fmt.Println("✅ Connected to MT4 server")
 
 	svc := servicepkg.NewMT4Service(account)
+
+	if err := svc.ShowSymbolParams(ctx, cfg.DefaultSymbol); err != nil {
+		log.Fatalf("❌ Failed to get symbol params: %v", err)
 
 	// === 🚀 Step-by-step execution of methods ===
 
@@ -85,4 +89,6 @@ func main() {
 	   svc.ShowOrderCloseByExample(ctx, 12345678, 12345679) // ♻️ Close with opposite order
 	   svc.ShowOrderDeleteExample(ctx, 12345678)            // 🗑 Delete pending order
 	*/
+}
+
 }

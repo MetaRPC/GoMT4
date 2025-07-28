@@ -22,6 +22,7 @@ import (
 
 // MT4Account represents a client session for interacting with the MT4 terminal API over gRPC.
 type MT4Account struct {
+	
 	// User is the MT4 account login number.
 	User uint64
 
@@ -55,7 +56,7 @@ type MT4Account struct {
 	AccountClient      pb.AccountHelperClient
 	TradeClient        pb.TradingHelperClient
 	MarketInfoClient   pb.MarketInfoClient
-
+    AccountHelper      pb.AccountHelperClient
 	// Id is a unique identifier (UUID) for this account session/instance.
 	Id uuid.UUID
 }
@@ -1042,6 +1043,34 @@ func (a *MT4Account) QuoteMany(ctx context.Context, symbols []string) (*pb.Quote
 	return reply.GetData(), nil
 }
 
+// ShowAllSymbols retrieves all available symbols from the server.
+func (a *MT4Account) ShowAllSymbols(ctx context.Context) (*pb.SymbolsData, error) {
+    // Ensure the account is connected to a server.
+    if !a.isConnected() {
+        return nil, errors.New("not connected to terminal")
+    }
+
+    req := &pb.SymbolsRequest{}
+
+    grpcCall := func(headers metadata.MD) (*pb.SymbolsReply, error) {
+        c := metadata.NewOutgoingContext(ctx, headers)
+        return a.MarketInfoClient.Symbols(c, req)
+    }
+
+    errorSelector := func(reply *pb.SymbolsReply) *pb.Error {
+        return reply.GetError()
+    }
+
+    // Execute the request with reconnection logic
+    reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+    if err != nil {
+        return nil, err
+    }
+
+    return reply.GetData(), nil
+}
+
+
 // QuoteHistory retrieves historical candlestick data (OHLC) for a symbol within a time range.
 //
 // This method uses the MarketInfo.QuoteHistory endpoint. Timeframe options include M1, H1, D1, etc.
@@ -1367,3 +1396,38 @@ func (a *MT4Account) OnSymbolTick(
 	)
 	return dataCh, errCh
 }
+
+func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.SymbolParamsManyInfo, error) {
+	if !a.isConnected() {
+		return nil, fmt.Errorf("not connected to terminal")
+	}
+
+	req := &pb.SymbolParamsManyRequest{
+		SymbolName: proto.String(symbol), // ⚠️ optional string = 1; → proto.String(...)
+	}
+
+	grpcCall := func(headers metadata.MD) (*pb.SymbolParamsManyReply, error) {
+		c := metadata.NewOutgoingContext(ctx, headers)
+		return a.AccountHelper.SymbolParamsMany(c, req)
+	}
+
+	errorSelector := func(reply *pb.SymbolParamsManyReply) *pb.Error {
+		return reply.GetError() // inside oneof, it returns nil if the field is not selected.
+	}
+
+	resp, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := resp.GetData().GetSymbolInfos()
+	if len(symbols) == 0 {
+		return nil, fmt.Errorf("no parameters returned for symbol: %s", symbol)
+	}
+
+	return symbols[0], nil
+}
+
+
+
+

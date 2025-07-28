@@ -6,17 +6,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/MetaRPC/GoMT4/internal/account"
 	pb "github.com/MetaRPC/GoMT4/pb"
+	accountpkg "github.com/MetaRPC/GoMT4/internal/account"
 )
 
 type MT4Service struct {
-	account *account.MT4Account
+	account *accountpkg.MT4Account
 }
 
-func NewMT4Service(acc *account.MT4Account) *MT4Service {
+func NewMT4Service(acc *accountpkg.MT4Account) *MT4Service {
 	return &MT4Service{account: acc}
 }
+
 
 // === 📂 Account Info ===
 
@@ -268,26 +269,75 @@ func (s *MT4Service) ShowQuoteHistory(ctx context.Context, symbol string) {
 	}
 }
 
-// ShowSymbolParams prints detailed trading parameters for the given symbol.
+// ShowAllSymbols fetches and prints all symbols available in the MT4 terminal.
 //
-// Includes volume limits, spread, currencies, and trade modes.
-
-func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) {
-	data, err := s.account.SymbolParamsMany(ctx, []string{symbol})
+// Calls ShowAllSymbols from the MT4Account wrapper and displays name and description
+// for each symbol, if available.
+func (s *MT4Service) ShowAllSymbols(ctx context.Context) {
+	data, err := s.account.ShowAllSymbols(ctx)
 	if err != nil {
-		log.Printf("❌ SymbolParamsMany error: %v", err)
+		log.Printf("❌ ShowAllSymbols error: %v", err)
 		return
 	}
 
-	fmt.Println("=== Symbol Info Params ===")
-	for _, info := range data.Infos {
-		fmt.Printf("Symbol: %s\n  Digits: %d\n  SpreadFloat: %.2f\n  Bid: %.5f\n  VolumeMin: %.2f\n  VolumeMax: %.2f\n  VolumeStep: %.2f\n  CurrencyBase: %s\n  CurrencyProfit: %s\n  CurrencyMargin: %s\n  TradeMode: %v\n  TradeExeMode: %v\n\n",
-			info.GetSymbolName(), info.GetDigits(), info.GetSpreadFloat(), info.GetBid(),
-			info.GetVolumeMin(), info.GetVolumeMax(), info.GetVolumeStep(),
-			info.GetCurrencyBase(), info.GetCurrencyProfit(), info.GetCurrencyMargin(),
-			info.GetTradeMode(), info.GetTradeExecutionMode())
+	symbols := data.SymbolNameInfos
+	if len(symbols) == 0 {
+		fmt.Println("📭 No symbols found.")
+		return
+	}
+
+	fmt.Println("=== 🧾 All Available Symbols ===")
+	for _, sym := range symbols {
+		fmt.Printf("• %s (Index: %d)\n", sym.GetSymbolName(), sym.GetSymbolIndex())
 	}
 }
+
+// ShowSymbolParams prints detailed parameters for a specific trading symbol.
+//
+// Retrieves and displays advanced symbol information such as description, digits,
+// volume limits, trade mode, and related currencies using the SymbolParamsMany gRPC method.
+func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) error {
+	info, err := s.account.SymbolParams(ctx, symbol)
+	if err != nil {
+		return err
+	}
+
+
+	fmt.Println("📊 Symbol Parameters:")
+	fmt.Printf("• Symbol: %s\n", info.GetSymbolName())
+	fmt.Printf("• Description: %s\n", info.GetSymDescription())
+	fmt.Printf("• Digits: %d\n", info.GetDigits())
+	fmt.Printf("• Volume Min: %.2f\n", info.GetVolumeMin())
+	fmt.Printf("• Volume Max: %.2f\n", info.GetVolumeMax())
+	fmt.Printf("• Volume Step: %.2f\n", info.GetVolumeStep())
+	fmt.Printf("• Trade Mode: %s\n", tradeModeToString(info.GetTradeMode()))
+	fmt.Printf("• Currency Base: %s\n", info.GetCurrencyBase())
+	fmt.Printf("• Currency Profit: %s\n", info.GetCurrencyProfit())
+	fmt.Printf("• Currency Margin: %s\n", info.GetCurrencyMargin())
+
+	return nil
+}
+
+
+// ShowSymbols prints the available symbols along with their indices.
+//
+// Displays the symbol name and its corresponding index from the SymbolsData response.
+
+func (s *MT4Service) ShowSymbols(ctx context.Context) {
+    data, err := s.account.Symbols(ctx)
+    if err != nil {
+        log.Printf("❌ Symbols error: %v", err)
+        return
+    }
+
+    
+    fmt.Println("=== Available Symbols ===")
+    for _, symbolInfo := range data.GetSymbolNameInfos() { 
+        fmt.Printf("Symbol: %s, Index: %d\n", symbolInfo.GetSymbolName(), symbolInfo.GetSymbolIndex())
+    }
+}
+
+
 
 // ShowTickValues prints tick value, tick size, and contract size for each symbol.
 //
@@ -344,13 +394,15 @@ func (s *MT4Service) StreamQuotes(ctx context.Context) {
 
 // StreamOpenedOrderProfits subscribes to live profit updates for opened orders.
 //
-// Prints real-time profit data per order.
+// Prints real-time profit data for each updated order, including ticket number,
+// symbol, and current profit. Automatically stops on stream timeout or error.
 
 func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context) {
 	profitCh, errCh := s.account.OnOpenedOrdersProfit(ctx, 1000)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	fmt.Println("🔄 Streaming order profits...")
+
 	for {
 		select {
 		case profit, ok := <-profitCh:
@@ -358,12 +410,17 @@ func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context) {
 				fmt.Println("✅ Profit stream ended.")
 				return
 			}
-			info := profit.GetProfitInfo()
-			fmt.Printf("[Profit] Ticket: %d | Symbol: %s | Profit: %.2f\n",
-				info.GetTicket(), info.GetSymbol(), info.GetProfit())
+
+			// profit.OpenedOrdersWithProfitUpdated — это массив []*OnOpenedOrdersProfitOrderInfo
+			for _, info := range profit.OpenedOrdersWithProfitUpdated {
+				fmt.Printf("[Profit] Ticket: %d | Symbol: %s | Profit: %.2f\n",
+					info.Ticket, info.Symbol, info.OrderProfit)
+			}
+
 		case err := <-errCh:
 			log.Printf("❌ Stream error: %v", err)
 			return
+
 		case <-time.After(30 * time.Second):
 			fmt.Println("⏱️ Timeout reached.")
 			return
@@ -387,8 +444,9 @@ func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context) {
 				fmt.Println("✅ Ticket stream ended.")
 				return
 			}
-			tix := pkt.GetTickets()
-			fmt.Printf("[Tickets] %d open tickets: %v\n", len(tix), tix)
+			tix := append(pkt.PositionTickets, pkt.PendingOrderTickets...)
+            fmt.Printf("[Tickets] %d open tickets: %v\n", len(tix), tix)
+
 		case err := <-errCh:
 			log.Printf("❌ Stream error: %v", err)
 			return
@@ -408,6 +466,7 @@ func (s *MT4Service) StreamTradeUpdates(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	fmt.Println("🔄 Streaming trade updates...")
+
 	for {
 		select {
 		case trade, ok := <-tradeCh:
@@ -415,16 +474,46 @@ func (s *MT4Service) StreamTradeUpdates(ctx context.Context) {
 				fmt.Println("✅ Trade stream ended.")
 				return
 			}
-			info := trade.GetTradeInfo()
-			fmt.Printf("[Trade] Ticket: %d | Symbol: %s | Type: %v | Volume: %.2f | Profit: %.2f\n",
-				info.GetTicket(), info.GetSymbol(), info.GetOrderType(), info.GetLots(), info.GetProfit())
+
+			info := trade.EventData
+			if info == nil {
+				log.Println("❌ No trade info available.")
+				continue
+			}
+
+			if len(info.NewOrders) > 0 {
+    order := info.NewOrders[0]
+    fmt.Printf("[Trade] Ticket: %d | Symbol: %s | Type: %v | Volume: %.2f | Profit: %.2f\n",
+        order.Ticket, order.Symbol, order.Type, order.Lots, order.OrderProfit)
+}
+
+
+
 		case err := <-errCh:
 			log.Printf("❌ Stream error: %v", err)
 			return
+
 		case <-time.After(30 * time.Second):
 			fmt.Println("⏱️ Timeout reached.")
 			return
 		}
+	}
+}
+
+func tradeModeToString(mode pb.SP_ENUM_SYMBOL_TRADE_MODE) string {
+	switch mode {
+	case pb.SP_ENUM_SYMBOL_TRADE_MODE_SYMBOL_TRADE_MODE_DISABLED:
+		return "Disabled"
+	case pb.SP_ENUM_SYMBOL_TRADE_MODE_SYMBOL_TRADE_MODE_LONGONLY:
+		return "Long Only"
+	case pb.SP_ENUM_SYMBOL_TRADE_MODE_SYMBOL_TRADE_MODE_SHORTONLY:
+		return "Short Only"
+	case pb.SP_ENUM_SYMBOL_TRADE_MODE_SYMBOL_TRADE_MODE_CLOSEONLY:
+		return "Close Only"
+	case pb.SP_ENUM_SYMBOL_TRADE_MODE_SYMBOL_TRADE_MODE_FULL:
+		return "Full Access"
+	default:
+		return "Unknown"
 	}
 }
 

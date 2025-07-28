@@ -1,4 +1,4 @@
-module GoMT4.local
+module github.com/MetaRPC/GoMT4
 
 go 1.23.6
 
