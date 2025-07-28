@@ -1,7 +1,8 @@
 ﻿syntax = "proto3";
 
 package mt4_term_api;
-option go_package = "GoMT4/pb";
+option go_package = "github.com/MetaRPC/GoMT4/pb;pb";
+
 
 message Error {
   ErrorType type = 1;

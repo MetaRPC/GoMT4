@@ -5,7 +5,8 @@ import "google/protobuf/timestamp.proto";
 import "mrpc-mt4-error.proto";
 
 package mt4_term_api;
-option go_package = "GoMT4/pb";
+option go_package = "github.com/MetaRPC/GoMT4/pb;pb";
+
 
 service MarketInfo {
   // Get quote

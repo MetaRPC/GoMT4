@@ -1095,7 +1095,7 @@ const file_mt4_term_api_trading_helper_proto_rawDesc = "" +
 	"/OrderSend\x12e\n" +
 	"\vOrderModify\x12 .mt4_term_api.OrderModifyRequest\x1a\x1e.mt4_term_api.OrderModifyReply\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/OrderModify\x12y\n" +
 	"\x10OrderCloseDelete\x12%.mt4_term_api.OrderCloseDeleteRequest\x1a#.mt4_term_api.OrderCloseDeleteReply\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/OrderCloseDelete\x12i\n" +
-	"\fOrderCloseBy\x12!.mt4_term_api.OrderCloseByRequest\x1a\x1f.mt4_term_api.OrderCloseByReply\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/OrderCloseByB\x19Z\bGoMT4/pb\xaa\x02\fmt4_term_apib\x06proto3"
+	"\fOrderCloseBy\x12!.mt4_term_api.OrderCloseByRequest\x1a\x1f.mt4_term_api.OrderCloseByReply\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/OrderCloseByB/Z\x1egithub.com/MetaRPC/GoMT4/pb;pb\xaa\x02\fmt4_term_apib\x06proto3"
 
 var (
 	file_mt4_term_api_trading_helper_proto_rawDescOnce sync.Once

@@ -8,7 +8,7 @@ import (
 	"io"
 	"time"
 
-	pb "GoMT4/pb"
+	pb "github.com/MetaRPC/GoMT4/pb"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -105,30 +105,6 @@ func (a *MT4Account) getHeaders() metadata.MD {
 	}
 	return metadata.Pairs("id", a.Id.String())
 }
-
-// OrderSend отправляет рыночный или отложенный ордер через MT4 API.
-func (a *MT4Account) OrderSend(ctx context.Context, req *pb.OrderSendRequest) (*pb.OrderSendReply, error) {
-	if a.TradeClient == nil {
-		return nil, errors.New("TradeClient is not initialized")
-	}
-
-	// Добавляем gRPC-заголовки
-	headers := a.getHeaders()
-	ctx = metadata.NewOutgoingContext(ctx, headers)
-
-	// Выполняем RPC-вызов
-	resp, err := a.TradeClient.OrderSend(ctx, req)
-	if err != nil {
-		st, ok := status.FromError(err)
-		if ok {
-			return nil, fmt.Errorf("gRPC error (%v): %s", st.Code(), st.Message())
-		}
-		return nil, err
-	}
-
-	return resp, nil
-}
-
 
 // ConnectByHostPort connects to the MT4 terminal using a host/port pair.
 // Updates the session state fields (Host, Port, etc.) upon success.
@@ -510,7 +486,28 @@ func ExecuteStreamWithReconnect[TRequest any, TReply any, TData any](
 
 //=== Order Operations ===
 
-// OrderSend places a new market or pending order on the MT4 terminal.
+// OrderSend places a new trade order (market or pending) on the connected MT4 terminal.
+//
+// Parameters:
+//   - ctx: Context used for request cancellation or timeout control.
+//   - symbol: Trading symbol (e.g., "EURUSD") for the order.
+//   - operationType: Type of order operation (e.g., Buy, Sell, BuyLimit, etc.), defined by OrderSendOperationType enum.
+//   - volume: Number of lots to trade (e.g., 0.1, 1.0).
+//   - price: Price for the order (used for pending orders). Ignored for market orders if nil.
+//   - slippage: Maximum allowed slippage in points for market orders (optional).
+//   - stoploss: Price level for the Stop Loss (optional).
+//   - takeprofit: Price level for the Take Profit (optional).
+//   - comment: Optional text comment associated with the order (visible in the terminal).
+//   - magicNumber: Identifier used by expert advisors to track orders (optional).
+//   - expiration: Expiration time for pending orders (optional; ignored for market orders).
+//
+// Returns:
+//   - Pointer to OrderSendData structure containing result details (e.g., ticket number, status).
+//   - Error object if the operation fails due to network issues, validation, or terminal errors.
+//
+// The method wraps the gRPC call to the TradeClient.OrderSend method, preparing all optional fields if provided.
+// It uses ExecuteWithReconnect to automatically retry on transient network or session errors,
+// and checks for application-level errors returned by the terminal via the response.Error field.
 func (a *MT4Account) OrderSend(
 	ctx context.Context,
 	symbol string,
@@ -572,7 +569,24 @@ func (a *MT4Account) OrderSend(
 	return reply.GetData(), nil
 }
 
-// OrderClose deletes or closes the given order (market or pending).
+// OrderClose closes or deletes an existing market or pending order on the MT4 terminal.
+//
+// Parameters:
+//   - ctx: Context for request timeout or cancellation.
+//   - ticket: Unique identifier (ticket number) of the order to be closed.
+//   - lots: Optional parameter to partially close the order (e.g., 0.5 lots). If nil, the full order is closed.
+//   - price: Optional closing price. Used for market orders; if nil, market price is used.
+//   - slippage: Optional maximum allowable slippage in points. Ignored for pending orders.
+//
+// Returns:
+//   - Pointer to OrderCloseDeleteData structure with details of the operation (e.g., confirmation).
+//   - Error if not connected, or if the gRPC/API call fails or is rejected by the terminal.
+//
+// This method sends a request to close or delete an order via the TradeClient.OrderCloseDelete RPC call.
+// Optional fields (lots, price, slippage) are only included if explicitly provided.
+// It uses ExecuteWithReconnect to automatically retry on connection or session-related errors,
+// and checks for application-level errors in the gRPC response via the Error field.
+
 func (a *MT4Account) OrderClose(ctx context.Context, ticket int32, lots, price *float64, slippage *int32) (*pb.OrderCloseDeleteData, error) {
 	if !a.isConnected() {
 		return nil, errors.New("not connected")
@@ -607,13 +621,42 @@ func (a *MT4Account) OrderClose(ctx context.Context, ticket int32, lots, price *
 	return reply.GetData(), nil
 }
 
-// OrderDelete removes a pending order by ticket.
+// OrderDelete removes a pending order from the MT4 terminal using its ticket number.
+//
+// Parameters:
+//   - ctx: Context for cancellation or timeout.
+//   - ticket: Ticket number of the pending order to delete.
+//
+// Returns:
+//   - Pointer to OrderCloseDeleteData containing result information (e.g., confirmation).
+//   - Error if the order could not be deleted or if the operation fails.
+//
+// This is a convenience wrapper around OrderClose with all optional parameters set to nil,
+// meaning the full pending order is deleted using default behavior.
+// Only applicable to pending orders; attempting to delete an open market order may result in an error.
+
 func (a *MT4Account) OrderDelete(ctx context.Context, ticket int32) (*pb.OrderCloseDeleteData, error) {
 	return a.OrderClose(ctx, ticket, nil, nil, nil)
 }
 
-// OrderSelect retrieves information about a specific order by its ticket ID.
-// Returns nil if the ticket is not found.
+// OrderSelect retrieves detailed information about a specific opened order by its ticket number.
+//
+// Parameters:
+//   - ctx: Context for request timeout or cancellation.
+//   - ticket: Ticket number (unique ID) of the order to search for.
+//
+// Returns:
+//   - Pointer to OpenedOrderInfo struct containing full order details.
+//   - Error if the terminal is not connected, or if the order is not found.
+//
+// This method fetches the list of currently opened orders by calling OpenedOrders(),
+// then iterates through them to find a match with the specified ticket.
+// Returns an error if the order does not exist or if the API call fails.
+//
+// Note:
+//   - This method does not query closed or pending orders — only currently opened ones.
+//   - Matching is done locally by comparing tickets from the retrieved list.
+
 func (a *MT4Account) OrderSelect(ctx context.Context, ticket int32) (*pb.OpenedOrderInfo, error) {
 	if !a.isConnected() {
 		return nil, errors.New("not connected to terminal")
@@ -634,7 +677,28 @@ func (a *MT4Account) OrderSelect(ctx context.Context, ticket int32) (*pb.OpenedO
 }
 
 
-// OrderCloseBy closes a market order using an opposite order.
+// OrderCloseBy closes a market order by pairing it with an opposite order (i.e., a hedge).
+//
+// Parameters:
+//   - ctx: Context for timeout or cancellation.
+//   - ticketToClose: Ticket number of the order to be closed.
+//   - oppositeTicket: Ticket number of the opposite-direction order used to close the first one.
+//
+// Returns:
+//   - Pointer to OrderCloseByData structure with details of the closing operation.
+//   - Error if not connected or if the API call fails or is rejected by the terminal.
+//
+// This method is used when closing one position using another of the opposite direction,
+// typically in hedge-mode accounts. The operation is atomic — both orders are closed simultaneously.
+//
+// It sends a gRPC request to the terminal using TradeClient.OrderCloseBy,
+// and applies automatic retry logic through ExecuteWithReconnect.
+// Any application-level errors returned by the terminal are extracted from the reply.
+//
+// Note:
+//   - Both orders must be opened and of equal volume.
+//   - This operation is only available in hedge-enabled accounts.
+
 func (a *MT4Account) OrderCloseBy(ctx context.Context, ticketToClose int32, oppositeTicket int32) (*pb.OrderCloseByData, error) {
 	if !a.isConnected() {
 		return nil, errors.New("not connected")
@@ -661,7 +725,22 @@ func (a *MT4Account) OrderCloseBy(ctx context.Context, ticketToClose int32, oppo
 	return reply.GetData(), nil
 }
 
-// OrdersTotal returns the number of currently open orders for the connected account.
+// OrdersTotal returns the total number of currently opened orders on the connected MT4 trading account.
+//
+// Parameters:
+//   - ctx: Context for request timeout or cancellation.
+//
+// Returns:
+//   - Integer value representing the number of open orders (int32).
+//   - Error if the terminal is not connected or the API call fails.
+//
+// This method calls OpenedOrders() to retrieve the list of currently active market and pending orders,
+// and returns the total count. It does not include closed or historical orders.
+//
+// Note:
+//   - This is a runtime query and reflects the current state of the trading account.
+//   - If the connection to the terminal is not established, an error is returned immediately.
+
 func (a *MT4Account) OrdersTotal(ctx context.Context) (int32, error) {
 	if !a.isConnected() {
 		return 0, errors.New("not connected to terminal")
@@ -675,7 +754,32 @@ func (a *MT4Account) OrdersTotal(ctx context.Context) (int32, error) {
 	return int32(len(orders.GetOrderInfos())), nil
 }
 
-// OrderModify modifies an existing order's price, SL, TP or expiration.
+// OrderModify updates the parameters of an existing order on the MT4 terminal,
+// such as entry price, stop loss, take profit, or expiration time.
+//
+// Parameters:
+//   - ctx: Context for request timeout or cancellation.
+//   - ticket: Ticket number (unique ID) of the order to be modified.
+//   - price: New entry price (optional). Used primarily for pending orders.
+//   - stoploss: New Stop Loss level (optional).
+//   - takeprofit: New Take Profit level (optional).
+//   - expiration: New expiration time for pending orders (optional).
+//
+// Returns:
+//   - Boolean indicating whether the order was successfully modified.
+//   - Error if the modification failed due to terminal state, invalid parameters, or connectivity issues.
+//
+// This method constructs an OrderModifyRequest message with any provided fields,
+// and sends it to the terminal via the TradeClient.OrderModify RPC call.
+// Fields that are nil are omitted, so only specified parameters are updated.
+//
+// The call is wrapped in ExecuteWithReconnect to automatically retry on transient connection issues,
+// and inspects the gRPC response for any terminal-level errors.
+//
+// Note:
+//   - Only pending orders can have price or expiration modified.
+//   - The order must still be valid (not closed or already filled).
+
 func (a *MT4Account) OrderModify(ctx context.Context, ticket int32, price, stoploss, takeprofit *float64, expiration *timestamppb.Timestamp) (bool, error) {
 	if !a.isConnected() {
 		return false, errors.New("not connected")

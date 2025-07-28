@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 
-
-	"github.com/google/uuid"
-
-	accountpkg "GoMT4/internal/account"
-	servicepkg "GoMT4/internal/service" // MT4Service wrapper
+	pb "GoMT4.local/pb"
+	accountpkg "GoMT4.local/internal/account"
+	servicepkg "GoMT4.local/internal/service"
 )
 
 func main() {

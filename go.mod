@@ -1,4 +1,4 @@
-module GoMT4
+module GoMT4.local
 
 go 1.23.6
 

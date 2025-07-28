@@ -6,24 +6,29 @@ import (
 	"log"
 	"time"
 
-	"GoMT4/internal/account"
-	pb "GoMT4/pb"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/MetaRPC/GoMT4/internal/account"
+	pb "github.com/MetaRPC/GoMT4/pb"
 )
 
-// MT4Service provides higher-level methods wrapping MT4Account operations.
 type MT4Service struct {
 	account *account.MT4Account
 }
 
-// NewMT4Service constructs a new MT4Service.
 func NewMT4Service(acc *account.MT4Account) *MT4Service {
 	return &MT4Service{account: acc}
 }
 
-// ShowAccountSummary prints basic account information.
+// === 📂 Account Info ===
+
+// ShowAccountSummary fetches and prints the account's balance, equity, and currency.
+//
+// Parameters:
+//   - ctx: Context for timeout or cancellation.
+//
+// If the request fails, logs the error. Otherwise, prints key account metrics to stdout.
+// Intended for CLI or diagnostic output; does not return any data.
+
 func (s *MT4Service) ShowAccountSummary(ctx context.Context) {
-	fmt.Println("=== Account Summary ===")
 	summary, err := s.account.AccountSummary(ctx)
 	if err != nil {
 		log.Printf("❌ AccountSummary error: %v", err)
@@ -32,13 +37,16 @@ func (s *MT4Service) ShowAccountSummary(ctx context.Context) {
 	fmt.Printf("Balance: %.2f, Equity: %.2f, Currency: %s\n",
 		summary.GetAccountBalance(),
 		summary.GetAccountEquity(),
-		summary.GetAccountCurrency(),
-	)
+		summary.GetAccountCurrency())
 }
 
-// ShowOpenedOrders lists currently opened orders.
+// === 📂 Order Operations ===
+
+// ShowOpenedOrders prints all currently opened orders with basic trade info.
+//
+// Logs an error if the request fails. Prints "No opened orders" if the list is empty.
+
 func (s *MT4Service) ShowOpenedOrders(ctx context.Context) {
-	fmt.Println("=== Opened Orders ===")
 	ordersData, err := s.account.OpenedOrders(ctx)
 	if err != nil {
 		log.Printf("❌ OpenedOrders error: %v", err)
@@ -61,9 +69,11 @@ func (s *MT4Service) ShowOpenedOrders(ctx context.Context) {
 	}
 }
 
-// ShowOpenedOrderTickets prints the ticket IDs of opened orders.
+// ShowOpenedOrderTickets prints the ticket numbers of all open orders.
+//
+// Logs an error if the request fails. Shows a message if no tickets are found.
+
 func (s *MT4Service) ShowOpenedOrderTickets(ctx context.Context) {
-	fmt.Println("=== Opened Order Tickets ===")
 	ticketsData, err := s.account.OpenedOrdersTickets(ctx)
 	if err != nil {
 		log.Printf("❌ OpenedOrdersTickets error: %v", err)
@@ -80,9 +90,11 @@ func (s *MT4Service) ShowOpenedOrderTickets(ctx context.Context) {
 	}
 }
 
-// ShowOrdersHistory prints the order history for the last 7 days.
+// ShowOrdersHistory prints closed orders from the last 7 days, sorted by close time.
+//
+// Logs an error if the request fails. Prints a message if no historical orders are found.
+
 func (s *MT4Service) ShowOrdersHistory(ctx context.Context) {
-	fmt.Println("=== Orders History (last 7 days) ===")
 	from := time.Now().AddDate(0, 0, -7)
 	to := time.Now()
 	history, err := s.account.OrdersHistory(
@@ -113,9 +125,11 @@ func (s *MT4Service) ShowOrdersHistory(ctx context.Context) {
 	}
 }
 
-// ShowOrderSendExample sends a simple market Buy order.
+// ShowOrderSendExample sends a sample BUY order with test parameters.
+//
+// Logs the result or prints the ticket and price if successful.
+
 func (s *MT4Service) ShowOrderSendExample(ctx context.Context, symbol string) {
-	fmt.Println("📤 Sending market order...")
 	data, err := s.account.OrderSend(
 		ctx,
 		symbol,
@@ -134,13 +148,14 @@ func (s *MT4Service) ShowOrderSendExample(ctx context.Context, symbol string) {
 		return
 	}
 	fmt.Printf("✅ Order opened! Ticket: %d, Price: %.5f, Time: %s\n",
-		data.GetTicket(), data.GetPrice(), data.GetOpenTime().AsTime().Format("2006-01-02 15:04:05"),
-	)
+		data.GetTicket(), data.GetPrice(), data.GetOpenTime().AsTime().Format("2006-01-02 15:04:05"))
 }
 
-// ShowOrderModifyExample demonstrates modifying SL/TP.
+// ShowOrderModifyExample attempts to modify SL/TP for the given order ticket.
+//
+// Logs the result and indicates whether the modification was successful.
+
 func (s *MT4Service) ShowOrderModifyExample(ctx context.Context, ticket int32) {
-	fmt.Println("=== Modify Order ===")
 	newSL := 1.0500
 	newTP := 1.0900
 	modified, err := s.account.OrderModify(ctx, ticket, nil, &newSL, &newTP, nil)
@@ -155,9 +170,11 @@ func (s *MT4Service) ShowOrderModifyExample(ctx context.Context, ticket int32) {
 	}
 }
 
-// ShowOrderCloseExample shows closing a market order.
+// ShowOrderCloseExample closes an order by ticket and prints the result.
+//
+// Displays close mode and optional order comment if available.
+
 func (s *MT4Service) ShowOrderCloseExample(ctx context.Context, ticket int32) {
-	fmt.Println("=== Close Order ===")
 	result, err := s.account.OrderClose(ctx, ticket, nil, nil, nil)
 	if err != nil {
 		log.Printf("❌ OrderClose error: %v", err)
@@ -170,22 +187,25 @@ func (s *MT4Service) ShowOrderCloseExample(ctx context.Context, ticket int32) {
 	fmt.Println()
 }
 
-// ShowOrderCloseByExample closes one order using an opposite order.
+// ShowOrderCloseByExample closes an order using an opposite one and prints the result.
+//
+// Shows profit, close price, and time of closure.
+
 func (s *MT4Service) ShowOrderCloseByExample(ctx context.Context, ticket int32, oppositeTicket int32) {
-	fmt.Println("=== Close Order By Opposite ===")
 	data, err := s.account.OrderCloseBy(ctx, ticket, oppositeTicket)
 	if err != nil {
 		log.Printf("❌ OrderCloseBy error: %v", err)
 		return
 	}
 	fmt.Printf("✅ Closed by opposite: Profit=%.2f, Price=%.5f, Time: %s\n",
-		data.GetProfit(), data.GetClosePrice(), data.GetCloseTime().AsTime().Format("2006-01-02 15:04:05"),
-	)
+		data.GetProfit(), data.GetClosePrice(), data.GetCloseTime().AsTime().Format("2006-01-02 15:04:05"))
 }
 
-// ShowOrderDeleteExample deletes a pending order by ticket.
+// ShowOrderDeleteExample deletes a pending order by ticket and prints the result.
+//
+// Displays the close mode and any associated comment.
+
 func (s *MT4Service) ShowOrderDeleteExample(ctx context.Context, ticket int32) {
-	fmt.Println("=== Delete Pending Order ===")
 	data, err := s.account.OrderDelete(ctx, ticket)
 	if err != nil {
 		log.Printf("❌ OrderDelete error: %v", err)
@@ -194,9 +214,13 @@ func (s *MT4Service) ShowOrderDeleteExample(ctx context.Context, ticket int32) {
 	fmt.Printf("✅ Order deleted. Mode: %s, Comment: %s\n", data.GetMode(), data.GetHistoryOrderComment())
 }
 
-// ShowQuote retrieves and prints the current Bid/Ask quote for the given symbol.
+// === 📂 Market Info / Symbol Info ===
+
+// ShowQuote fetches and prints the latest quote (bid/ask) for a given symbol.
+//
+// Also shows the timestamp of the quote.
+
 func (s *MT4Service) ShowQuote(ctx context.Context, symbol string) {
-	fmt.Printf("=== Current Quote for %s ===\n", symbol)
 	data, err := s.account.Quote(ctx, symbol)
 	if err != nil {
 		log.Printf("❌ Quote error: %v", err)
@@ -204,13 +228,14 @@ func (s *MT4Service) ShowQuote(ctx context.Context, symbol string) {
 	}
 	fmt.Printf("✅ Symbol: %s | Bid: %.5f | Ask: %.5f | Time: %s\n",
 		symbol, data.GetBid(), data.GetAsk(),
-		data.GetDateTime().AsTime().Format("2006-01-02 15:04:05"),
-	)
+		data.GetDateTime().AsTime().Format("2006-01-02 15:04:05"))
 }
 
-// ShowQuotesMany retrieves and displays quotes for multiple symbols.
+// ShowQuotesMany prints the latest quotes (bid/ask) for multiple symbols.
+//
+// Logs an error if the request fails.
+
 func (s *MT4Service) ShowQuotesMany(ctx context.Context, symbols []string) {
-	fmt.Println("=== Quotes for Multiple Symbols ===")
 	data, err := s.account.QuoteMany(ctx, symbols)
 	if err != nil {
 		log.Printf("❌ QuoteMany error: %v", err)
@@ -219,17 +244,18 @@ func (s *MT4Service) ShowQuotesMany(ctx context.Context, symbols []string) {
 	for _, q := range data.GetQuotes() {
 		fmt.Printf("📈 Symbol: %s | Bid: %.5f | Ask: %.5f | Time: %s\n",
 			q.GetSymbol(), q.GetBid(), q.GetAsk(),
-			q.GetDateTime().AsTime().Format("2006-01-02 15:04:05"),
-		)
+			q.GetDateTime().AsTime().Format("2006-01-02 15:04:05"))
 	}
 }
 
-// ShowQuoteHistory displays historical OHLC data for a given symbol.
+// ShowQuoteHistory prints historical OHLC data for a symbol (last 5 days, H1).
+//
+// Displays time, open, high, low, and close prices for each candle.
+
 func (s *MT4Service) ShowQuoteHistory(ctx context.Context, symbol string) {
-	fmt.Printf("=== Historical Quote History for %s ===\n", symbol)
 	from := time.Now().AddDate(0, 0, -5)
 	to := time.Now()
-	timeframe := pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QhPeriodH1
+	timeframe := pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_H1
 	data, err := s.account.QuoteHistory(ctx, symbol, timeframe, from, to)
 	if err != nil {
 		log.Printf("❌ QuoteHistory error: %v", err)
@@ -238,154 +264,171 @@ func (s *MT4Service) ShowQuoteHistory(ctx context.Context, symbol string) {
 	for _, c := range data.GetHistoricalQuotes() {
 		fmt.Printf("[%s] O: %.5f H: %.5f L: %.5f C: %.5f\n",
 			c.GetTime().AsTime().Format("2006-01-02 15:04:05"),
-			c.GetOpen(), c.GetHigh(), c.GetLow(), c.GetClose(),
+			c.GetOpen(), c.GetHigh(), c.GetLow(), c.GetClose())
+	}
+}
+
+// ShowSymbolParams prints detailed trading parameters for the given symbol.
+//
+// Includes volume limits, spread, currencies, and trade modes.
+
+func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) {
+	data, err := s.account.SymbolParamsMany(ctx, []string{symbol})
+	if err != nil {
+		log.Printf("❌ SymbolParamsMany error: %v", err)
+		return
+	}
+
+	fmt.Println("=== Symbol Info Params ===")
+	for _, info := range data.Infos {
+		fmt.Printf("Symbol: %s\n  Digits: %d\n  SpreadFloat: %.2f\n  Bid: %.5f\n  VolumeMin: %.2f\n  VolumeMax: %.2f\n  VolumeStep: %.2f\n  CurrencyBase: %s\n  CurrencyProfit: %s\n  CurrencyMargin: %s\n  TradeMode: %v\n  TradeExeMode: %v\n\n",
+			info.GetSymbolName(), info.GetDigits(), info.GetSpreadFloat(), info.GetBid(),
+			info.GetVolumeMin(), info.GetVolumeMax(), info.GetVolumeStep(),
+			info.GetCurrencyBase(), info.GetCurrencyProfit(), info.GetCurrencyMargin(),
+			info.GetTradeMode(), info.GetTradeExecutionMode())
+	}
+}
+
+// ShowTickValues prints tick value, tick size, and contract size for each symbol.
+//
+// Useful for risk and volume calculations.
+
+func (s *MT4Service) ShowTickValues(ctx context.Context, symbols []string) {
+	data, err := s.account.TickValueWithSize(ctx, symbols)
+	if err != nil {
+		log.Printf("❌ TickValueWithSize error: %v", err)
+		return
+	}
+	for _, info := range data.Infos {
+		fmt.Printf("💹 Symbol: %s\n  TickValue: %.5f\n  TickSize: %.5f\n  ContractSize: %.2f\n\n",
+			info.GetSymbolName(),
+			info.GetTradeTickValue(),
+			info.GetTradeTickSize(),
+			info.GetTradeContractSize(),
 		)
 	}
 }
 
-// ShowAllSymbols retrieves and displays all available trading symbols.
-func (s *MT4Service) ShowAllSymbols(ctx context.Context) {
-	fmt.Println("=== All Available Symbols ===")
-	data, err := s.account.Symbols(ctx)
-	if err != nil {
-		log.Printf("❌ Symbols error: %v", err)
-		return
-	}
-	for _, e := range data.Get
-}
+// === 📂 Streaming / Subscriptions ===
 
+// StreamQuotes subscribes to live tick updates for predefined symbols.
+//
+// Prints bid/ask updates until stream ends or times out.
 
-// ShowTickValues fetches and displays tick value, tick size, and contract size for each symbol.
-func (s *MT4Service) ShowTickValues(ctx context.Context, symbols []string) {
-    fmt.Println("=== Tick Value, Size, and Contract Size ===")
-
-    data, err := s.account.TickValueWithSize(ctx, symbols)
-    if err != nil {
-        log.Printf("❌ TickValueWithSize error: %v", err)
-        return
-    }
-    for _, info := range data.GetInfos() {
-        fmt.Printf("💹 Symbol: %s\n", info.GetSymbolName())
-        fmt.Printf("  TickValue: %.5f\n", info.GetTradeTickValue())
-        fmt.Printf("  TickSize: %.5f\n", info.GetTradeTickSize())
-        fmt.Printf("  ContractSize: %.2f\n\n", info.GetTradeContractSize())
-    }
-}
-
-// === Streaming (Streaming data) ===
-
-// StreamQuotes subscribes to live tick updates.
 func (s *MT4Service) StreamQuotes(ctx context.Context) {
-    symbols := []string{"EURUSD", "GBPUSD"}
-    tickCh, errCh := s.account.OnSymbolTick(ctx, symbols)
-
-    ctx, cancel := context.WithCancel(ctx)
-    defer cancel()
-
-    fmt.Println("🔄 Streaming ticks...")
-
-    for {
-        select {
-        case tick, ok := <-tickCh:
-            if !ok {
-                fmt.Println("✅ Tick stream ended.")
-                return
-            }
-            if sym := tick.GetSymbolTick(); sym != nil {
-                fmt.Printf("[Tick] %s | Bid: %.5f | Ask: %.5f | Time: %s\n",
-                    sym.GetSymbol(), sym.GetBid(), sym.GetAsk(),
-                    sym.GetTime().AsTime().Format("2006-01-02 15:04:05"))
-            }
-        case err := <-errCh:
-            log.Printf("❌ Stream error: %v", err)
-            return
-        case <-time.After(30 * time.Second):
-            fmt.Println("⏱️ Timeout reached.")
-            return
-        }
-    }
+	symbols := []string{"EURUSD", "GBPUSD"}
+	tickCh, errCh := s.account.OnSymbolTick(ctx, symbols)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	fmt.Println("🔄 Streaming ticks...")
+	for {
+		select {
+		case tick, ok := <-tickCh:
+			if !ok {
+				fmt.Println("✅ Tick stream ended.")
+				return
+			}
+			if sym := tick.GetSymbolTick(); sym != nil {
+				fmt.Printf("[Tick] %s | Bid: %.5f | Ask: %.5f | Time: %s\n",
+					sym.GetSymbol(), sym.GetBid(), sym.GetAsk(), sym.GetTime().AsTime().Format("2006-01-02 15:04:05"))
+			}
+		case err := <-errCh:
+			log.Printf("❌ Stream error: %v", err)
+			return
+		case <-time.After(30 * time.Second):
+			fmt.Println("⏱️ Timeout reached.")
+			return
+		}
+	}
 }
 
-// StreamOpenedOrderProfits streams live profit updates for open orders.
+// StreamOpenedOrderProfits subscribes to live profit updates for opened orders.
+//
+// Prints real-time profit data per order.
+
 func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context) {
-    profitCh, errCh := s.account.OnOpenedOrdersProfit(ctx, 1000)
-
-    ctx, cancel := context.WithCancel(ctx)
-    defer cancel()
-
-    fmt.Println("🔄 Streaming order profits...")
-    for {
-        select {
-        case profit, ok := <-profitCh:
-            if !ok {
-                fmt.Println("✅ Profit stream ended.")
-                return
-            }
-            info := profit.GetProfitInfo()
-            fmt.Printf("[Profit] Ticket: %d | Symbol: %s | Profit: %.2f\n",
-                info.GetTicket(), info.GetSymbol(), info.GetProfit())
-        case err := <-errCh:
-            log.Printf("❌ Stream error: %v", err)
-            return
-        case <-time.After(30 * time.Second):
-            fmt.Println("⏱️ Timeout reached.")
-            return
-        }
-    }
+	profitCh, errCh := s.account.OnOpenedOrdersProfit(ctx, 1000)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	fmt.Println("🔄 Streaming order profits...")
+	for {
+		select {
+		case profit, ok := <-profitCh:
+			if !ok {
+				fmt.Println("✅ Profit stream ended.")
+				return
+			}
+			info := profit.GetProfitInfo()
+			fmt.Printf("[Profit] Ticket: %d | Symbol: %s | Profit: %.2f\n",
+				info.GetTicket(), info.GetSymbol(), info.GetProfit())
+		case err := <-errCh:
+			log.Printf("❌ Stream error: %v", err)
+			return
+		case <-time.After(30 * time.Second):
+			fmt.Println("⏱️ Timeout reached.")
+			return
+		}
+	}
 }
 
-// StreamOpenedOrderTickets streams real‑time updates of open order tickets.
+// StreamOpenedOrderTickets subscribes to live updates of open order tickets.
+//
+// Prints current ticket list on each update.
+
 func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context) {
-    ticketCh, errCh := s.account.OnOpenedOrdersTickets(ctx, 1000)
-
-    ctx, cancel := context.WithCancel(ctx)
-    defer cancel()
-
-    fmt.Println("🔄 Streaming opened order tickets...")
-    for {
-        select {
-        case pkt, ok := <-ticketCh:
-            if !ok {
-                fmt.Println("✅ Ticket stream ended.")
-                return
-            }
-            tix := pkt.GetTickets()
-            fmt.Printf("[Tickets] %d open tickets: %v\n", len(tix), tix)
-        case err := <-errCh:
-            log.Printf("❌ Stream error: %v", err)
-            return
-        case <-time.After(30 * time.Second):
-            fmt.Println("⏱️ Timeout reached.")
-            return
-        }
-    }
+	ticketCh, errCh := s.account.OnOpenedOrdersTickets(ctx, 1000)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	fmt.Println("🔄 Streaming opened order tickets...")
+	for {
+		select {
+		case pkt, ok := <-ticketCh:
+			if !ok {
+				fmt.Println("✅ Ticket stream ended.")
+				return
+			}
+			tix := pkt.GetTickets()
+			fmt.Printf("[Tickets] %d open tickets: %v\n", len(tix), tix)
+		case err := <-errCh:
+			log.Printf("❌ Stream error: %v", err)
+			return
+		case <-time.After(30 * time.Second):
+			fmt.Println("⏱️ Timeout reached.")
+			return
+		}
+	}
 }
 
-// StreamTradeUpdates streams real‑time trade events.
+// StreamTradeUpdates listens for real-time trade events (opens, closes, modifies).
+//
+// Prints order info on each trade update.
+
 func (s *MT4Service) StreamTradeUpdates(ctx context.Context) {
-    tradeCh, errCh := s.account.OnTrade(ctx)
-
-    ctx, cancel := context.WithCancel(ctx)
-    defer cancel()
-
-    fmt.Println("🔄 Streaming trade updates...")
-    for {
-        select {
-        case trade, ok := <-tradeCh:
-            if !ok {
-                fmt.Println("✅ Trade stream ended.")
-                return
-            }
-            info := trade.GetTradeInfo()
-            fmt.Printf("[Trade] Ticket: %d | Symbol: %s | Type: %v | Volume: %.2f | Profit: %.2f\n",
-                info.GetTicket(), info.GetSymbol(), info.GetOrderType(),
-                info.GetLots(), info.GetProfit())
-        case err := <-errCh:
-            log.Printf("❌ Stream error: %v", err)
-            return
-        case <-time.After(30 * time.Second):
-            fmt.Println("⏱️ Timeout reached.")
-            return
-        }
-    }
+	tradeCh, errCh := s.account.OnTrade(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	fmt.Println("🔄 Streaming trade updates...")
+	for {
+		select {
+		case trade, ok := <-tradeCh:
+			if !ok {
+				fmt.Println("✅ Trade stream ended.")
+				return
+			}
+			info := trade.GetTradeInfo()
+			fmt.Printf("[Trade] Ticket: %d | Symbol: %s | Type: %v | Volume: %.2f | Profit: %.2f\n",
+				info.GetTicket(), info.GetSymbol(), info.GetOrderType(), info.GetLots(), info.GetProfit())
+		case err := <-errCh:
+			log.Printf("❌ Stream error: %v", err)
+			return
+		case <-time.After(30 * time.Second):
+			fmt.Println("⏱️ Timeout reached.")
+			return
+		}
+	}
 }
+
+// === 🔧Utilities ===
+
+func ptrInt32(v int32) *int32    { return &v }
+func ptrString(v string) *string { return &v }

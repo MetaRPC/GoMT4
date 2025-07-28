@@ -4,7 +4,7 @@
 // 	protoc        v5.26.1
 // source: mrpc-mt4-error.proto
 
-package _go
+package pb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -909,7 +909,7 @@ const file_mrpc_mt4_error_proto_rawDesc = "" +
 	"\x1cERR_OBJECT_COORDINATES_ERROR\x10\xed \x12\x1f\n" +
 	"\x1aERR_NO_SPECIFIED_SUBWINDOW\x10\xee \x12\x1a\n" +
 	"\x15ERR_SOME_OBJECT_ERROR\x10\xef \x12\x19\n" +
-	"\x14ERR_FILE_CANNOT_OPEN\x10\x8c'B3Z1git.mtapi.io/root/mrpc-proto.git/mt4/libraries/gob\x06proto3"
+	"\x14ERR_FILE_CANNOT_OPEN\x10\x8c'B Z\x1egithub.com/MetaRPC/GoMT4/pb;pbb\x06proto3"
 
 var (
 	file_mrpc_mt4_error_proto_rawDescOnce sync.Once
