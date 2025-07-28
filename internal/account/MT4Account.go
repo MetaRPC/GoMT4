@@ -1408,11 +1408,12 @@ func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.Symbo
 
 	grpcCall := func(headers metadata.MD) (*pb.SymbolParamsManyReply, error) {
 		c := metadata.NewOutgoingContext(ctx, headers)
-		return a.AccountHelper.SymbolParamsMany(c, req)
+		
+		return a.AccountClient.SymbolParamsMany(c, req)
 	}
 
 	errorSelector := func(reply *pb.SymbolParamsManyReply) *pb.Error {
-		return reply.GetError() // inside oneof, it returns nil if the field is not selected.
+		return reply.GetError()
 	}
 
 	resp, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
@@ -1427,6 +1428,7 @@ func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.Symbo
 
 	return symbols[0], nil
 }
+
 
 
 
