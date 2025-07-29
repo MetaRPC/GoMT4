@@ -5,7 +5,7 @@
 
 ---
 
-### Code Example
+### Code Example 
 
 ```go
 summary, err := s.account.AccountSummary(ctx)
