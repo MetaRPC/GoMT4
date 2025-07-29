@@ -37,7 +37,6 @@ jobs:
 
       - run: pip install mkdocs-material pymdown-extensions
 
-      # --- GODOC2MD SECTION STARTS HERE ---
       - name: Install Go
         uses: actions/setup-go@v5
         with:
@@ -48,13 +47,13 @@ jobs:
 
       - name: Generate Go API docs (Markdown)
         run: |
-          cd examples
-          mkdir -p ../docs
-          ~/go/bin/godoc2md mt4go > ../docs/api.md
-      # --- GODOC2MD SECTION ENDS HERE ---
+          mkdir -p docs
+          ~/go/bin/godoc2md mt4go > docs/api.md
 
       - name: Deploy Docs to GitHub Pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global user.name "github-actions[bo]()
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdocs gh-deploy --force --clean --remote-branch gh-pages
