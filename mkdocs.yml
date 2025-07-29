@@ -4,7 +4,7 @@ nav:
   - Home: index.md
   - Account:
       - ShowAccountSummary: account/ShowAccountSummary.md
-  - Market Info:
+  - MarketInfo:
       - ShowAllSymbols: market_info/ShowAllSymbols.md
       - ShowQuote: market_info/ShowQuote.md
       - ShowQuoteHistory: market_info/ShowQuoteHistory.md
@@ -12,7 +12,7 @@ nav:
       - ShowSymbolParams: market_info/ShowSymbolParams.md
       - ShowSymbols: market_info/ShowSymbols.md
       - ShowTickValues: market_info/ShowTickValues.md
-  - Order Operations:
+  - OrderOperations:
       - ShowOpenedOrderTickets: order_operations/ShowOpenedOrderTickets.md
       - ShowOpenedOrders: order_operations/ShowOpenedOrders.md
       - ShowOrderCloseByExample: order_operations/ShowOrderCloseByExample.md
