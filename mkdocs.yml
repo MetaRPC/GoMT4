@@ -26,7 +26,7 @@ nav:
       - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
       - StreamQuotes: Streaming/StreamQuotes.md
       - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
-  - CLI Usage: docs/cli_usage.md
+  - CLI Usage: cli_usage.md
 
 theme:
   name: material
