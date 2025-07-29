@@ -3,29 +3,29 @@ site_name: MetaRPC MT4 Golang Documentation
 nav:
   - Home: index.md
   - Account:
-      - ShowAccountSummary: account/ShowAccountSummary.md
+      - ShowAccountSummary: Account/ShowAccountSummary.md
   - MarketInfo:
-      - ShowAllSymbols: market_info/ShowAllSymbols.md
-      - ShowQuote: market_info/ShowQuote.md
-      - ShowQuoteHistory: market_info/ShowQuoteHistory.md
-      - ShowQuotesMany: market_info/ShowQuotesMany.md
-      - ShowSymbolParams: market_info/ShowSymbolParams.md
-      - ShowSymbols: market_info/ShowSymbols.md
-      - ShowTickValues: market_info/ShowTickValues.md
+      - ShowAllSymbols: Market_info/ShowAllSymbols.md
+      - ShowQuote: Market_info/ShowQuote.md
+      - ShowQuoteHistory: Market_info/ShowQuoteHistory.md
+      - ShowQuotesMany: Market_info/ShowQuotesMany.md
+      - ShowSymbolParams: Market_info/ShowSymbolParams.md
+      - ShowSymbols: Market_info/ShowSymbols.md
+      - ShowTickValues: Market_info/ShowTickValues.md
   - OrderOperations:
-      - ShowOpenedOrderTickets: order_operations/ShowOpenedOrderTickets.md
-      - ShowOpenedOrders: order_operations/ShowOpenedOrders.md
-      - ShowOrderCloseByExample: order_operations/ShowOrderCloseByExample.md
-      - ShowOrderCloseExample: order_operations/ShowOrderCloseExample.md
-      - ShowOrderDeleteExample: order_operations/ShowOrderDeleteExample.md
-      - ShowOrderModifyExample: order_operations/ShowOrderModifyExample.md
-      - ShowOrderSendExample: order_operations/ShowOrderSendExample.md
-      - ShowOrdersHistory: order_operations/ShowOrdersHistory.md
+      - ShowOpenedOrderTickets: Order_operations/ShowOpenedOrderTickets.md
+      - ShowOpenedOrders: Order_operations/ShowOpenedOrders.md
+      - ShowOrderCloseByExample: Order_operations/ShowOrderCloseByExample.md
+      - ShowOrderCloseExample: Order_operations/ShowOrderCloseExample.md
+      - ShowOrderDeleteExample: Order_operations/ShowOrderDeleteExample.md
+      - ShowOrderModifyExample: Order_operations/ShowOrderModifyExample.md
+      - ShowOrderSendExample: Order_operations/ShowOrderSendExample.md
+      - ShowOrdersHistory: Order_operations/ShowOrdersHistory.md
   - Streaming:
-      - StreamOpenedOrderProfits: streaming/StreamOpenedOrderProfits.md
-      - StreamOpenedOrderTickets: streaming/StreamOpenedOrderTickets.md
-      - StreamQuotes: streaming/StreamQuotes.md
-      - StreamTradeUpdates: streaming/StreamTradeUpdates.md
+      - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
+      - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
+      - StreamQuotes: Streaming/StreamQuotes.md
+      - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
 
 theme:
   name: material
