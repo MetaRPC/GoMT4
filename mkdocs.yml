@@ -5,22 +5,22 @@ nav:
   - Account:
       - ShowAccountSummary: Account/ShowAccountSummary.md
   - MarketInfo:
-      - ShowAllSymbols: Market_info/ShowAllSymbols.md
-      - ShowQuote: Market_info/ShowQuote.md
-      - ShowQuoteHistory: Market_info/ShowQuoteHistory.md
-      - ShowQuotesMany: Market_info/ShowQuotesMany.md
-      - ShowSymbolParams: Market_info/ShowSymbolParams.md
-      - ShowSymbols: Market_info/ShowSymbols.md
-      - ShowTickValues: Market_info/ShowTickValues.md
+      - ShowAllSymbols: Market_Info/ShowAllSymbols.md
+      - ShowQuote: Market_Info/ShowQuote.md
+      - ShowQuoteHistory: Market_Info/ShowQuoteHistory.md
+      - ShowQuotesMany: Market_Info/ShowQuotesMany.md
+      - ShowSymbolParams: Market_Info/ShowSymbolParams.md
+      - ShowSymbols: Market_Info/ShowSymbols.md
+      - ShowTickValues: Market_Info/ShowTickValues.md
   - OrderOperations:
-      - ShowOpenedOrderTickets: Order_operations/ShowOpenedOrderTickets.md
-      - ShowOpenedOrders: Order_operations/ShowOpenedOrders.md
-      - ShowOrderCloseByExample: Order_operations/ShowOrderCloseByExample.md
-      - ShowOrderCloseExample: Order_operations/ShowOrderCloseExample.md
-      - ShowOrderDeleteExample: Order_operations/ShowOrderDeleteExample.md
-      - ShowOrderModifyExample: Order_operations/ShowOrderModifyExample.md
-      - ShowOrderSendExample: Order_operations/ShowOrderSendExample.md
-      - ShowOrdersHistory: Order_operations/ShowOrdersHistory.md
+      - ShowOpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
+      - ShowOpenedOrders: Order_Operations/ShowOpenedOrders.md
+      - ShowOrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
+      - ShowOrderCloseExample: Order_Operations/ShowOrderCloseExample.md
+      - ShowOrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
+      - ShowOrderModifyExample: Order_Operations/ShowOrderModifyExample.md
+      - ShowOrderSendExample: Order_Operations/ShowOrderSendExample.md
+      - ShowOrdersHistory: Order_Operations/ShowOrdersHistory.md
   - Streaming:
       - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
       - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
