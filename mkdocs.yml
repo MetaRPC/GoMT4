@@ -5,22 +5,22 @@ nav:
   - Account:
       - ShowAccountSummary: Account/ShowAccountSummary.md
   - MarketInfo:
-      - ShowAllSymbols: Market_Info/ShowAllSymbols.md
+      - AllSymbols: Market_Info/ShowAllSymbols.md
       - ShowQuote: Market_Info/ShowQuote.md
-      - ShowQuoteHistory: Market_Info/ShowQuoteHistory.md
-      - ShowQuotesMany: Market_Info/ShowQuotesMany.md
-      - ShowSymbolParams: Market_Info/ShowSymbolParams.md
-      - ShowSymbols: Market_Info/ShowSymbols.md
-      - ShowTickValues: Market_Info/ShowTickValues.md
+      - QuoteHistory: Market_Info/ShowQuoteHistory.md
+      - QuotesMany: Market_Info/ShowQuotesMany.md
+      - SymbolParams: Market_Info/ShowSymbolParams.md
+      - Symbols: Market_Info/ShowSymbols.md
+      - TickValues: Market_Info/ShowTickValues.md
   - OrderOperations:
-      - ShowOpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
-      - ShowOpenedOrders: Order_Operations/ShowOpenedOrders.md
-      - ShowOrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
-      - ShowOrderCloseExample: Order_Operations/ShowOrderCloseExample.md
-      - ShowOrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
-      - ShowOrderModifyExample: Order_Operations/ShowOrderModifyExample.md
-      - ShowOrderSendExample: Order_Operations/ShowOrderSendExample.md
-      - ShowOrdersHistory: Order_Operations/ShowOrdersHistory.md
+      - OpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
+      - OpenedOrders: Order_Operations/ShowOpenedOrders.md
+      - OrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
+      - OrderCloseExample: Order_Operations/ShowOrderCloseExample.md
+      - OrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
+      - OrderModifyExample: Order_Operations/ShowOrderModifyExample.md
+      - OrderSendExample: Order_Operations/ShowOrderSendExample.md
+      - OrdersHistory: Order_Operations/ShowOrdersHistory.md
   - Streaming:
       - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
       - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
