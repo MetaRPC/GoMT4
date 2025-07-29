@@ -2,7 +2,31 @@ site_name: MetaRPC MT4 Golang Documentation
 
 nav:
   - Home: index.md
-  - API Reference: api.md
+  - Account:
+      - ShowAccountSummary: Account/ShowAccountSummary.md
+  - Market Info:
+      - ShowAllSymbols: Market Info/ShowAllSymbols.md
+      - ShowQuote: Market Info/ShowQuote.md
+      - ShowQuoteHistory: Market Info/ShowQuoteHistory.md
+      - ShowQuotesMany: Market Info/ShowQuotesMany.md
+      - ShowSymbolParams: Market Info/ShowSymbolParams.md
+      - ShowSymbols: Market Info/ShowSymbols.md
+      - ShowTickValues: Market Info/ShowTickValues.md
+  - Order Operations:
+      - ShowOpenedOrderTickets: Order Operations/ShowOpenedOrderTickets.md
+      - ShowOpenedOrders: Order Operations/ShowOpenedOrders.md
+      - ShowOrderCloseByExample: Order Operations/ShowOrderCloseByExample.md
+      - ShowOrderCloseExample: Order Operations/ShowOrderCloseExample.md
+      - ShowOrderDeleteExample: Order Operations/ShowOrderDeleteExample.md
+      - ShowOrderModifyExample: Order Operations/ShowOrderModifyExample.md
+      - ShowOrderSendExample: Order Operations/ShowOrderSendExample.md
+      - ShowOrdersHistory: Order Operations/ShowOrdersHistory.md
+  - Streaming:
+      - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
+      - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
+      - StreamQuotes: Streaming/StreamQuotes.md
+      - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
+
 theme:
   name: material
   palette:
