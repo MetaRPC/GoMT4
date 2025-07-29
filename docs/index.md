@@ -4,10 +4,12 @@ Welcome to the **MetaRPC MT4 Go Documentation** — your guide to building integ
 
 This documentation provides everything you need to:
 
-📘 Understand all available trading, account, and market methods
-💡 See **Go usage examples** with context, timeouts, and channels
-🔁 Work with **real-time streaming** of quotes, trades, profits, and tickets
-⚙️ Explore all **input/output types** including OrderInfo, TradeInfo, QuoteData, and enums like `ENUM_ORDER_TYPE_TF`
+This documentation provides everything you need to:
+
+- 📘 Understand all available trading, account, and market methods  
+- 💡 See **Go usage examples** with context, timeouts, and channels  
+- 🔁 Work with **real-time streaming** of quotes, trades, profits, and tickets  
+- ⚙️ Explore all **input/output types** including OrderInfo, TradeInfo, QuoteData, and enums like `ENUM_ORDER_TYPE_TF`
 
 ---
 
