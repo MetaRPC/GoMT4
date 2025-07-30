@@ -1397,6 +1397,20 @@ func (a *MT4Account) OnSymbolTick(
 	return dataCh, errCh
 }
 
+// SymbolParams retrieves detailed trading parameters for a single symbol.
+//
+// Parameters:
+//   - ctx: Context for cancellation or timeout.
+//   - symbol: Name of the trading symbol (e.g., "EURUSD").
+//
+// Returns:
+//   - *pb.SymbolParamsManyInfo: Detailed symbol info (digits, volume limits, trade mode, etc.).
+//   - error: If request fails or symbol not found.
+//
+// Notes:
+//   - Internally calls SymbolParamsMany with one symbol.
+//   - Returns the first result in the symbol info list.
+//   - Performs automatic reconnect if the terminal connection is lost.
 func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.SymbolParamsManyInfo, error) {
 	if !a.isConnected() {
 		return nil, fmt.Errorf("not connected to terminal")
