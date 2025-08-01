@@ -6,7 +6,8 @@ import (
 	"log"
     
 	"github.com/google/uuid"
- 
+   
+   configpkg "github.com/MetaRPC/GoMT4/internal/config"
    accountpkg "github.com/MetaRPC/GoMT4/internal/account"
    servicepkg "github.com/MetaRPC/GoMT4/internal/service"
 )
@@ -14,7 +15,7 @@ import (
 func main() {
 	// === 🔧 Initialization ===
 
-	cfg, err := LoadConfig("C:/Go/GoMT4/config.json")
+	cfg, err := configpkg.LoadConfig("C:/Go/GoMT4/config.json")
 	if err != nil {
 		log.Fatalf("❌ Failed to load config.json: %v", err)
 	}

@@ -298,6 +298,9 @@ func (a *MT4Account) AccountSummary(ctx context.Context) (*pb.AccountSummaryData
 	return reply.GetData(), nil
 }
 
+// NOTE: All values are retrieved via AccountSummary,
+// which already uses ExecuteWithReconnect internally.
+
 // AccountLogin returns the account login number.
 func (a *MT4Account) AccountLogin(ctx context.Context) (int64, error) {
 	summary, err := a.AccountSummary(ctx)
@@ -1043,7 +1046,12 @@ func (a *MT4Account) QuoteMany(ctx context.Context, symbols []string) (*pb.Quote
 	return reply.GetData(), nil
 }
 
-// ShowAllSymbols retrieves all available symbols from the server.
+// ShowAllSymbols retrieves all available trading symbols from the server.
+//
+// This method sends a request to the MetaTrader terminal (via gRPC) asking for
+// a list of all known trading instruments (symbols), such as "EURUSD", "GBPJPY", etc.
+// These symbols include both visible (in Market Watch) and hidden ones.
+
 func (a *MT4Account) ShowAllSymbols(ctx context.Context) (*pb.SymbolsData, error) {
     // Ensure the account is connected to a server.
     if !a.isConnected() {
@@ -1070,6 +1078,51 @@ func (a *MT4Account) ShowAllSymbols(ctx context.Context) (*pb.SymbolsData, error
     return reply.GetData(), nil
 }
 
+// SymbolParams retrieves detailed trading parameters for a single symbol.
+//
+// Parameters:
+//   - ctx: Context for cancellation or timeout.
+//   - symbol: Name of the trading symbol (e.g., "EURUSD").
+//
+// Returns:
+//   - *pb.SymbolParamsManyInfo: Detailed symbol info (digits, volume limits, trade mode, etc.).
+//   - error: If request fails or symbol not found.
+//
+// Notes:
+//   - Internally calls SymbolParamsMany with one symbol.
+//   - Returns the first result in the symbol info list.
+//   - Performs automatic reconnect if the terminal connection is lost.
+func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.SymbolParamsManyInfo, error) {
+	if !a.isConnected() {
+		return nil, fmt.Errorf("not connected to terminal")
+	}
+
+	req := &pb.SymbolParamsManyRequest{
+		SymbolName: proto.String(symbol), // ⚠️ optional string = 1; → proto.String(...)
+	}
+
+	grpcCall := func(headers metadata.MD) (*pb.SymbolParamsManyReply, error) {
+		c := metadata.NewOutgoingContext(ctx, headers)
+		
+		return a.AccountClient.SymbolParamsMany(c, req)
+	}
+
+	errorSelector := func(reply *pb.SymbolParamsManyReply) *pb.Error {
+		return reply.GetError()
+	}
+
+	resp, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := resp.GetData().GetSymbolInfos()
+	if len(symbols) == 0 {
+		return nil, fmt.Errorf("no parameters returned for symbol: %s", symbol)
+	}
+
+	return symbols[0], nil
+}
 
 // QuoteHistory retrieves historical candlestick data (OHLC) for a symbol within a time range.
 //
@@ -1397,51 +1450,6 @@ func (a *MT4Account) OnSymbolTick(
 	return dataCh, errCh
 }
 
-// SymbolParams retrieves detailed trading parameters for a single symbol.
-//
-// Parameters:
-//   - ctx: Context for cancellation or timeout.
-//   - symbol: Name of the trading symbol (e.g., "EURUSD").
-//
-// Returns:
-//   - *pb.SymbolParamsManyInfo: Detailed symbol info (digits, volume limits, trade mode, etc.).
-//   - error: If request fails or symbol not found.
-//
-// Notes:
-//   - Internally calls SymbolParamsMany with one symbol.
-//   - Returns the first result in the symbol info list.
-//   - Performs automatic reconnect if the terminal connection is lost.
-func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.SymbolParamsManyInfo, error) {
-	if !a.isConnected() {
-		return nil, fmt.Errorf("not connected to terminal")
-	}
-
-	req := &pb.SymbolParamsManyRequest{
-		SymbolName: proto.String(symbol), // ⚠️ optional string = 1; → proto.String(...)
-	}
-
-	grpcCall := func(headers metadata.MD) (*pb.SymbolParamsManyReply, error) {
-		c := metadata.NewOutgoingContext(ctx, headers)
-		
-		return a.AccountClient.SymbolParamsMany(c, req)
-	}
-
-	errorSelector := func(reply *pb.SymbolParamsManyReply) *pb.Error {
-		return reply.GetError()
-	}
-
-	resp, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
-	if err != nil {
-		return nil, err
-	}
-
-	symbols := resp.GetData().GetSymbolInfos()
-	if len(symbols) == 0 {
-		return nil, fmt.Errorf("no parameters returned for symbol: %s", symbol)
-	}
-
-	return symbols[0], nil
-}
 
 
 
