@@ -19,12 +19,19 @@ This section demonstrates how to **use GoMT4 directly from the terminal**, witho
 
 ```bash
 GoMT4/
-├── config.json               ← Your connection settings
-├── main.go                   ← Entry point, where you call MT4 functions
+├── examples/
+│   └── main.go         // Usage example MT4Account
 ├── internal/
-│   ├── account/              ← MT4Account wrapper
-│   └── service/              ← MT4Service wrapper (all method access)
-└── pb/                       ← gRPC-generated proto types
+│   ├── account/
+│   │   └── MT4Account.go
+│   └── service/
+│       └── MT4_service.go
+├── pb/
+│   └── ...             // gRPC-generated files
+├── config.json
+├── go.mod
+└── go.sum
+ 
 ```
 
 ---
