@@ -1,4 +1,5 @@
-package service
+package examples
+
 
 import (
 	"context"
@@ -7,7 +8,7 @@ import (
 	"time"
 
 	pb "github.com/MetaRPC/GoMT4/pb"
-	accountpkg "github.com/MetaRPC/GoMT4/internal/account"
+	accountpkg "github.com/MetaRPC/GoMT4/exemples"
 )
 
 type MT4Service struct {

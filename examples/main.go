@@ -1,15 +1,16 @@
-package main
+package examples
+
 
 import (
 	"context"
 	"fmt"
 	"log"
-    
+
 	"github.com/google/uuid"
-   
-   configpkg "github.com/MetaRPC/GoMT4/internal/config"
-   accountpkg "github.com/MetaRPC/GoMT4/internal/account"
-   servicepkg "github.com/MetaRPC/GoMT4/internal/service"
+
+	configpkg "github.com/MetaRPC/GoMT4/examples"
+	accountpkg "github.com/MetaRPC/GoMT4/examples"
+	servicepkg "github.com/MetaRPC/GoMT4/examples"
 )
 
 func main() {
