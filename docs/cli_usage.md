@@ -32,10 +32,6 @@ GoMT4/
 │   ├── go.sum                     # Dependency checksums
 │   └── main.go                    # Entry point demonstrating MT4Service usage
 │
-├── pb/                            # gRPC-generated files
-│   ├── go.mod                     # Go module for protobuf code
-│   ├── go.sum
-│   └── *.pb.go                    # Auto-generated gRPC files (types, services)
 │
 ├── .gitignore                     # Files/folders to be excluded from Git
 └── mkdocs.yml                     # Documentation config file (for mkdocs or similar tools)
