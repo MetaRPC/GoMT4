@@ -1,0 +1,51 @@
+site_name: MetaRPC MT4 Golang Documentation
+
+nav:
+  - Home: index.md
+  - Account:
+      - ShowAccountSummary: Account/ShowAccountSummary.md
+  - MarketInfo:
+      - AllSymbols: Market_Info/ShowAllSymbols.md
+      - ShowQuote: Market_Info/ShowQuote.md
+      - QuoteHistory: Market_Info/ShowQuoteHistory.md
+      - QuotesMany: Market_Info/ShowQuotesMany.md
+      - SymbolParams: Market_Info/ShowSymbolParams.md
+      - Symbols: Market_Info/ShowSymbols.md
+      - TickValues: Market_Info/ShowTickValues.md
+  - OrderOperations:
+      - OpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
+      - OpenedOrders: Order_Operations/ShowOpenedOrders.md
+      - OrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
+      - OrderCloseExample: Order_Operations/ShowOrderCloseExample.md
+      - OrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
+      - OrderModifyExample: Order_Operations/ShowOrderModifyExample.md
+      - OrderSendExample: Order_Operations/ShowOrderSendExample.md
+      - OrdersHistory: Order_Operations/ShowOrdersHistory.md
+  - Streaming:
+      - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
+      - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
+      - StreamQuotes: Streaming/StreamQuotes.md
+      - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
+  - CLI Usage: cli_usage.md
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - palette.toggle
+    - palette.auto
+
+markdown_extensions:
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences
