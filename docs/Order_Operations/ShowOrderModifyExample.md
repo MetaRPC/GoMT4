@@ -46,32 +46,39 @@ Required:
 
 Optional parameters (when directly using MT4Account):
 
-| Field        | Type         | Description                         |
-| ------------ | ------------ | ----------------------------------- |
-| `price`      | `*float64`   | Specific price for modification.    |
-| `stopLoss`   | `*float64`   | New stop loss level.                |
-| `takeProfit` | `*float64`   | New take profit level.              |
-| `expiration` | `*time.Time` | Expiration time for pending orders. |
+| Field        | Type                     | Description                          |
+| ------------ | ------------------------ | ------------------------------------ |
+| `price`      | `*float64`               | New price (used mainly for pending). |
+| `stopLoss`   | `*float64`               | New stop loss level.                 |
+| `takeProfit` | `*float64`               | New take profit level.               |
+| `expiration` | `*timestamppb.Timestamp` | New expiration (pending orders).     |
 
-The provided ticket must be a valid active order ID; otherwise, the server will return an error such as `Invalid ticket` or `Ticket not found`.
+At least one of `price`, `stopLoss`, `takeProfit`, `expiration` must be provided.
 
 ---
 
 ## ⬆️ Output
 
-The method prints modification result to stdout, indicating:
-
-* Whether the modification was successful.
-* Relevant server feedback or error messages in case of failure.
+The method prints whether modification succeeded.
+Underlying response: `*pb.OrderModifyReply` → `Data.OrderWasModified` (`bool`).
 
 ---
 
 ## 🎯 Purpose
 
-This method allows manual updates to critical trade parameters (SL/TP) of active orders, useful for:
+Adjust SL/TP (and, for pendings, price/expiration) on active orders—useful for dynamic risk management and strategy updates.
 
-* Dynamic adjustment of risk management
-* Trade strategy automation
-* Manual intervention based on changing market conditions
+---
 
-Ensure you use valid parameters and active tickets for successful order modifications.
+## 🧩 Notes & Tips
+
+* **Digits & rounding:** Use `Digits` from `SymbolParams` to format/round SL/TP; avoid hardcoded decimals.
+* **Volume/price rules:** Brokers enforce minimal distances/steps for SL/TP and pending prices; validate before sending to reduce rejects.
+* **No-op guard:** If all optional params are `nil`, nothing will change; treat as a no-op.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Closed/non-existent ticket:** Will fail with a server-side error (e.g., ticket not found).
+* **Invalid levels:** SL above price on sells (or below on buys), TP in the wrong direction, or levels inside the minimal distance will be rejected.
