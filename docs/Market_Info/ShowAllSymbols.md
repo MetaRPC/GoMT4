@@ -70,21 +70,22 @@ Enumerate all available trading instruments from the MT4 terminal. Useful for:
 
 ## 🧩 Notes & Tips
 
-* **Spread:** If not exposed in `*pb.QuoteData`, compute `Ask - Bid`. For points/pips: get `Point` via `SymbolParams(ctx, symbol)` and do `(Ask - Bid) / Point`.
-* **Precision:** Format for display only (instrument‑specific decimals); keep raw doubles for calculations.
-* **Timestamp:** `DateTime` is UTC; format for UI, log in UTC for correlation.
+* **Indices are not stable:** `SymbolIndex` can change after terminal restarts or broker updates. Always use `SymbolName` as the key.
+* **Broker suffixes:** Symbols may have suffixes like `EURUSD.m` or `DE40.cash`. Treat each as distinct — no auto-stripping.
+* **Sorting:** The API does not guarantee order. Sort client‑side if you need deterministic lists.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* **Zero/invalid values:** Guard `Bid > 0 && Ask >= Bid` — otherwise treat as stale/invalid.
-* **Wrong symbol string:** Use the exact broker symbol including any suffix.
-* **Negative spread:** Rare server glitch; re‑query once before surfacing an error.
+* **Large catalogs:** Brokers may expose hundreds/thousands of instruments. Printing/logging all at once can flood output.
+* **Disabled instruments:** Some returned symbols may not be tradable on your account type — check permissions before using.
+* **Empty responses:** A stale/disconnected terminal can return an empty list without error. Add sanity checks.
 
 ---
 
 ## 🧪 Testing Suggestions
 
-* **Happy path:** `EURUSD` → `Ask > Bid`, timestamp recent.
-* **Error path:** Unknown/disabled symbol → clear error or empty data handled gracefully.
+* **Happy path:** List is non‑empty and contains common pairs like `EURUSD`.
+* **Edge:** Include known disabled symbols and verify they don’t break downstream logic.
+* **Failure path:** Simulate no connection — expect error or empty slice handled gracefully.
