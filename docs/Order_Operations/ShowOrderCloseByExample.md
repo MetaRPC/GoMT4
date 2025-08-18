@@ -50,7 +50,7 @@ Both tickets must be valid and represent opposing open positions.
 
 ## ⬆️ Output
 
-Returns the result of the closing operation:
+Returns `*pb.OrderCloseByData` with fields:
 
 | Field        | Type        | Description                         |
 | ------------ | ----------- | ----------------------------------- |
@@ -62,11 +62,17 @@ Returns the result of the closing operation:
 
 ## 🎯 Purpose
 
-Use this method to close one position with another opposite-position order.
-This is useful for:
+Close one position with another opposite-position order. Useful for:
 
 * Trade netting workflows
-* Reducing exposure by pairing off positions
+* Reducing exposure by pairing positions
 * Closing multiple positions efficiently
 
-Ensure both tickets are valid and represent opposing trades for this operation to succeed.
+---
+
+## 🧩 Notes & Tips
+
+* **Same symbol required:** Both tickets must be for the **same symbol** and opposite directions.
+* **Partial overlap:** If lot sizes differ, only the overlapping volume is closed; the larger position remains with the residual volume.
+* **Ticket types:** Tickets are `int32` in your API; avoid mixing with `uint64` types used elsewhere.
+
