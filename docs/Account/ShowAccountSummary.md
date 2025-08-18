@@ -86,39 +86,3 @@ It is a fundamental method for any MT4 integration dealing with account monitori
 * **Type drift:** Ensure your struct field types match proto definitions (e.g., `double` vs `float`, `int32` vs `int64`).
 * **Time zones:** Values are server-side; when correlating with events, log both server time and UTC.
 
----
-
-## 🔧 Extended Example (optional)
-
-```go
-// ShowAccountSummary prints a concise summary and adds defensive logging.
-// Input: ctx with timeout. No other params.
-// Errors: logs only; designed for operator-facing output.
-func (s *MT4Service) ShowAccountSummary(ctx context.Context) {
-    c, cancel := context.WithTimeout(ctx, 5*time.Second)
-    defer cancel()
-
-    summary, err := s.account.AccountSummary(c)
-    if err != nil {
-        log.Printf("[MT4Svc] AccountSummary error: %v", err)
-        return
-    }
-
-    // Print human-readable line; keep raw numbers for any follow-up computations
-    fmt.Printf("📊 Balance=%.2f | Equity=%.2f | Margin=%.2f | Free=%.2f | Cur=%s | Lev=%dx\n",
-        summary.GetAccountBalance(),
-        summary.GetAccountEquity(),
-        summary.GetAccountMargin(),
-        summary.GetAccountFreeMargin(),
-        summary.GetAccountCurrency(),
-        int(summary.GetAccountLeverage()))
-}
-```
-
----
-
-## 🧪 Testing Suggestions
-
-* **Happy path:** Assert values are non-negative; equity ≥ 0; currency is non-empty.
-* **Edge cases:** With open positions, ensure equity ≠ balance; with no positions, equity ≈ balance (within broker rounding).
-* **Failure path:** Simulate terminal down; expect error logged and no panic.
