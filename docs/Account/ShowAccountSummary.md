@@ -1,6 +1,6 @@
 # Getting an Account Summary
 
-> **Request:** full account summary (`AccountSummaryData`) from MT4
+> **Request:** full account summary (`*pb.AccountSummaryData`) from MT4
 > Fetch all core account metrics in a single call.
 
 ---
@@ -41,48 +41,54 @@ No required input parameters.
 
 ## ⬆️Output
 
-Prints selected fields from `AccountSummaryData` to console:
+Prints selected fields from `*pb.AccountSummaryData` to console:
 
-| Field               | Type     | Description                                       |
-| ------------------- | -------- | ------------------------------------------------- |
-| `AccountBalance`    | `double` | Account balance excluding open positions.         |
-| `AccountEquity`     | `double` | Equity — balance including floating P/L.          |
-| `AccountMargin`     | `double` | Currently used margin.                            |
-| `AccountFreeMargin` | `double` | Free margin available for opening new trades.     |
-| `AccountCurrency`   | `string` | Account deposit currency (e.g. `"USD"`, `"EUR"`). |
-| `AccountLeverage`   | `int`    | Leverage applied to the account.                  |
-| `AccountName`       | `string` | Account holder's name.                            |
-| `AccountNumber`     | `int`    | Account number (login ID).                        |
-| `Company`           | `string` | Broker's name or company.                         |
+| Field                | Type     | Description                                   |
+| -------------------- | -------- | --------------------------------------------- |
+| `AccountBalance`     | `double` | Balance excluding open positions.             |
+| `AccountEquity`      | `double` | Equity — balance including floating P/L.      |
+| `AccountMargin`      | `double` | Currently used margin.                        |
+| `AccountFreeMargin`  | `double` | Free margin available for opening new trades. |
+| `AccountCurrency`    | `string` | Deposit currency (e.g. `"USD"`, `"EUR"`).     |
+| `AccountLeverage`    | `int64`  | Leverage applied to the account.              |
+| `AccountUserName`    | `string` | Account holder's name.                        |
+| `AccountLogin`       | `int64`  | Account login ID.                             |
+| `AccountCompanyName` | `string` | Broker's name or company.                     |
 
 ---
 
 ## 🎯Purpose
 
-This method is used to retrieve and display key real-time account information. It is typically used for:
+Retrieve and display key real-time account information. Typical uses:
 
 * Showing account status in dashboards or CLI output
 * Checking available margin and equity before placing trades
 * Monitoring general account health and exposure
 
-It is a fundamental method for any MT4 integration dealing with account monitoring or diagnostics.
-
 ---
 
 ## 🧩 Notes & Tips
 
-* **Bounded context:** Always call with a timeout (e.g., 3–5s) to avoid hanging RPCs.
-* **Currency vs P/L base:** `AccountCurrency` is the deposit currency; P/L reporting may use symbol quote currency. Do not mix them in formatting or math.
-* **Equity is volatile:** Treat equity as a snapshot; for risk checks, use a short rolling window or re-query just-in-time before order placement.
-* **Leverage source of truth:** Use leverage from the summary for margin math; do not hardcode per-broker assumptions.
-* **Rounding/formatting:** For UI, round to instrument-appropriate precision. Keep raw doubles for calculations.
+* **Bounded context:** Your implementation sets a 3s timeout if none is provided — keep it; bump to 5s on slow terminals.
+* **Connection required:** Returns `"not connected"` if neither `Host` nor `ServerName` is set. Call `ConnectByHostPort`/`ConnectByServerName` first.
+* **Reconnect behavior:** `ExecuteWithReconnect` retries on `codes.Unavailable` and `TERMINAL_INSTANCE_NOT_FOUND` with \~500ms backoff + jitter — short pauses are expected during restarts.
+* **Currency vs P/L base:** `AccountCurrency` is the deposit currency; P/L can be in the quote currency of instruments — don’t mix in calculations.
+* **Equity is a snapshot:** Re-query right before risk checks or order placement.
+* **Leverage source of truth:** Use `AccountLeverage` from summary for margin math; avoid hardcoded broker values.
+* **Formatting:** Round for display only; keep raw doubles for math.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* **Stale terminal:** If the terminal is disconnected, you may get old values without an explicit error. Log the terminal connection state alongside the numbers.
-* **Commissions/swaps timing:** Some brokers apply swaps/commissions at roll-over; short intervals may show counterintuitive equity vs. balance deltas.
-* **Type drift:** Ensure your struct field types match proto definitions (e.g., `double` vs `float`, `int32` vs `int64`).
-* **Time zones:** Values are server-side; when correlating with events, log both server time and UTC.
+* **Stale terminal:** With a disconnected terminal, values may be old without a hard error. Log connection state along with numbers.
+* **Roll-over effects:** Swaps/commissions at roll-over can cause brief equity/balance divergences.
+* **Type drift:** Match pb types exactly (`int64` for leverage/login). Mixing `int32`/`uint64` can bite later.
 
+---
+
+## 🧪 Testing Suggestions
+
+* **Happy path:** Values are non-negative; equity ≈ balance on flat accounts.
+* **Edge cases:** With open positions, equity ≠ balance; currency non-empty.
+* **Failure path:** Simulate terminal down; expect error logged and no panic.
