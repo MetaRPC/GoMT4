@@ -45,7 +45,13 @@ func (s *MT4Service) ShowSymbols(ctx context.Context)
 
 ## ⬆️ Output
 
-Returns a list of `SymbolNameIndexPair` structures:
+Returns `*pb.SymbolsData` with:
+
+| Field             | Type                        | Description                     |
+| ----------------- | --------------------------- | ------------------------------- |
+| `SymbolNameInfos` | `[]*pb.SymbolNameIndexPair` | Pairs of symbol name and index. |
+
+Each `*pb.SymbolNameIndexPair` includes:
 
 | Field         | Type     | Description                         |
 | ------------- | -------- | ----------------------------------- |
@@ -56,8 +62,23 @@ Returns a list of `SymbolNameIndexPair` structures:
 
 ## 🎯 Purpose
 
-Use this method to fetch a clean list of symbols from the terminal for:
+Fetch a clean list of symbols from the terminal for:
 
 * Populating symbol dropdowns and selectors
 * Filtering instruments by index
-* Lightweight symbol enumeration for setup and diagnostics
+* Lightweight enumeration for setup/diagnostics
+
+---
+
+## 🧩 Notes & Tips
+
+* **Index stability:** `SymbolIndex` can change after terminal restarts/updates. Key by `SymbolName` if you need persistence.
+* **Sorting:** The API doesn’t guarantee order. Sort client-side for deterministic UI.
+* **Suffixes:** Treat broker suffixes (e.g., `EURUSD.m`) as distinct symbols; don’t auto-normalize.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Large lists:** Avoid printing thousands of lines to stdout; prefer paging or file output.
+* **Empty result:** A stale/disconnected terminal may yield an empty list without error — add a sanity check (expect common pairs).
