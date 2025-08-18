@@ -87,7 +87,7 @@ func (a *MT4Account) OnSymbolTick(ctx context.Context, symbols []string) (<-chan
 
 ### From `QuoteMany`
 
-Returns slice of **QuoteData**:
+Returns slice of `*pb.QuoteData`:
 
 | Field    | Type        | Description           |
 | -------- | ----------- | --------------------- |
@@ -98,7 +98,7 @@ Returns slice of **QuoteData**:
 
 ### From `OnSymbolTick`
 
-Returns real-time stream of **SymbolTickData**:
+Returns real-time stream of `*pb.SymbolTickDataPacket`:
 
 | Field        | Type        | Description                    |
 | ------------ | ----------- | ------------------------------ |
@@ -110,15 +110,31 @@ Returns real-time stream of **SymbolTickData**:
 
 Use this method when working with **multiple symbols**:
 
-1. `QuoteMany` gives instant snapshot of bid/ask prices — good for validation or display
-2. `OnSymbolTick` streams live updates — ideal for dashboards or pricing alerts
+1. `QuoteMany` gives instant snapshot of bid/ask prices — good for validation or display.
+2. `OnSymbolTick` streams live updates — ideal for dashboards or pricing alerts.
 
 Perfect for trading UIs, price monitors, or auto-trading logic with symbol watchlists.
 
 ---
 
-### ❓ Notes
+## 🧩 Notes & Tips
 
-* `OnSymbolTick` is a continuous stream — always control it with context.
-* Use `.break` or `timeout` logic in testing.
-* Combine both calls for a full view: initial quote + live updates.
+* **Stream lifecycle:** Always cancel context to stop `OnSymbolTick`. Otherwise the channel stays open.
+* **Initial state:** Combine `QuoteMany` first, then subscribe to ticks — avoids waiting for first tick.
+* **Channel handling:** Both data and error channels must be consumed to avoid goroutine leaks.
+
+---
+
+## ⚠️ Pitfalls
+
+* **High-frequency symbols:** Subscribing to many active symbols can flood your app with ticks. Consider rate-limiting.
+* **Connection drops:** Streams end silently if connection dies — always monitor `errCh`.
+* **Duplicate updates:** Rapid ticks may repeat Bid/Ask without visible change. Filter if necessary.
+
+---
+
+## 🧪 Testing Suggestions
+
+* **Snapshot check:** Call `QuoteMany` on 2–3 symbols, verify consistent prices.
+* **Stream test:** Subscribe to one symbol, ensure ticks arrive within expected intervals.
+* **Timeout/Cancel:** Cancel context mid-stream → channels should close cleanly.
