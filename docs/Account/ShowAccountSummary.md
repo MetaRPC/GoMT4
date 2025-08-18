@@ -1,22 +1,22 @@
 # Getting an Account Summary
 
-> **Request:** retrieve a full account summary (`AccountSummaryData`) from MT4 in one call.
+> **Request:** full account summary (`AccountSummaryData`) from MT4
+> Fetch all core account metrics in a single call.
 
 ---
 
 ### Code Example
 
 ```go
-// High-level helper: prints a formatted account summary
-total, err := s.account.AccountSummary(ctx)
+summary, err := s.account.AccountSummary(ctx)
 if err != nil {
     log.Printf("❌ AccountSummary error: %v", err)
     return
 }
 fmt.Printf("Account Summary: Balance=%.2f, Equity=%.2f, Currency=%s\n",
-    total.GetAccountBalance(),
-    total.GetAccountEquity(),
-    total.GetAccountCurrency())
+    summary.GetAccountBalance(),
+    summary.GetAccountEquity(),
+    summary.GetAccountCurrency())
 ```
 
 ---
@@ -29,55 +29,96 @@ func (s *MT4Service) ShowAccountSummary(ctx context.Context)
 
 ---
 
-## 🔽 Input
+## 🔽Input
 
-No required parameters apart from context.
+No required input parameters.
 
-| Parameter | Type              | Description                       |
-| --------- | ----------------- | --------------------------------- |
-| `ctx`     | `context.Context` | Controls timeout or cancellation. |
-
----
-
-## ⬆️ Output
-
-Prints selected fields from `AccountSummaryData`:
-
-| Field               | Type     | Description                            |
-| ------------------- | -------- | -------------------------------------- |
-| `AccountBalance`    | `double` | Balance excluding open positions.      |
-| `AccountEquity`     | `double` | Equity = balance + floating P/L.       |
-| `AccountMargin`     | `double` | Currently used margin.                 |
-| `AccountFreeMargin` | `double` | Free margin available for new trades.  |
-| `AccountCurrency`   | `string` | Deposit currency (`USD`, `EUR`, etc.). |
-| `AccountLeverage`   | `int`    | Leverage applied to account.           |
-| `AccountName`       | `string` | Account holder’s name.                 |
-| `AccountNumber`     | `int`    | Account login ID.                      |
-| `Company`           | `string` | Broker’s company name.                 |
+| Parameter | Type              | Description                                  |
+| --------- | ----------------- | -------------------------------------------- |
+| `ctx`     | `context.Context` | Context for timeout or cancellation control. |
 
 ---
 
-## 🎯 Purpose
+## ⬆️Output
 
-Retrieve and display real-time account information. Useful for:
+Prints selected fields from `AccountSummaryData` to console:
 
-* Displaying account status in CLI or dashboards
-* Checking margin/equity before trade placement
-* Monitoring account health and exposure
+| Field               | Type     | Description                                       |
+| ------------------- | -------- | ------------------------------------------------- |
+| `AccountBalance`    | `double` | Account balance excluding open positions.         |
+| `AccountEquity`     | `double` | Equity — balance including floating P/L.          |
+| `AccountMargin`     | `double` | Currently used margin.                            |
+| `AccountFreeMargin` | `double` | Free margin available for opening new trades.     |
+| `AccountCurrency`   | `string` | Account deposit currency (e.g. `"USD"`, `"EUR"`). |
+| `AccountLeverage`   | `int`    | Leverage applied to the account.                  |
+| `AccountName`       | `string` | Account holder's name.                            |
+| `AccountNumber`     | `int`    | Account number (login ID).                        |
+| `Company`           | `string` | Broker's name or company.                         |
+
+---
+
+## 🎯Purpose
+
+This method is used to retrieve and display key real-time account information. It is typically used for:
+
+* Showing account status in dashboards or CLI output
+* Checking available margin and equity before placing trades
+* Monitoring general account health and exposure
+
+It is a fundamental method for any MT4 integration dealing with account monitoring or diagnostics.
 
 ---
 
 ## 🧩 Notes & Tips
 
-* Always wrap calls in a bounded context to avoid blocking RPCs.
-* Currency field reflects the deposit currency; do not assume P/L base currency.
-* Equity can fluctuate rapidly with market prices; never rely on a single snapshot for risk calculations.
-* Leverage is broker-defined; cross-check when using for margin math.
+* **Bounded context:** Always call with a timeout (e.g., 3–5s) to avoid hanging RPCs.
+* **Currency vs P/L base:** `AccountCurrency` is the deposit currency; P/L reporting may use symbol quote currency. Do not mix them in formatting or math.
+* **Equity is volatile:** Treat equity as a snapshot; for risk checks, use a short rolling window or re-query just-in-time before order placement.
+* **Leverage source of truth:** Use leverage from the summary for margin math; do not hardcode per-broker assumptions.
+* **Rounding/formatting:** For UI, round to instrument-appropriate precision. Keep raw doubles for calculations.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* Some brokers report slightly different equity/margin values due to swaps or commissions.
-* Values are server-provided; delays may exist if the terminal connection is unstable.
-* AccountName and Company are mostly informational; do not rely on them programmatically.
+* **Stale terminal:** If the terminal is disconnected, you may get old values without an explicit error. Log the terminal connection state alongside the numbers.
+* **Commissions/swaps timing:** Some brokers apply swaps/commissions at roll-over; short intervals may show counterintuitive equity vs. balance deltas.
+* **Type drift:** Ensure your struct field types match proto definitions (e.g., `double` vs `float`, `int32` vs `int64`).
+* **Time zones:** Values are server-side; when correlating with events, log both server time and UTC.
+
+---
+
+## 🔧 Extended Example (optional)
+
+```go
+// ShowAccountSummary prints a concise summary and adds defensive logging.
+// Input: ctx with timeout. No other params.
+// Errors: logs only; designed for operator-facing output.
+func (s *MT4Service) ShowAccountSummary(ctx context.Context) {
+    c, cancel := context.WithTimeout(ctx, 5*time.Second)
+    defer cancel()
+
+    summary, err := s.account.AccountSummary(c)
+    if err != nil {
+        log.Printf("[MT4Svc] AccountSummary error: %v", err)
+        return
+    }
+
+    // Print human-readable line; keep raw numbers for any follow-up computations
+    fmt.Printf("📊 Balance=%.2f | Equity=%.2f | Margin=%.2f | Free=%.2f | Cur=%s | Lev=%dx\n",
+        summary.GetAccountBalance(),
+        summary.GetAccountEquity(),
+        summary.GetAccountMargin(),
+        summary.GetAccountFreeMargin(),
+        summary.GetAccountCurrency(),
+        int(summary.GetAccountLeverage()))
+}
+```
+
+---
+
+## 🧪 Testing Suggestions
+
+* **Happy path:** Assert values are non-negative; equity ≥ 0; currency is non-empty.
+* **Edge cases:** With open positions, ensure equity ≠ balance; with no positions, equity ≈ balance (within broker rounding).
+* **Failure path:** Simulate terminal down; expect error logged and no panic.
