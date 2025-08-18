@@ -45,13 +45,13 @@ No required parameters beyond:
 
 ## ⬆️ Output
 
-Returns a `SymbolNamesData` structure with:
+Returns `*pb.SymbolsData`:
 
-| Field             | Type                    | Description                             |
-| ----------------- | ----------------------- | --------------------------------------- |
-| `SymbolNameInfos` | `[]SymbolNameIndexPair` | List of symbol names with their indices |
+| Field             | Type                        | Description                             |
+| ----------------- | --------------------------- | --------------------------------------- |
+| `SymbolNameInfos` | `[]*pb.SymbolNameIndexPair` | List of symbol names with their indices |
 
-Each `SymbolNameIndexPair` includes:
+Each `*pb.SymbolNameIndexPair` includes:
 
 | Field         | Type     | Description                  |
 | ------------- | -------- | ---------------------------- |
@@ -106,5 +106,3 @@ This is useful for:
 * **Determinism check:** Apply a stable sort and snapshot to a golden file for UI components.
 * **Failure path:** Simulate terminal down / broker maintenance; verify you handle empty result + warning gracefully.
 * **Permission edge:** Include a symbol you know is disabled and ensure downstream code skips it safely.
-
-
