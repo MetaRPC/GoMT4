@@ -55,13 +55,15 @@ Required:
 
 * `ctx` (`context.Context`) — context for managing timeout or cancellation.
 
-Method internally uses:
+Method internally uses (when calling `MT4Account.OrdersHistory`):
 
-| Field      | Type                       | Description                       |
-| ---------- | -------------------------- | --------------------------------- |
-| `sortType` | `EnumOrderHistorySortType` | Sorting logic.                    |
-| `from`     | `time.Time`                | Start time of the history window. |
-| `to`       | `time.Time`                | End time of the history window.   |
+| Field      | Type                          | Description                       |
+| ---------- | ----------------------------- | --------------------------------- |
+| `sortType` | `pb.EnumOrderHistorySortType` | Sorting logic.                    |
+| `from`     | `*time.Time`                  | Start time of the history window. |
+| `to`       | `*time.Time`                  | End time of the history window.   |
+| `page`     | `*int32`                      | Page number (optional).           |
+| `items`    | `*int32`                      | Items per page (optional).        |
 
 Possible `EnumOrderHistorySortType` values:
 
@@ -70,24 +72,18 @@ Possible `EnumOrderHistorySortType` values:
 * `HISTORY_SORT_BY_CLOSE_TIME_ASC`
 * `HISTORY_SORT_BY_CLOSE_TIME_DESC`
 
-Optional:
-
-* `deadline` (`time.Time`) — optional timeout.
-* `cancellationToken` (via context) — optional cancellation control.
-
 ---
 
 ## ⬆️ Output
 
 Prints closed order information to stdout.
+Underlying response: `*pb.OrdersHistoryData`
 
-Underlying returned structure:
+| Field        | Type    | Description                         |
+| ------------ | ------- | ----------------------------------- |
+| `OrdersInfo` | (slice) | List of historical (closed) orders. |
 
-| Field        | Type          | Description                         |
-| ------------ | ------------- | ----------------------------------- |
-| `OrdersInfo` | `[]OrderInfo` | List of historical (closed) orders. |
-
-Each `OrderInfo` includes:
+Printed fields typically include:
 
 | Field        | Type                 | Description                           |
 | ------------ | -------------------- | ------------------------------------- |
@@ -108,25 +104,26 @@ Each `OrderInfo` includes:
 
 ---
 
-### ENUM: `ENUM_ORDER_TYPE_TF`
+## 🧩 Notes & Tips
 
-| Value                  | Description        |
-| ---------------------- | ------------------ |
-| `OrderTypeTfBuy`       | Buy order          |
-| `OrderTypeTfSell`      | Sell order         |
-| `OrderTypeTfBuyLimit`  | Pending Buy Limit  |
-| `OrderTypeTfSellLimit` | Pending Sell Limit |
-| `OrderTypeTfBuyStop`   | Pending Buy Stop   |
-| `OrderTypeTfSellStop`  | Pending Sell Stop  |
+* **Pagination:** Use `page` and `itemsPerPage` for large ranges to avoid oversized payloads.
+* **Sorting:** Choose `sortType` based on how you plan to display/export results (by open vs close time).
+* **Time window:** If `from`/`to` are nil, the server may apply defaults; pass both for deterministic results.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Wide ranges:** Very large windows can be slow/heavy; prefer paged requests.
+* **Broker discrepancies:** History can differ slightly across servers/brokers for the same symbol.
+* **Status vs fills:** This is **order** history; if you need individual fills/deals, use the corresponding deals endpoint.
 
 ---
 
 ## 🎯 Purpose
 
-This method retrieves completed trades within a specified time frame, useful for:
+Retrieve completed trades in a specified time frame for:
 
-* Historical trade analysis
-* Auditing or reporting
-* Exporting trade logs for compliance or analytics
-
-Essential for accessing historical trade data from MT4.
+* Historical trade analysis and reporting
+* Auditing and compliance exports
+* Reconciliation with external systems
