@@ -34,35 +34,42 @@ func (s *MT4Service) ShowOpenedOrderTickets(ctx context.Context)
 
 ## 🔽 Input
 
-Required:
+| Field | Type              | Description                          |
+| ----- | ----------------- | ------------------------------------ |
+| `ctx` | `context.Context` | For timeout and cancellation control |
 
-ctx (context.Context) — context for managing timeout or cancellation. Can include a deadline or a cancellation token.
-
-Optional context modifications:
-
-Use context.WithDeadline to specify a deadline.
-
-Use context.WithCancel to manage cancellation explicitly.
 ---
 
 ## ⬆️ Output
 
-This method prints the ticket IDs of opened orders to stdout and does not directly return data.
+This method prints the ticket IDs of opened orders to stdout.
+Underlying response: `*pb.OpenedOrdersTicketsData`
 
-Underlying returned structure:
-
-| Field     | Type      | Description                           |
-| --------- | --------- | ------------------------------------- |
-| `Tickets` | `[]int32` | List of ticket IDs for opened orders. |
+| Field     | Type       | Description                          |
+| --------- | ---------- | ------------------------------------ |
+| `Tickets` | `[]uint64` | List of ticket IDs for opened orders |
 
 ---
 
 ## 🎯 Purpose
 
-Use this method when you only need ticket IDs of open orders, useful for:
+Retrieve only **open order IDs** without full details. Useful for:
 
-* Rapid synchronization or matching processes
-* Tracking order IDs without loading complete order details
-* Quick selection for targeted operations such as modifications or cancellations
+* Rapid synchronization or order tracking
+* Lightweight matching against local state
+* Selecting targets for modification/cancellation
 
-Provides an efficient, low-overhead alternative to retrieving full order details.
+---
+
+## 🧩 Notes & Tips
+
+* **Tickets only:** To inspect volumes, prices, or symbols, follow up with `OpenedOrders` or `HistoryOrderByTicket`.
+* **Uniqueness:** Ticket IDs are unique per account; always treat them as `uint64`.
+* **Performance:** Ideal for high-frequency polling or lightweight checks.
+
+---
+
+## ⚠️ Pitfalls
+
+* **No orders open:** The API returns an empty slice, not `nil`. Always handle gracefully.
+* **Stale state:** If orders are rapidly opened/closed, snapshot may be outdated in milliseconds. For real-time, use streams if available.
