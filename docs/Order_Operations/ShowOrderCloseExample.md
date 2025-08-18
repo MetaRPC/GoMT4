@@ -58,23 +58,23 @@ Required:
 | `orderType` | `pb.OrderSendOperationType` | Type of order (market/pending).     |
 | `volume`    | `float64`                   | Order volume in lots (e.g., 0.1).   |
 
-Optional parameters (when directly using MT4Account):
+Optional (when calling `MT4Account.OrderSend` directly):
 
-| Field        | Type         | Description                         |
-| ------------ | ------------ | ----------------------------------- |
-| `price`      | `*float64`   | Order price for pending orders.     |
-| `slippage`   | `*int32`     | Max slippage allowed (points).      |
-| `stopLoss`   | `*float64`   | Stop Loss price.                    |
-| `takeProfit` | `*float64`   | Take Profit price.                  |
-| `comment`    | `*string`    | Optional order comment.             |
-| `magic`      | `*int32`     | Magic number to tag the order.      |
-| `expiration` | `*time.Time` | Expiration time for pending orders. |
+| Field        | Type                     | Description                                 |
+| ------------ | ------------------------ | ------------------------------------------- |
+| `price`      | `*float64`               | Price for pending orders; `nil` for market. |
+| `slippage`   | `*int32`                 | Max slippage (points).                      |
+| `stopLoss`   | `*float64`               | Stop Loss price.                            |
+| `takeProfit` | `*float64`               | Take Profit price.                          |
+| `comment`    | `*string`                | Optional order comment.                     |
+| `magic`      | `*int32`                 | Magic number tag.                           |
+| `expiration` | `*timestamppb.Timestamp` | Expiration (pending orders only).           |
 
 ---
 
 ## ⬆️ Output
 
-Returns execution details:
+Returns `*pb.OrderSendData`:
 
 | Field      | Type        | Description                         |
 | ---------- | ----------- | ----------------------------------- |
@@ -86,16 +86,21 @@ Returns execution details:
 
 ## 🎯 Purpose
 
-Use this method to place new trade orders (market or pending), controlling volume, price, and risk parameters. The result confirms the assigned ticket number, price, and open time for tracking or logging.
+Place new trade orders (market or pending), controlling volume, price, and risk parameters. The result confirms ticket number, execution price, and open time for tracking/logging.
 
 ---
 
-### ❓ Notes
+## 🧩 Notes & Tips
 
-This method requires:
+* **Timeouts:** Your implementation sets a default 5s timeout if none is provided — keep calls bounded.
+* **Volume validation:** Ensure `volume` respects `VolumeMin/Max` and `VolumeStep` from `SymbolParams` before sending.
+* **Pending orders:** `price` must be provided for pending types; for market orders it should be `nil`.
+* **Types:** `slippage` is `*int32`, `magic` is `*int32`, `expiration` uses protobuf timestamp.
 
-* Valid trading symbol
-* Stable connection to MT4 terminal
-* Terminal in trading-enabled state
+---
 
-Ensure proper configuration before using in production to avoid unexpected errors.
+## ⚠️ Pitfalls
+
+* **Not connected:** When terminal is not connected, API returns `"not connected"`.
+* **Rejected by broker:** Invalid SL/TP distances, disabled trading, or wrong price for pending orders will cause API errors.
+* **Races:** Price can move between validation and send; expect slippage/requotes depending on broker settings.
