@@ -17,7 +17,7 @@ if err != nil {
     log.Fatalf("Error retrieving symbol parameters: %v", err)
 }
 
-fmt.Println("\uD83D\uDCCA Symbol Parameters:")
+fmt.Println("📊 Symbol Parameters:")
 fmt.Printf("• Symbol: %s\n", info.GetSymbolName())
 fmt.Printf("• Description: %s\n", info.GetSymDescription())
 fmt.Printf("• Digits: %d\n", info.GetDigits())
@@ -51,31 +51,50 @@ func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) error
 
 ## ⬆️ Output
 
-Returns a single `SymbolParamsInfo` object containing:
+Returns `*pb.SymbolParamsManyInfo` with fields (key subset):
 
-| Field            | Type      | Description                                      |
-| ---------------- | --------- | ------------------------------------------------ |
-| `SymbolName`     | `string`  | Name of the symbol                               |
-| `SymDescription` | `string`  | Descriptive name or label for the symbol         |
-| `Digits`         | `int32`   | Number of decimal places                         |
-| `VolumeMin`      | `float64` | Minimum allowed lot volume                       |
-| `VolumeMax`      | `float64` | Maximum allowed lot volume                       |
-| `VolumeStep`     | `float64` | Minimum lot increment                            |
-| `SpreadFloat`    | `float64` | Current floating spread in points                |
-| `Bid`            | `float64` | Current bid price                                |
-| `CurrencyBase`   | `string`  | Base currency of the symbol                      |
-| `CurrencyProfit` | `string`  | Profit currency for trades in this symbol        |
-| `CurrencyMargin` | `string`  | Margin currency used for this symbol             |
-| `TradeMode`      | `int32`   | Trade mode (e.g., disabled, long-only, etc.)     |
-| `TradeExeMode`   | `int32`   | Execution mode (e.g., market, instant execution) |
+| Field            | Type      | Description                                 |
+| ---------------- | --------- | ------------------------------------------- |
+| `SymbolName`     | `string`  | Name of the symbol.                         |
+| `SymDescription` | `string`  | Descriptive name/label.                     |
+| `Digits`         | `int32`   | Number of decimal places.                   |
+| `VolumeMin`      | `float64` | Minimum allowed lot volume.                 |
+| `VolumeMax`      | `float64` | Maximum allowed lot volume.                 |
+| `VolumeStep`     | `float64` | Minimum lot increment.                      |
+| `CurrencyBase`   | `string`  | Base currency of the symbol.                |
+| `CurrencyProfit` | `string`  | Profit currency for trades in this symbol.  |
+| `CurrencyMargin` | `string`  | Margin currency for this symbol.            |
+| `TradeMode`      | `int32`   | Trade mode enum (e.g., disabled/long-only). |
+
+> Fields above reflect getters used in your code. If additional fields exist in proto, list them here using exact pb names.
 
 ---
 
 ## 🎯 Purpose
 
-Use this method to retrieve a **comprehensive profile** of a trading instrument, including trading rules, volume constraints, and precision. Useful for:
+Obtain a **comprehensive profile** of an instrument: precision, volume constraints, currencies, and trade mode — to validate orders and display instrument config.
 
-* Validating trade requests and constraints
-* Displaying full instrument configurations
-* Enabling condition-aware trading decisions
+---
 
+## 🧩 Notes & Tips
+
+* **Order validation:** Use `VolumeMin/Max/Step` and `Digits` to validate user inputs **before** `OrderSend`.
+* **Rounding rule:** Round order volume to the nearest `VolumeStep` (never exceed `VolumeMax`).
+* **Precision:** Format prices using `Digits`; do not hardcode decimals per symbol.
+* **TradeMode usage:** If `TradeMode` indicates disabled/restricted, surface a clear message and skip order placement.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Broker differences:** Parameters may vary across accounts/servers for the same symbol.
+* **Stale cache:** Don’t cache forever — refresh on reconnect or at session start.
+* **Step mismatch:** Floating arithmetic can break step checks; compare with a small epsilon when validating steps.
+
+---
+
+## 🧪 Testing Suggestions
+
+* **Happy path:** `EURUSD` returns non-empty description; digits match expected (e.g., 5).
+* **Volume bounds:** Try `VolumeMin - ε` and `VolumeMax + ε` → validation rejects.
+* **Mode edge:** Force a symbol with restricted `TradeMode` → UI/action must block placing orders.
