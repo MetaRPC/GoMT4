@@ -70,13 +70,13 @@ func (s *MT4Service) ShowQuoteHistory(ctx context.Context, symbol string)
 
 ## ⬆️ Output
 
-Returns a `QuoteHistoryData` object with:
+Returns `*pb.QuoteHistoryData`:
 
-| Field              | Type                   | Description                      |
-| ------------------ | ---------------------- | -------------------------------- |
-| `HistoricalQuotes` | `[]HistoricalQuoteBar` | List of historical OHLC candles. |
+| Field              | Type                       | Description                      |
+| ------------------ | -------------------------- | -------------------------------- |
+| `HistoricalQuotes` | `[]*pb.HistoricalQuoteBar` | List of historical OHLC candles. |
 
-Each `HistoricalQuoteBar` includes:
+Each `*pb.HistoricalQuoteBar` includes:
 
 | Field   | Type        | Description            |
 | ------- | ----------- | ---------------------- |
@@ -90,10 +90,32 @@ Each `HistoricalQuoteBar` includes:
 
 ## 🎯 Purpose
 
-Use this method to load candlestick-style **historical price data** for a symbol. Ideal for:
+Load candlestick-style **historical price data** for a symbol. Ideal for:
 
 * Charting historical candles
 * Backtesting trading strategies
 * Detecting technical analysis patterns
 
-Supports all major timeframes using `ENUM_QUOTE_HISTORY_TIMEFRAME`.
+---
+
+## 🧩 Notes & Tips
+
+* **Range limits:** Very large ranges may be truncated. Query in smaller chunks.
+* **Timezone:** All times are UTC. Convert to local TZ for charts.
+* **Gaps:** Weekend and holiday gaps are normal; don’t misinterpret them as missing data.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Inconsistent data:** Different brokers can have slightly different history for the same symbol.
+* **No future bars:** `to` cannot exceed the server’s latest bar — it will return empty beyond.
+* **Alignment:** Bars align strictly to their timeframe (e.g., H1 always at :00 minutes).
+
+---
+
+## 🧪 Testing Suggestions
+
+* **Happy path:** Request last 100 H1 bars for EURUSD → verify consistent OHLC values.
+* **Edge case:** Request with `from > to` → expect error/empty response.
+* **Stress test:** Fetch several months of M1 data → ensure chunking or iteration works.
