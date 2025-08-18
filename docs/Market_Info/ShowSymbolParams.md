@@ -66,8 +66,6 @@ Returns `*pb.SymbolParamsManyInfo` with fields (key subset):
 | `CurrencyMargin` | `string`  | Margin currency for this symbol.            |
 | `TradeMode`      | `int32`   | Trade mode enum (e.g., disabled/long-only). |
 
-> Fields above reflect getters used in your code. If additional fields exist in proto, list them here using exact pb names.
-
 ---
 
 ## 🎯 Purpose
