@@ -47,24 +47,43 @@ Required:
 
 ## ⬆️ Output
 
-Returns a **QuoteData** object with the following fields:
+Returns `*pb.QuoteData` with fields:
 
-| Field      | Type        | Description                         |
-| ---------- | ----------- | ----------------------------------- |
-| `Bid`      | `float64`   | Current bid price                   |
-| `Ask`      | `float64`   | Current ask price                   |
-| `Spread`   | `float64`   | Spread between ask and bid (points) |
-| `DateTime` | `timestamp` | UTC timestamp of the quote          |
+| Field      | Type        | Description                 |
+| ---------- | ----------- | --------------------------- |
+| `Bid`      | `float64`   | Current bid price.          |
+| `Ask`      | `float64`   | Current ask price.          |
+| `DateTime` | `timestamp` | UTC timestamp of the quote. |
+
+> **Spread:** If not exposed directly, compute as `Ask - Bid`. For points/pips, divide by the symbol’s `Point` (from `SymbolParams`).
 
 ---
 
 ## 🎯 Purpose
 
-Use this method to retrieve **live market pricing** for a specific symbol.
-Useful for:
+Retrieve **live market pricing** for a specific symbol. Useful for:
 
 * Displaying real-time bid/ask prices
-* Building pricing widgets or dashboards
+* Building dashboards or widgets
 * Monitoring spreads and triggering alerts
 
-Provides an up-to-date snapshot of market conditions for a trading instrument.
+---
+
+## 🧩 Notes & Tips
+
+* **Precision:** Print with instrument-specific decimals (e.g., 5 for EURUSD). Keep raw values for calculations.
+* **Timestamp:** `DateTime` is UTC — format for display, log in UTC.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Zero/invalid values:** Check `Bid > 0 && Ask >= Bid`. Otherwise treat as stale.
+* **Wrong symbol string:** Use the exact broker symbol (including suffixes).
+
+---
+
+## 🧪 Testing Suggestions
+
+* **Happy path:** `EURUSD` → `Ask > Bid`, timestamp recent.
+* **Error path:** Unknown/disabled symbol → return error or empty data handled gracefully.
