@@ -1,7 +1,7 @@
 # Closing an Order by Opposite Order
 
 > **Request:** close one order using another opposite-position order
-> Sends a request to close a position by matching it with an opposite order.
+> Sends a request to close a position by matching it with an opposite order. 
 
 ---
 
