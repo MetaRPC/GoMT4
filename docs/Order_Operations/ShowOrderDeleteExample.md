@@ -42,13 +42,13 @@ Required:
 | `ctx`    | `context.Context` | Timeout or cancellation management. |
 | `ticket` | `int32`           | Ticket number of the pending order. |
 
-The ticket must reference a **pending** order. Attempting to delete a non-pending order will result in an error.
+The ticket must reference a **pending** order.
 
 ---
 
 ## ⬆️ Output
 
-Returns a result structure containing:
+Returns `*pb.OrderCloseDeleteData`:
 
 | Field                 | Type     | Description                             |
 | --------------------- | -------- | --------------------------------------- |
@@ -59,11 +59,16 @@ Returns a result structure containing:
 
 ## 🎯 Purpose
 
-Use this method to manually delete pending orders that are no longer needed.
-Helpful for:
+Remove limit/stop orders that are no longer needed:
 
-* Canceling limit/stop orders before execution
-* Managing pending order queues
-* Cleaning up unused test/training orders
+* Cancel pending orders before execution
+* Manage pending order queues
+* Clean up unused test/training orders
 
-Ensure the ticket references a valid pending order to avoid errors.
+---
+
+## 🧩 Notes & Tips
+
+* **Pending only:** For open market positions use `OrderClose`, not `OrderDelete`.
+* **Idempotency:** If the order is already filled/expired/cancelled, the API may return an error with a broker comment.
+* **No price/slippage:** Delete uses only the ticket; price and slippage parameters are not applicable.
