@@ -52,6 +52,8 @@ This documentation will help you:
 * [Stream Opened Order Tickets](Streaming/StreamOpenedOrderTickets.md)
 * [Stream Quotes](Streaming/StreamQuotes.md)
 * [Stream Trade Updates](Streaming/StreamTradeUpdates.md)
+* [Stream Orders History (Example)](Streaming/StreamOrdersHistoryExample.md)
+* [Stream Quote History (Example)](Streaming/StreamQuoteHistoryExample.md)
 
 ---
 
