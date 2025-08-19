@@ -1,4 +1,4 @@
-# Market\_Info — Overview
+# Market Info — Overview
 
 This section contains **market data and instrument metadata** methods for MT4. Use it to discover symbols, read quotes, fetch historical candles, and get contract/tick parameters.
 
