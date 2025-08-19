@@ -108,12 +108,14 @@ go run main.go
 
 ### 🔄 Streaming / Subscriptions
 
-| Function                     | Description                             |
-| ---------------------------- | --------------------------------------- |
-| `StreamQuotes()`             | Subscribe to live tick updates          |
-| `StreamOpenedOrderProfits()` | Real-time profit updates per open order |
-| `StreamOpenedOrderTickets()` | Monitor currently open order tickets    |
-| `StreamTradeUpdates()`       | Subscribe to all trading events         |
+| Function                         | Description                                                              |
+| -------------------------------- | ------------------------------------------------------------------------ |
+| `StreamQuotes()`                 | Subscribe to live tick updates                                           |
+| `StreamOpenedOrderProfits()`     | Real-time profit updates per open order                                  |
+| `StreamOpenedOrderTickets()`     | Monitor currently open order tickets                                     |
+| `StreamTradeUpdates()`           | Subscribe to all trading events                                          |
+| `StreamOrdersHistoryExample()`   | Page-by-page stream of order history (demo; last 30 days, close-time DESC) |
+| `StreamQuoteHistoryExample()`    | Time-chunked OHLC history stream (demo; H1, last 90 days, weekly chunks) |
 
 > Example output:
 
