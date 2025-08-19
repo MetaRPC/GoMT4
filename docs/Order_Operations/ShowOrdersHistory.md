@@ -8,21 +8,27 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOrdersHistory(context.Background())
+// --- Quick use (service wrapper) ---
+// Prints order history for the last 7 days.
+svc.ShowOrdersHistory(ctx)
 
-// Or directly from MT4Account
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
 from := time.Now().AddDate(0, 0, -7)
-to := time.Now()
+to   := time.Now()
 
-history, err := mt4.OrdersHistory(
-    context.Background(),
+ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+defer cancel()
+
+history, err := account.OrdersHistory(
+    ctx,
     pb.EnumOrderHistorySortType_HISTORY_SORT_BY_CLOSE_TIME_DESC,
-    &from, &to, nil, nil,
+    &from, &to,
+    nil, nil, // page & itemsPerPage (optional)
 )
-
 if err != nil {
-    log.Fatalf("Error retrieving order history: %v", err)
+    log.Fatalf("❌ OrdersHistory error: %v", err)
 }
 
 for _, order := range history.GetOrdersInfo() {
@@ -37,6 +43,7 @@ for _, order := range history.GetOrdersInfo() {
         order.GetCloseTime().AsTime().Format("2006-01-02 15:04:05"),
     )
 }
+
 ```
 
 ---
