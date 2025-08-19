@@ -8,15 +8,19 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.StreamQuotes(context.Background())
+// --- Quick use (service wrapper) ---
+// Streams live ticks for default symbols (EURUSD, GBPUSD in demo); stops after ~30s.
+svc.StreamQuotes(ctx)
 
-// Or directly from MT4Account
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
 symbols := []string{"EURUSD", "GBPUSD"}
-tickCh, errCh := mt4.OnSymbolTick(context.Background(), symbols)
 
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
+
+tickCh, errCh := account.OnSymbolTick(ctx, symbols)
 
 fmt.Println("🔄 Streaming ticks...")
 for {
@@ -33,14 +37,17 @@ for {
                 sym.GetAsk(),
                 sym.GetTime().AsTime().Format("2006-01-02 15:04:05"))
         }
+
     case err := <-errCh:
         log.Printf("❌ Stream error: %v", err)
         return
-    case <-time.After(30 * time.Second):
+
+    case <-time.After(30 * time.Second): // demo timeout
         fmt.Println("⏱️ Timeout reached.")
         return
     }
 }
+
 ```
 
 ---
