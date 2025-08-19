@@ -1,5 +1,40 @@
+давай теперь добавим наши овервайвы в начало каждого раздела
+добавим гайд и файл cli_usage.md в раздел гайды
+
 site_name: MetaRPC MT4 Golang Documentation
-site_description: Docs and examples for MetaRPC MT4 in Go (account, market, order operations, streaming)
+
+nav:
+  - Home: index.md
+  - Account:
+      - Show Account Summary: Account/ShowAccountSummary.md
+  - Market Info:
+      - Overview: Market_Info/Market_Info_Overview.md
+      - AllSymbols: Market_Info/ShowAllSymbols.md
+      - ShowQuote: Market_Info/ShowQuote.md
+      - QuoteHistory: Market_Info/ShowQuoteHistory.md
+      - QuotesMany: Market_Info/ShowQuotesMany.md
+      - SymbolParams: Market_Info/ShowSymbolParams.md
+      - Symbols: Market_Info/ShowSymbols.md
+      - TickValues: Market_Info/ShowTickValues.md
+  - Order Operations:
+      - Overview: Order_Operations/Order_Operations_Overview.md
+      - OpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
+      - OpenedOrders: Order_Operations/ShowOpenedOrders.md
+      - OrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
+      - OrderCloseExample: Order_Operations/ShowOrderCloseExample.md
+      - OrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
+      - OrderModifyExample: Order_Operations/ShowOrderModifyExample.md
+      - OrderSendExample: Order_Operations/ShowOrderSendExample.md
+      - OrdersHistory: Order_Operations/ShowOrdersHistory.md
+  - Streaming:
+      - Overview: Streaming/Streaming_Overview.md
+      - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
+      - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
+      - StreamQuotes: Streaming/StreamQuotes.md
+      - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
+  - Guides:
+      - CLI Usage: cli_usage.md
+      - Beginner Run Guide: Guides/Beginner_Run_Guide.md
 
 theme:
   name: material
@@ -17,59 +52,8 @@ theme:
   features:
     - palette.toggle
     - palette.auto
-    - content.code.copy
-    - content.action.edit
-
-nav:
-  - Home: index.md
-
-  - Account:
-      - Overview: Account/Account_Overview.md
-      - Show Account Summary: Account/ShowAccountSummary.md
-
-  - Market Info:
-      - Overview: Market_Info/Market_Info_Overview.md
-      - All Symbols: Market_Info/ShowAllSymbols.md
-      - Show Quote: Market_Info/ShowQuote.md
-      - Quote History: Market_Info/ShowQuoteHistory.md
-      - Quotes Many: Market_Info/ShowQuotesMany.md
-      - Symbol Params: Market_Info/ShowSymbolParams.md
-      - Symbols: Market_Info/ShowSymbols.md
-      - Tick Values: Market_Info/ShowTickValues.md
-
-  - Order Operations:
-      - Overview: Order_Operations/Order_Operations_Overview.md
-      - Opened Orders: Order_Operations/ShowOpenedOrders.md
-      - Opened Order Tickets: Order_Operations/ShowOpenedOrderTickets.md
-      - Orders History: Order_Operations/ShowOrdersHistory.md
-      - Order Send Example: Order_Operations/ShowOrderSendExample.md
-      - Order Modify Example: Order_Operations/ShowOrderModifyExample.md
-      - Order Close Example: Order_Operations/ShowOrderCloseExample.md
-      - Order Close By Example: Order_Operations/ShowOrderCloseByExample.md
-      - Order Delete Example: Order_Operations/ShowOrderDeleteExample.md
-
-  - Streaming:
-      - Overview: Streaming/Streaming_Overview.md
-      - Streaming Quotes: Streaming/StreamingQuotes.md
-      - Opened Order Profits: Streaming/StreamOpenedOrderProfits.md
-      - Opened Order Tickets: Streaming/StreamOpenedOrderTickets.md
-      - Trade Updates: Streaming/StreamTradeUpdates.md
-
-  - Guides:
-      - CLI Guide: Guides/cli_usage.md
-      - Beginner Run Guide: Guides/Beginner_Run_Guide.md
-
-plugins:
-  - search
 
 markdown_extensions:
-  - admonition
-  - tables
-  - toc:
-      permalink: true
-  - pymdownx.details
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.emoji:
-      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.superfences
