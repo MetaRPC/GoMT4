@@ -1,6 +1,3 @@
-давай теперь добавим наши овервайвы в начало каждого раздела
-добавим гайд и файл cli_usage.md в раздел гайды
-
 site_name: MetaRPC MT4 Golang Documentation
 
 nav:
