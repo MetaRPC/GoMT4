@@ -31,7 +31,7 @@ nav:
       - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
   - Guides:
       - CLI Usage: cli_usage.md
-      - Beginner Run Guide: Guides/Beginner_Run_Guide.md
+      - Beginner Run Guide: Beginner_Run_Guide.md
 
 theme:
   name: material
