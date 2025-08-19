@@ -8,29 +8,35 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOrderSendExample(context.Background(), "EURUSD")
+// --- Quick use (service wrapper) ---
+// Opens a BUY order and prints ticket/price/time.
+// ⚠️ This places a real trade — use on demo or with caution.
+svc.ShowOrderSendExample(ctx, "EURUSD")
 
-// Or directly using MT4Account
-result, err := mt4.OrderSend(
-    context.Background(),
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+result, err := account.OrderSend(
+    ctx,
     "EURUSD",
-    pb.OrderSendOperationType_OC_OP_BUY,
-    0.1,
-    nil,
-    ptrInt32(5),
-    ptrFloat64(1.0500),
-    ptrFloat64(1.0900),
-    ptrString("Go order test"),
-    ptrInt32(123456),
-    nil,
+    pb.OrderSendOperationType_OC_OP_BUY, // order type: Buy
+    0.1,                                 // lots
+    nil,                                 // price (nil = market)
+    ptrInt32(5),                         // slippage
+    ptrFloat64(1.0500),                  // stop loss
+    ptrFloat64(1.0900),                  // take profit
+    ptrString("Go order test"),          // comment
+    ptrInt32(123456),                    // magic number
+    nil,                                 // expiration
 )
-
 if err != nil {
-    log.Fatalf("Error sending order: %v", err)
+    log.Fatalf("❌ OrderSend error: %v", err)
 }
 
-fmt.Printf("Order opened! Ticket: %d, Price: %.5f, Time: %s\n",
+fmt.Printf("✅ Order opened! Ticket: %d, Price: %.5f, Time: %s\n",
     result.GetTicket(),
     result.GetPrice(),
     result.GetOpenTime().AsTime().Format("2006-01-02 15:04:05"),
