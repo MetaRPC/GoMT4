@@ -8,13 +8,21 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOrderDeleteExample(context.Background(), 123456)
+// --- Quick use (service wrapper) ---
+// Deletes a pending order by ticket.
+// ⚠️ Works only for pending orders (BuyLimit, SellLimit, etc.).
+svc.ShowOrderDeleteExample(ctx, 123456)
 
-// Or directly from MT4Account
-data, err := mt4.OrderDelete(context.Background(), 123456)
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+// ⚠️ Use only with pending orders. For active Buy/Sell use OrderClose.
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+data, err := account.OrderDelete(ctx, 123456)
 if err != nil {
-    log.Fatalf("Error deleting order: %v", err)
+    log.Fatalf("❌ OrderDelete error: %v", err)
 }
 
 fmt.Printf("Order deleted. Mode: %s, Comment: %s\n",
