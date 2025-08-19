@@ -4,7 +4,7 @@
 
 ---
 
-## Requirements
+## 🪪 Requirements
 
 * `config/config.json` filled with **login**, **password**, **server**, and a **default symbol**.
 * Standard build/run works: `go build ./...` or `go run .`.
@@ -31,7 +31,7 @@ enableStreams         := true    // Read-only streaming: quotes/profits/tickets/
 enableHistoryStreams  := true    // New: history streams (pagination/time-chunks)
 ```
 
-### What each toggle does
+### 🔧 What each toggle does
 
 * **`enableTradingExamples`**
 
