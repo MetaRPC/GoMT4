@@ -8,14 +8,22 @@
 ### Code Example
 
 ```go
-// Using service wrapper
+// --- Quick use (service wrapper) ---
+// Prints multiple quotes with bid/ask/time.
 symbols := []string{"EURUSD", "GBPUSD"}
-service.ShowQuotesMany(context.Background(), symbols)
+svc.ShowQuotesMany(ctx, symbols)
 
-// Or directly from MT4Account (QuoteMany)
-data, err := mt4.QuoteMany(context.Background(), symbols)
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+symbols := []string{"EURUSD", "GBPUSD"}
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+data, err := account.QuoteMany(ctx, symbols)
 if err != nil {
-    log.Fatalf("Error fetching multiple quotes: %v", err)
+    log.Fatalf("❌ QuoteMany error: %v", err)
 }
 
 for _, q := range data.GetQuotes() {
@@ -27,9 +35,16 @@ for _, q := range data.GetQuotes() {
     )
 }
 
-// Stream real-time tick updates
+// --- Streaming tick updates (direct) ---
+// Subscribes to real-time ticks for given symbols.
+// Stops after first tick or timeout (demo only).
+
 streamSymbols := []string{"EURUSD"}
-tickCh, errCh := mt4.OnSymbolTick(context.Background(), streamSymbols)
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+tickCh, errCh := account.OnSymbolTick(ctx, streamSymbols)
+
 for {
     select {
     case tick := <-tickCh:
@@ -40,15 +55,13 @@ for {
                 q.GetBid(),
                 q.GetAsk(),
                 q.GetTime().AsTime().Format("2006-01-02 15:04:05"))
-            break // For test/demo
+            return // demo: exit after first tick
         }
     case err := <-errCh:
-        log.Fatalf("Tick stream error: %v", err)
-    case <-time.After(5 * time.Second):
-        fmt.Println("Timeout reached")
-        return
+        log.Fatalf("❌ Tick stream error: %v", err)
     }
 }
+
 ```
 
 ---
