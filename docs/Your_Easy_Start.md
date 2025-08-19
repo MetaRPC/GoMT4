@@ -20,7 +20,7 @@
 
 ---
 
-## Feature Toggles (Safe by Default)
+## ✨ Feature Toggles (Safe by Default)
 
 Place these three flags near the top of your `main.go` (after loading config and creating the account):
 
@@ -139,7 +139,7 @@ if enableHistoryStreams {
 
 ---
 
-## Safety Checklist (before enabling trading)
+## 🏗️ Safety Checklist (before enabling trading)
 
 * ✅ You’re on a **DEMO** account (strongly recommended for first runs).
 * ✅ `ShowAccountSummary` looks sane; you understand `Equity` and `FreeMargin`.
@@ -148,7 +148,7 @@ if enableHistoryStreams {
 
 ---
 
-## FAQ
+## 🤖 FAQ
 
 **Do I need to call `MT4Account` directly?**
 No. Use `MT4Service` methods (`svc.Show...`, `svc.Stream...`). `MT4Account` is managed under the hood.
