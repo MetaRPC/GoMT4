@@ -1,49 +1,88 @@
 # Getting Started with MetaTrader 4 in Go
 
-Welcome to the **MetaRPC MT4 Go Documentation** — your guide to building integrations with **MetaTrader 4** using **Go** and **gRPC**.
+Welcome to the **MetaRPC MT4 Go Documentation** — your guide to integrating with **MetaTrader 4** using **Go** and **gRPC**.
 
-This documentation provides everything you need to:
+This documentation will help you:
 
-- 📘 Understand all available trading, account, and market methods  
-- 💡 See **Go usage examples** with context, timeouts, and channels  
-- 🔁 Work with **real-time streaming** of quotes, trades, profits, and tickets  
-- ⚙️ Explore all **input/output types** including OrderInfo, TradeInfo, QuoteData, and enums like `ENUM_ORDER_TYPE_TF`
+* 📘 Explore all available **account, market, and trading methods**
+* 💡 Learn from **Go usage examples** with context and timeout handling
+* 🔁 Work with **real-time streaming** for quotes, orders, and trades
+* ⚙️ Understand all **input/output types** such as `OrderInfo`, `QuoteData`, and enums like `ENUM_ORDER_TYPE_TF`
 
 ---
 
 ## 📚 Main Sections
 
-* **Account Information** — balance, equity, margin, leverage, and more
-* **Order Operations** — send, modify, close orders and track history
-* **Market Info** — available instruments, trading conditions, tick sizes
-* **Streaming** — subscribe to real-time updates for trades, profits, and prices
+### Account
+
+* [Show Account Summary](Account/ShowAccountSummary.md)
+
+---
+
+### Market Info
+
+* **Overview:** \[Market Info — Overview]\(Market\_Info/Market\_Info — Overview\.md)
+* [Show Quote](Market_Info/ShowQuote.md)
+* [Show Quotes Many](Market_Info/ShowQuotesMany.md)
+* [Show Quote History](Market_Info/ShowQuoteHistory.md)
+* [Show Symbol Params](Market_Info/ShowSymbolParams.md)
+* [Show Symbols](Market_Info/ShowSymbols.md)
+* [Show All Symbols](Market_Info/ShowAllSymbols.md)
+* [Show Tick Values](Market_Info/ShowTickValues.md)
+
+---
+
+### Order Operations ⚠️
+
+* **Overview:** \[Order Operations — Overview]\(Order\_Operations/Order\_Operations — Overview\.md)
+* [Show Opened Orders](Order_Operations/ShowOpenedOrders.md)
+* [Show Opened Order Tickets](Order_Operations/ShowOpenedOrderTickets.md)
+* [Show Orders History](Order_Operations/ShowOrdersHistory.md)
+* [Order Close Example](Order_Operations/OrderCloseExample.md)
+* [Order Close By Example](Order_Operations/ShowOrderCloseByExample.md)
+* [Order Delete Example](Order_Operations/ShowOrderDeleteExample.md)
+* [Order Modify Example](Order_Operations/ShowOrderModifyExample.md)
+
+---
+
+### Streaming
+
+* **Overview:** \[Streaming — Overview]\(Streaming/Streaming — Overview\.md)
+* [Stream Opened Order Profits](Streaming/StreamOpenedOrderProfits.md)
+* [Stream Opened Order Tickets](Streaming/StreamOpenedOrderTickets.md)
+* [Stream Quotes](Streaming/StreamQuotes.md)
+* [Stream Trade Updates](Streaming/StreamTradeUpdates.md)
 
 ---
 
 ## 🚀 Quick Start
 
-To get started with Go + MetaTrader 4:
+1. Configure your `config.json` with MT4 credentials and connection details.
+2. Initialize an `MT4Account` and wrap it with `MT4Service`.
+3. Run examples from `main.go` or call the `Show*` helpers.
 
-1. **Configure your `config.json`** with MT4 credentials and connection details.
-2. Use the `MT4Account` or `MT4Service` structs to access functionality.
-3. Run method examples via `main.go` or through helper files like `Show*.go`.
+```go
+ctx := context.Background()
+svc := mt4.NewMT4Service(account)
+
+// Example: quick account & quote
+svc.ShowAccountSummary(ctx)
+svc.ShowQuote(ctx, "EURUSD")
+```
 
 ---
 
 ## 🛠 Requirements
 
-* Go 1.20+
+* Go 1.21+
 * gRPC-Go
-* Protobuf-generated Go bindings for MT4 `.proto` definitions
-* LiteIDE, VS Code, or GoLand for editing
+* Protobuf Go bindings
+* VS Code / GoLand / LiteIDE
 
 ---
 
-With this documentation, you can:
+## 🧭 Navigation
 
-* Build terminal dashboards
-* Automate trade flows
-* Create monitoring services
-* Analyze real-time market data
-
-Ready to trade? Let’s Go 🟢
+* Sections above link **directly** to the markdown files in your repo.
+* Methods are organized to mirror the **MT4 API structure**.
+* Each **Overview** file contains explanations, best practices, and usage guidance.
