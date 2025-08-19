@@ -108,8 +108,6 @@ Enable **real-time tracking of floating P/L per open order** for dashboards, exp
 
 * **Interval trade-off:** Lower `intervalMs` → fresher updates, higher CPU/network use. 500–2000 ms works well for dashboards.
 * **Delta batches:** Updates often include only orders that changed; maintain a map keyed by `Ticket` and apply deltas.
-* **Backpressure:** Always read **both** data and error channels to avoid goroutine leaks.
-* **UI smoothing:** Debounce rendering if bursts arrive at interval boundaries.
 
 ---
 
