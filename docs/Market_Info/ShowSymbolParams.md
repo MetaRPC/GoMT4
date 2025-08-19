@@ -8,13 +8,19 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowSymbolParams(context.Background(), "EURUSD")
+// --- Quick use (service wrapper) ---
+// Prints full symbol parameters in a readable format.
+svc.ShowSymbolParams(ctx, "EURUSD")
 
-// Or directly from MT4Account
-info, err := mt4.SymbolParams(context.Background(), "EURUSD")
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+info, err := account.SymbolParams(ctx, "EURUSD")
 if err != nil {
-    log.Fatalf("Error retrieving symbol parameters: %v", err)
+    log.Fatalf("❌ SymbolParams error: %v", err)
 }
 
 fmt.Println("📊 Symbol Parameters:")
