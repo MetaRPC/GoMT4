@@ -8,22 +8,29 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOrderModifyExample(context.Background(), 123456)
+// --- Quick use (service wrapper) ---
+// Modifies SL/TP for an order by ticket.
+// ⚠️ This changes a live trade — use on demo or with caution.
+svc.ShowOrderModifyExample(ctx, 123456)
 
-// Or directly from MT4Account
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
 newSL := 1.0500
 newTP := 1.0900
 
-modified, err := mt4.OrderModify(context.Background(), 123456, nil, &newSL, &newTP, nil)
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+modified, err := account.OrderModify(ctx, 123456, nil, &newSL, &newTP, nil)
 if err != nil {
-    log.Fatalf("Error modifying order: %v", err)
+    log.Fatalf("❌ OrderModify error: %v", err)
 }
 
 if modified {
-    fmt.Println("Order successfully modified.")
+    fmt.Println("✅ Order successfully modified.")
 } else {
-    fmt.Println("Order was NOT modified.")
+    fmt.Println("⚠️ Order was NOT modified.")
 }
 ```
 
