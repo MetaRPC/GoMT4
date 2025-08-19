@@ -8,15 +8,28 @@
 ### Code Example
 
 ```go
-summary, err := s.account.AccountSummary(ctx)
+// --- Quick use (service wrapper) ---
+// Prints balance/equity/currency inside the method.
+svc.ShowAccountSummary(ctx)
+
+// --- Low-level (direct account call) ---
+// Preconditions: account is connected via ConnectByServerName/ConnectByHostPort.
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second) // keep short; bump if your terminal is slow
+defer cancel()
+
+summary, err := account.AccountSummary(ctx)
 if err != nil {
     log.Printf("❌ AccountSummary error: %v", err)
     return
 }
+
 fmt.Printf("Account Summary: Balance=%.2f, Equity=%.2f, Currency=%s\n",
     summary.GetAccountBalance(),
     summary.GetAccountEquity(),
-    summary.GetAccountCurrency())
+    summary.GetAccountCurrency(),
+)
+
 ```
 
 ---
