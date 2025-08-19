@@ -8,13 +8,19 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowQuote(context.Background(), "EURUSD")
+// --- Quick use (service wrapper) ---
+// Prints bid/ask/time for the symbol.
+svc.ShowQuote(ctx, "EURUSD")
 
-// Or directly from MT4Account
-data, err := mt4.Quote(context.Background(), "EURUSD")
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+data, err := account.Quote(ctx, "EURUSD")
 if err != nil {
-    log.Fatalf("Error fetching quote: %v", err)
+    log.Fatalf("❌ Quote error: %v", err)
 }
 
 fmt.Printf("Bid: %.5f, Ask: %.5f, Time: %s\n",
@@ -22,6 +28,7 @@ fmt.Printf("Bid: %.5f, Ask: %.5f, Time: %s\n",
     data.GetAsk(),
     data.GetDateTime().AsTime().Format("2006-01-02 15:04:05"),
 )
+
 ```
 
 ---
