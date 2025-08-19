@@ -1,4 +1,4 @@
-# Streaming Orders History (Example)
+# 🚀 Streaming Orders History (Example)
 
 > **Request:** Stream historical orders with sensible defaults.
 > This demo wrapper prints pages of order history and exits after a short timeout.
