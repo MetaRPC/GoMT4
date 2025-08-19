@@ -8,13 +8,19 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOpenedOrders(context.Background())
+// --- Quick use (service wrapper) ---
+// Prints all currently opened orders with details.
+svc.ShowOpenedOrders(ctx)
 
-// Or directly from MT4Account
-ordersData, err := mt4.OpenedOrders(context.Background())
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+ordersData, err := account.OpenedOrders(ctx)
 if err != nil {
-    log.Fatalf("Error retrieving opened orders: %v", err)
+    log.Fatalf("❌ OpenedOrders error: %v", err)
 }
 
 for _, order := range ordersData.GetOrderInfos() {
