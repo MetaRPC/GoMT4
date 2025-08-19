@@ -16,7 +16,7 @@ ticketCh, errCh := mt4.OnOpenedOrdersTickets(context.Background(), 1000)
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-fmt.Println("\uD83D\uDD04 Streaming opened order tickets...")
+fmt.Println("🔄 Streaming opened order tickets...")
 
 for {
     select {
@@ -56,30 +56,42 @@ func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context)
 | `ctx`        | `context.Context` | Controls streaming lifecycle and cancellation.    |
 | `intervalMs` | `int`             | Polling interval between updates in milliseconds. |
 
-> Note: `intervalMs` is hardcoded to 1000ms in the wrapper implementation, but can be made configurable.
+> Wrapper default: **1000 ms**.
 
 ---
 
 ## ⬆️ Output
 
-Stream of `OpenedOrderTicketsData` objects, each including:
+Stream of `*pb.OnOpenedOrdersTicketsData` packets. Each packet contains:
 
-| Field                 | Type      | Description                            |
-| --------------------- | --------- | -------------------------------------- |
-| `PositionTickets`     | `[]int32` | List of position order ticket numbers. |
-| `PendingOrderTickets` | `[]int32` | List of pending order ticket numbers.  |
+| Field                 | Type      | Description                   |
+| --------------------- | --------- | ----------------------------- |
+| `PositionTickets`     | `[]int32` | Ticket IDs of open positions. |
+| `PendingOrderTickets` | `[]int32` | Ticket IDs of pending orders. |
 
-Together, they represent all open orders in the terminal at each polling cycle.
+Combined, they represent all open orders at the time of the poll.
 
 ---
 
 ## 🎯 Purpose
 
-Use this method to **track open order ticket numbers** in real time.
-Useful for:
+Track **open order ticket numbers** in real time for:
 
 * Updating active trade lists in UIs
-* Detecting order creation/deletion events
-* Triggering related updates or monitoring logic
+* Detecting order creation/closure events
+* Triggering targeted follow-ups (fetch details, modify/close)
 
-It’s a **minimal-overhead** solution compared to full order detail streaming.
+---
+
+## 🧩 Notes & Tips
+
+* **Diffing:** Maintain a `map[int32]bool` of previous tickets. On each packet, compute added/removed sets to detect events.
+* **Batch ops:** When many changes occur at once, process `PositionTickets` and `PendingOrderTickets` separately if logic differs.
+* **Minimal overhead:** Use this stream when you only need IDs; fetch details lazily on demand.
+---
+
+## 🧪 Testing Suggestions
+
+* **Basic:** Verify non-empty tickets when known orders are open.
+* **Add/Remove:** Open/close orders and confirm the diffing logic detects changes.
+* **Timeout/Cancel:** Ensure context cancel cleanly stops both channels.
