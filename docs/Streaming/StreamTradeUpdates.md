@@ -1,4 +1,4 @@
-# Streaming Trade Updates
+# 🌐 Streaming Trade Updates
 
 > **Request:** subscribe to real-time trade update stream
 > Starts a server-side stream to receive trade activity as it happens.
