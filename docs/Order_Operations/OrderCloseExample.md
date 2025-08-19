@@ -8,13 +8,20 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOrderCloseExample(context.Background(), 123456)
+// --- Quick use (service wrapper) ---
+// Closes an order by ticket and prints result.
+svc.ShowOrderCloseExample(ctx, 123456)
 
-// Or directly from MT4Account
-res, err := mt4.OrderClose(context.Background(), 123456, nil, nil, nil)
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+// ⚠️ This actually closes a trade — use on demo or with caution.
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+res, err := account.OrderClose(ctx, 123456, nil, nil, nil)
 if err != nil {
-    log.Fatalf("Error closing order: %v", err)
+    log.Fatalf("❌ OrderClose error: %v", err)
 }
 
 fmt.Printf("Closed: %s | Comment: %s\n",
