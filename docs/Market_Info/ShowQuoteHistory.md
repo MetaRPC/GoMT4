@@ -8,17 +8,23 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowQuoteHistory(context.Background(), "EURUSD")
+// --- Quick use (service wrapper) ---
+// Prints recent OHLC candles for the symbol.
+svc.ShowQuoteHistory(ctx, "EURUSD")
 
-// Or directly from MT4Account
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
 from := time.Now().AddDate(0, 0, -5)
-to := time.Now()
+to   := time.Now()
 timeframe := pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_H1
 
-data, err := mt4.QuoteHistory(context.Background(), "EURUSD", timeframe, from, to)
+ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+defer cancel()
+
+data, err := account.QuoteHistory(ctx, "EURUSD", timeframe, from, to)
 if err != nil {
-    log.Fatalf("Error fetching quote history: %v", err)
+    log.Fatalf("❌ QuoteHistory error: %v", err)
 }
 
 for _, c := range data.GetHistoricalQuotes() {
