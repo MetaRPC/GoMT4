@@ -8,13 +8,19 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowSymbols(context.Background())
+// --- Quick use (service wrapper) ---
+// Prints all available symbols with indices.
+svc.ShowSymbols(ctx)
 
-// Or directly from MT4Account
-data, err := mt4.Symbols(context.Background())
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+data, err := account.Symbols(ctx)
 if err != nil {
-    log.Fatalf("Error fetching symbols: %v", err)
+    log.Fatalf("❌ Symbols error: %v", err)
 }
 
 fmt.Println("=== Available Symbols ===")
@@ -23,6 +29,7 @@ for _, symbolInfo := range data.GetSymbolNameInfos() {
         symbolInfo.GetSymbolName(),
         symbolInfo.GetSymbolIndex())
 }
+
 ```
 
 ---
