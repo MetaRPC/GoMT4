@@ -1,15 +1,13 @@
 package main
 
 import (
-    "context"
-    "fmt"
-    "log"
-
-    "github.com/MetaRPC/GoMT4/config"
-    "github.com/MetaRPC/GoMT4/mt4"
-    "github.com/google/uuid"
+	"context"
+	"fmt"
+	"github.com/MetaRPC/GoMT4/config"
+	"github.com/MetaRPC/GoMT4/mt4"
+	"github.com/google/uuid"
+	"log"
 )
-
 
 func main() {
 	// Loading the config
@@ -23,6 +21,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ Failed to create MT4 account: %v", err)
 	}
+	defer account.Disconnect() // ensure cleanup on exit
 
 	// Connecting to the server
 	ctx := context.Background()
@@ -39,59 +38,56 @@ func main() {
 		log.Fatalf("❌ Failed to get symbol params: %v", err)
 	}
 
+	//=======================================
+	//===-------- Feature toggles --------===
+	//=======================================
+	enableTradingExamples := false // ⚠️ Real trading operations (OrderSend/Modify/Close...)
+	enableStreams := true          // Streaming quotes/profit/tickets
+	enableHistoryStreams := true   // Our new story streams (pages/chunks)
 
-
-		// === 🚀 Step-by-step execution of methods ===
+	// === 🚀 Step-by-step execution of methods ===
 
 	// --- 📂 Account Info ---
 	svc.ShowAccountSummary(ctx)
 
-	// --- 📂 Order Operations ---
+	// --- 📂 Order Operations (safe reading) ---
 	svc.ShowOpenedOrders(ctx)
 	svc.ShowOpenedOrderTickets(ctx)
 	svc.ShowOrdersHistory(ctx)
 
-	// ⚠️ Warning: this will open a real trade on demo/real account
-	// Opens a market (or pending) order. The order type is set by the operationType field — Buy, Sell, BuyLimit, etc.
-	svc.ShowOrderSendExample(ctx, cfg.DefaultSymbol)
+	// --- ⚠️ Trading (DANGEROUS) ---
+	if enableTradingExamples {
+		// ATTENTION: opens a real deal (demo/real depending on login)
+		svc.ShowOrderSendExample(ctx, cfg.DefaultSymbol)
 
-	// ⚠️ Make sure the ticket is valid before using these:
-	svc.ShowOrderModifyExample(ctx, 12345678)                //  Modify SL/TP
-	svc.ShowOrderCloseExample(ctx, 12345678)                 //  Close order by ticket
-	svc.ShowOrderCloseByExample(ctx, 12345678, 12345679)     //  Close with opposite order
+		// These require valid tickets:
+		svc.ShowOrderModifyExample(ctx, 12345678)            // Modify SL/TP
+		svc.ShowOrderCloseExample(ctx, 12345678)             // Close by ticket
+		svc.ShowOrderCloseByExample(ctx, 12345678, 12345679) // Close with opposite
 
-	// This method only works with pending orders (BuyLimit, SellLimit, etc.)
-	// If an active order (Buy/Sell) is passed, deletion will not work — use ShowOrderCloseExample instead.
-	svc.ShowOrderDeleteExample(ctx, 12345678)
+		// Removes ONLY deposits (use Close for Buy/Sell)
+		svc.ShowOrderDeleteExample(ctx, 12345678)
+	}
 
 	// --- 📂 Market Info / Symbol Info ---
-	svc.ShowQuote(ctx, cfg.DefaultSymbol)                                          // Get current quote by symbol (Bid, Ask, Time)
-	svc.ShowQuotesMany(ctx, []string{"EURUSD", "GBPUSD", "USDJPY"})               // Get current quotes for multiple symbols
-	svc.ShowQuoteHistory(ctx, cfg.DefaultSymbol)                                  // Get historical candlesticks (OHLC) for the symbol
-	svc.ShowAllSymbols(ctx)                                                       // Show all available instruments in MT4
-	svc.ShowSymbolParams(ctx, cfg.DefaultSymbol)                                  // Get full symbol info: Digits, Volume, Trade Mode, etc.
-	svc.ShowTickValues(ctx, []string{"EURUSD", "GBPUSD", "USDJPY"})               // Get tick value, tick size, contract size for each symbol
+	svc.ShowQuote(ctx, cfg.DefaultSymbol)
+	svc.ShowQuotesMany(ctx, []string{"EURUSD", "GBPUSD", "USDJPY"})
+	svc.ShowQuoteHistory(ctx, cfg.DefaultSymbol)
+	svc.ShowAllSymbols(ctx)
+	svc.ShowSymbolParams(ctx, cfg.DefaultSymbol)
+	svc.ShowTickValues(ctx, []string{"EURUSD", "GBPUSD", "USDJPY"})
 
 	// --- 📂 Streaming / Subscriptions ---
-	svc.StreamQuotes(ctx)                 //  Live price updates (ticks). Stops after 30 seconds in example.
-	svc.StreamOpenedOrderProfits(ctx)    //  Stream open order profits. Interval can be customized.
-	svc.StreamOpenedOrderTickets(ctx)    //  Stream order tickets — shows only open ones.
-	svc.StreamTradeUpdates(ctx)          //  Stream trade updates — all trading activity in real-time.
+	if enableStreams {
+		svc.StreamQuotes(ctx)             // live ticks (in the example, it will stop by itself)
+		svc.StreamOpenedOrderProfits(ctx) // stream profits on open orders
+		svc.StreamOpenedOrderTickets(ctx) // ticket streaming
+		svc.StreamTradeUpdates(ctx)       // stream trade events
+	}
 
-	// == 🧪 Demo usage examples — uncomment to test ==
-	/*
-	   svc.ShowOpenedOrders(ctx)                            // Show active orders
-	   svc.ShowOpenedOrderTickets(ctx)                      // List open order tickets
-	   svc.ShowOrdersHistory(ctx)                           // Show order history (last 7 days)
-
-	   svc.ShowOrderSendExample(ctx, cfg.DefaultSymbol)     // 🔄 Open Buy order at market
-
-	   svc.ShowOrderModifyExample(ctx, 12345678)            // ✏️ Modify SL/TP — insert real ticket
-	   svc.ShowOrderCloseExample(ctx, 12345678)             // ❌ Close order by ticket
-	   svc.ShowOrderCloseByExample(ctx, 12345678, 12345679) // ♻️ Close with opposite order
-	   svc.ShowOrderDeleteExample(ctx, 12345678)            // 🗑 Delete pending order
-	*/
-
-
+	// --- 🧾 improved story streams (pages/chunks) ---
+	if enableHistoryStreams {
+		svc.StreamOrdersHistoryExample(ctx)                   // page-by-page history (30 days)
+		svc.StreamQuoteHistoryExample(ctx, cfg.DefaultSymbol) // candle chunks (90 days)
+	}
 }
-
