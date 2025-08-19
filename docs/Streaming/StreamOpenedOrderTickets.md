@@ -8,13 +8,18 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.StreamOpenedOrderTickets(context.Background())
+// --- Quick use (service wrapper) ---
+// Streams all opened order tickets (positions + pendings); stops after ~30s in demo.
+svc.StreamOpenedOrderTickets(ctx)
 
-// Or directly from MT4Account
-ticketCh, errCh := mt4.OnOpenedOrdersTickets(context.Background(), 1000)
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
+
+// Interval in milliseconds (server polls updates)
+ticketCh, errCh := account.OnOpenedOrdersTickets(ctx, 1000)
 
 fmt.Println("🔄 Streaming opened order tickets...")
 
@@ -32,11 +37,12 @@ for {
         log.Printf("❌ Stream error: %v", err)
         return
 
-    case <-time.After(30 * time.Second):
+    case <-time.After(30 * time.Second): // demo timeout
         fmt.Println("⏱️ Timeout reached.")
         return
     }
 }
+
 ```
 
 ---
