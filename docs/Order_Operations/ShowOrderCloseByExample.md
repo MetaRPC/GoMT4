@@ -8,13 +8,20 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.ShowOrderCloseByExample(context.Background(), 123456, 654321)
+// --- Quick use (service wrapper) ---
+// Closes one order by its opposite order.
+svc.ShowOrderCloseByExample(ctx, 123456, 654321)
 
-// Or directly from MT4Account
-result, err := mt4.OrderCloseBy(context.Background(), 123456, 654321)
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+// ⚠️ This action closes trades — use on demo or with caution.
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+result, err := account.OrderCloseBy(ctx, 123456, 654321)
 if err != nil {
-    log.Fatalf("Error closing by opposite: %v", err)
+    log.Fatalf("❌ OrderCloseBy error: %v", err)
 }
 
 fmt.Printf("Closed by opposite: Profit=%.2f, Price=%.5f, Time: %s\n",
@@ -22,6 +29,7 @@ fmt.Printf("Closed by opposite: Profit=%.2f, Price=%.5f, Time: %s\n",
     result.GetClosePrice(),
     result.GetCloseTime().AsTime().Format("2006-01-02 15:04:05"),
 )
+
 ```
 
 ---
