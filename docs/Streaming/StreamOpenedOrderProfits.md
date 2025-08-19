@@ -1,4 +1,4 @@
-# Streaming Opened Order Profits
+# ⚡ Streaming Opened Order Profits
 
 > **Request:** subscribe to real-time stream of floating profit/loss per open order
 > Starts a streaming channel to monitor floating profit for all active trades.
