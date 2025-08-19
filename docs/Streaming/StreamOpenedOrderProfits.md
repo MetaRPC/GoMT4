@@ -16,7 +16,7 @@ profitCh, errCh := mt4.OnOpenedOrdersProfit(context.Background(), 1000)
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-fmt.Println("\uD83D\uDD04 Streaming order profits...")
+fmt.Println("🔄 Streaming order profits...")
 
 for {
     select {
@@ -59,26 +59,29 @@ func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context)
 | `ctx`        | `context.Context` | For stream lifetime control and cancellation.     |
 | `intervalMs` | `int`             | Polling interval between updates in milliseconds. |
 
-> `intervalMs` is set internally in the wrapper call to 1000 ms by default.
+> In the wrapper, `intervalMs` defaults to **1000 ms**.
 
 ---
 
 ## ⬆️ Output
 
-Stream of `OnOpenedOrdersProfitOrderInfo` objects:
+Stream of per-order profit updates.
+Underlying response: `*pb.OnOpenedOrdersProfitData`
 
-| Field          | Type                 | Description                                 |
-| -------------- | -------------------- | ------------------------------------------- |
-| `Ticket`       | `int32`              | Order ticket ID                             |
-| `Symbol`       | `string`             | Trading symbol (e.g., "EURUSD")             |
-| `Lots`         | `float64`            | Trade volume in lots                        |
-| `Profit`       | `float64`            | Current floating profit/loss                |
-| `OpenPrice`    | `float64`            | Price at which the order was opened         |
-| `CurrentPrice` | `float64`            | Current market price                        |
-| `OpenTime`     | `timestamp`          | Order open time                             |
-| `OrderType`    | `ENUM_ORDER_TYPE_TF` | Type of trade: Buy, Sell, etc.              |
-| `Magic`        | `int32`              | Magic number identifying source or strategy |
-| `Comment`      | `string`             | Custom comment attached to the order        |
+Each update contains entries like `OnOpenedOrdersProfitOrderInfo`:
+
+| Field          | Type                 | Description                      |
+| -------------- | -------------------- | -------------------------------- |
+| `Ticket`       | `int32`              | Order ticket ID.                 |
+| `Symbol`       | `string`             | Trading symbol (e.g., "EURUSD"). |
+| `Lots`         | `float64`            | Trade volume in lots.            |
+| `Profit`       | `float64`            | Current floating profit/loss.    |
+| `OpenPrice`    | `float64`            | Order open price.                |
+| `CurrentPrice` | `float64`            | Current market price.            |
+| `OpenTime`     | `timestamp`          | Order open time.                 |
+| `OrderType`    | `ENUM_ORDER_TYPE_TF` | Trade type.                      |
+| `Magic`        | `int32`              | Strategy/magic number.           |
+| `Comment`      | `string`             | Order comment.                   |
 
 ---
 
@@ -97,12 +100,29 @@ Stream of `OnOpenedOrdersProfitOrderInfo` objects:
 
 ## 🎯 Purpose
 
-This method allows **real-time tracking of floating P/L per open order**.
+Enable **real-time tracking of floating P/L per open order** for dashboards, exposure monitoring, and alerting.
 
-Use cases include:
+---
 
-* Updating per-order PnL widgets in dashboards
-* Monitoring exposure and live risk
-* Alerting systems based on drawdown/profit triggers
+## 🧩 Notes & Tips
 
-Optimized for continuous updates using a polling interval in milliseconds.
+* **Interval trade-off:** Lower `intervalMs` → fresher updates, higher CPU/network use. 500–2000 ms works well for dashboards.
+* **Delta batches:** Updates often include only orders that changed; maintain a map keyed by `Ticket` and apply deltas.
+* **Backpressure:** Always read **both** data and error channels to avoid goroutine leaks.
+* **UI smoothing:** Debounce rendering if bursts arrive at interval boundaries.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Timeout vs cancel:** Your example uses a 30s timeout; prefer explicit `cancel()` for controlled shutdowns.
+* **Ordering:** Do not assume chronological ordering across entries; sort by `Ticket` or timestamp if needed.
+* **Float formatting:** Round only for display; keep raw values for calculations.
+
+---
+
+## 🧪 Testing Suggestions
+
+* **Smoke test:** `intervalMs=1000` for a few minutes; verify steady updates and no leaks.
+* **Burst test:** Open/close several orders quickly; ensure map/delta logic stays consistent.
+* **Shutdown:** Cancel context and assert both channels close/return without blocking.
