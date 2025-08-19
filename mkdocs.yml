@@ -29,9 +29,12 @@ nav:
       - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
       - StreamQuotes: Streaming/StreamQuotes.md
       - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
+      - StreamOrdersHistoryExample: Streaming/StreamOrdersHistoryExample.md
+      - StreamQuoteHistoryExample: Streaming/StreamQuoteHistoryExample.md
   - Guides:
       - CLI Usage: cli_usage.md
       - Beginner Run Guide: Beginner_Run_Guide.md
+      - Your Easy Start: Your_Easy_Start.md
 
 theme:
   name: material
