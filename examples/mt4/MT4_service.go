@@ -1,6 +1,5 @@
 package mt4
 
-
 import (
 	"context"
 	"fmt"
@@ -8,8 +7,6 @@ import (
 	"time"
 
 	pb "git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go"
-
-	
 )
 
 type MT4Service struct {
@@ -19,7 +16,6 @@ type MT4Service struct {
 func NewMT4Service(acc *MT4Account) *MT4Service {
 	return &MT4Service{account: acc}
 }
-
 
 // === 📂 Account Info ===
 
@@ -304,7 +300,6 @@ func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) error 
 		return err
 	}
 
-
 	fmt.Println("📊 Symbol Parameters:")
 	fmt.Printf("• Symbol: %s\n", info.GetSymbolName())
 	fmt.Printf("• Description: %s\n", info.GetSymDescription())
@@ -320,26 +315,22 @@ func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) error 
 	return nil
 }
 
-
 // ShowSymbols prints the available symbols along with their indices.
 //
 // Displays the symbol name and its corresponding index from the SymbolsData response.
 
 func (s *MT4Service) ShowSymbols(ctx context.Context) {
-    data, err := s.account.Symbols(ctx)
-    if err != nil {
-        log.Printf("❌ Symbols error: %v", err)
-        return
-    }
+	data, err := s.account.Symbols(ctx)
+	if err != nil {
+		log.Printf("❌ Symbols error: %v", err)
+		return
+	}
 
-    
-    fmt.Println("=== Available Symbols ===")
-    for _, symbolInfo := range data.GetSymbolNameInfos() { 
-        fmt.Printf("Symbol: %s, Index: %d\n", symbolInfo.GetSymbolName(), symbolInfo.GetSymbolIndex())
-    }
+	fmt.Println("=== Available Symbols ===")
+	for _, symbolInfo := range data.GetSymbolNameInfos() {
+		fmt.Printf("Symbol: %s, Index: %d\n", symbolInfo.GetSymbolName(), symbolInfo.GetSymbolIndex())
+	}
 }
-
-
 
 // ShowTickValues prints tick value, tick size, and contract size for each symbol.
 //
@@ -370,11 +361,9 @@ func (s *MT4Service) ShowTickValues(ctx context.Context, symbols []string) {
 func (s *MT4Service) StreamQuotes(ctx context.Context) {
 	symbols := []string{"EURUSD", "GBPUSD"}
 
-	
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	
 	tickCh, errCh := s.account.OnSymbolTick(ctx, symbols)
 
 	fmt.Println("🔄 Streaming ticks...")
@@ -405,10 +394,10 @@ func (s *MT4Service) StreamQuotes(ctx context.Context) {
 // symbol, and current profit. Automatically stops on stream timeout or error.
 
 func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context) {
-	
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-    profitCh, errCh := s.account.OnOpenedOrdersProfit(ctx, 1000)
+	profitCh, errCh := s.account.OnOpenedOrdersProfit(ctx, 1000)
 
 	fmt.Println("🔄 Streaming order profits...")
 
@@ -442,10 +431,10 @@ func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context) {
 // Prints current ticket list on each update.
 
 func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context) {
-	
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-    ticketCh, errCh := s.account.OnOpenedOrdersTickets(ctx, 1000)
+	ticketCh, errCh := s.account.OnOpenedOrdersTickets(ctx, 1000)
 
 	fmt.Println("🔄 Streaming opened order tickets...")
 	for {
@@ -456,7 +445,7 @@ func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context) {
 				return
 			}
 			tix := append(pkt.PositionTickets, pkt.PendingOrderTickets...)
-            fmt.Printf("[Tickets] %d open tickets: %v\n", len(tix), tix)
+			fmt.Printf("[Tickets] %d open tickets: %v\n", len(tix), tix)
 
 		case err := <-errCh:
 			log.Printf("❌ Stream error: %v", err)
@@ -473,11 +462,10 @@ func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context) {
 // Prints order info on each trade update.
 
 func (s *MT4Service) StreamTradeUpdates(ctx context.Context) {
-	
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	
 	tradeCh, errCh := s.account.OnTrade(ctx)
 
 	fmt.Println("🔄 Streaming trade updates...")
@@ -513,6 +501,163 @@ func (s *MT4Service) StreamTradeUpdates(ctx context.Context) {
 	}
 }
 
+// streamorderhistory — a page-by-page stream of the order history.
+// Proxies the OrdersHistoryStream from MT4Account.
+func (s *MT4Service) StreamOrdersHistory(
+	ctx context.Context,
+	sortType pb.EnumOrderHistorySortType,
+	from, to *time.Time,
+	pageSize int32,
+) (<-chan *pb.OrdersHistoryData, <-chan error) {
+	return s.account.OrdersHistoryStream(ctx, sortType, from, to, pageSize)
+}
+
+// StreamQuoteHistory — gives the history of quotes in chunks of time.
+// Proxies the QuoteHistoryStream from MT4Account.
+func (s *MT4Service) StreamQuoteHistory(
+	ctx context.Context,
+	symbol string,
+	timeframe pb.ENUM_QUOTE_HISTORY_TIMEFRAME,
+	from, to time.Time,
+	chunk time.Duration,
+) (<-chan *pb.QuoteHistoryData, <-chan error) {
+	return s.account.QuoteHistoryStream(ctx, symbol, timeframe, from, to, chunk)
+}
+
+// StreamOrdersHistoryExample streams account order history as paginated pages
+// for a fixed demo window (last 30 days). It uses the high-level service
+// wrapper s.StreamOrdersHistory which returns two channels:
+//   - pagesCh: emits *pb.OrdersHistoryData (one page at a time)
+//   - errCh:   emits terminal/stream errors
+//
+// Demo behavior:
+//   - Sorts by close time (DESC) so the most recent trades come first.
+//   - Uses a page size of 200 orders per page.
+//   - Stops after ~30 seconds via a demo timeout (time.After).
+//   - Prints each order with type, ticket, symbol and realized PnL.
+//
+// Production tips:
+//   - Replace the fixed date range with user input or config.
+//   - Remove the demo timeout and control lifetime via ctx (cancel).
+//   - Batch/process pages off the main goroutine if heavy work is needed.
+//   - Always read errCh to avoid goroutine leaks.
+func (s *MT4Service) StreamOrdersHistoryExample(ctx context.Context) {
+	// Define the historical window for the demo: 30 days back from now.
+	from := time.Now().AddDate(0, 0, -30)
+	to := time.Now()
+
+	// Open the paginated history stream via the service wrapper.
+	// Sort: by close time descending; Page size: 200.
+	pagesCh, errCh := s.StreamOrdersHistory(
+		ctx,
+		pb.EnumOrderHistorySortType_HISTORY_SORT_BY_CLOSE_TIME_DESC,
+		&from, &to,
+		200, // page size
+	)
+
+	fmt.Println("📥 Streaming orders history (last 30 days)...")
+
+	for {
+		select {
+		case page, ok := <-pagesCh:
+			if !ok {
+				// pagesCh closed: the stream finished gracefully.
+				fmt.Println("✅ Orders history stream finished.")
+				return
+			}
+
+			// Iterate over a single page of orders and print key fields.
+			for _, order := range page.GetOrdersInfo() {
+				fmt.Printf("[HIST] %s | Ticket: %d | %s | PnL: %.2f\n",
+					order.GetOrderType(),
+					order.GetTicket(),
+					order.GetSymbol(),
+					order.GetProfit(),
+				)
+			}
+
+		case err := <-errCh:
+			// Any transport/API error during streaming comes here.
+			// In production, consider retry/backoff or user notification.
+			log.Printf("❌ Orders history stream error: %v", err)
+			return
+
+		case <-time.After(30 * time.Second):
+			// Demo timeout to keep examples short and safe.
+			// In production, remove this and rely on ctx cancellation.
+			fmt.Println("⏱ Timeout reached.")
+			return
+		}
+	}
+}
+
+// StreamQuoteHistoryExample streams historical OHLC bars in fixed-size time chunks
+// for a demo window (last 90 days). It uses the service wrapper s.StreamQuoteHistory
+// which returns two channels:
+//   - barsCh: emits *pb.QuoteHistoryData (one chunk/batch at a time)
+//   - errCh:  emits terminal/stream errors
+//
+// Demo behavior:
+//   - Timeframe: H1 (hourly bars).
+//   - Range: last 90 days from now.
+//   - Chunking: 7 days per batch (weekly chunks).
+//   - Stops after ~30 seconds via a demo timeout.
+//   - Prints time, Open and Close for each bar.
+//
+// Production tips:
+//   - Replace the fixed date range and chunk size with user input/config.
+//   - Remove the demo timeout; control lifetime via ctx (cancel).
+//   - If you need strict ordering, sort batches by time before processing.
+//   - Offload heavy processing to worker goroutines; never block the reader loop.
+func (s *MT4Service) StreamQuoteHistoryExample(ctx context.Context, symbol string) {
+	// Define the historical window for the demo: 90 days back from now.
+	from := time.Now().AddDate(0, 0, -90)
+	to := time.Now()
+
+	// Start the time-chunked history stream:
+	// - timeframe: H1
+	// - chunk: 1 week per emitted batch
+	barsCh, errCh := s.StreamQuoteHistory(
+		ctx,
+		symbol,
+		pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_H1,
+		from, to,
+		7*24*time.Hour, // chunks per week
+	)
+
+	fmt.Printf("📊 Streaming quote history for %s...\n", symbol)
+
+	for {
+		select {
+		case batch, ok := <-barsCh:
+			if !ok {
+				// barsCh closed: the stream finished gracefully.
+				fmt.Println("✅ Quote history stream finished.")
+				return
+			}
+
+			// Iterate all bars in the current batch and print key fields.
+			for _, c := range batch.GetHistoricalQuotes() {
+				fmt.Printf("[%s] O: %.5f C: %.5f\n",
+					c.GetTime().AsTime().Format("2006-01-02 15:04:05"),
+					c.GetOpen(), c.GetClose(),
+				)
+			}
+
+		case err := <-errCh:
+			// Any transport/API error during streaming comes here.
+			// Consider retry/backoff or surfacing to the user in production.
+			log.Printf("❌ Quote history stream error: %v", err)
+			return
+
+		case <-time.After(30 * time.Second):
+			// Demo timeout to keep examples short and safe.
+			// In production, remove this and rely on ctx cancellation.
+			fmt.Println("⏱ Timeout reached.")
+			return
+		}
+	}
+}
 
 func tradeModeToString(mode pb.SP_ENUM_SYMBOL_TRADE_MODE) string {
 	switch mode {
