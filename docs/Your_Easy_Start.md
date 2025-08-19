@@ -1,4 +1,4 @@
-# Safe-by-Default Examples & Feature Toggles
+# 🛡️ Safe-by-Default Examples & Feature Toggles
 
 > Run the examples **safely by default**. Turn on the powerful (but potentially dangerous) trading calls only when you explicitly decide to.
 
