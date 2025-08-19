@@ -18,7 +18,7 @@ nav:
       - OpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
       - OpenedOrders: Order_Operations/ShowOpenedOrders.md
       - OrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
-      - OrderCloseExample: Order_Operations/ShowOrderCloseExample.md
+      - OrderCloseExample: Order_Operations/OrderCloseExample.md
       - OrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
       - OrderModifyExample: Order_Operations/ShowOrderModifyExample.md
       - OrderSendExample: Order_Operations/ShowOrderSendExample.md
