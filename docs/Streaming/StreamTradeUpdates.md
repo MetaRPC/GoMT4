@@ -8,26 +8,51 @@
 ### Code Example
 
 ```go
-// Using service wrapper
-service.StreamTradeUpdates(context.Background())
+// --- Quick use (service wrapper) ---
+// Streams trade events (new orders, updates, closes). Stops after ~30s in demo.
+svc.StreamTradeUpdates(ctx)
 
-// Or directly from MT4Account
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-stream, err := mt4.OnTrade(ctx)
+tradeCh, errCh := account.OnTrade(ctx)
 if err != nil {
     log.Fatalf("Stream error: %v", err)
 }
 
-fmt.Println("\uD83D\uDCCA Streaming trade updates...")
-for trade := range stream {
-    fmt.Printf("Trade ticket: %d, Symbol: %s, Profit: %.2f\n",
-        trade.TradeInfo.Ticket,
-        trade.TradeInfo.Symbol,
-        trade.TradeInfo.Profit)
-    break // for demo
+fmt.Println("📊 Streaming trade updates...")
+for {
+    select {
+    case trade, ok := <-tradeCh:
+        if !ok {
+            fmt.Println("✅ Trade stream ended.")
+            return
+        }
+
+        info := trade.EventData
+        if info != nil && len(info.NewOrders) > 0 {
+            order := info.NewOrders[0]
+            fmt.Printf("[Trade] Ticket: %d | Symbol: %s | Type: %v | Volume: %.2f | Profit: %.2f\n",
+                order.Ticket,
+                order.Symbol,
+                order.Type,
+                order.Lots,
+                order.OrderProfit)
+        }
+
+    case err := <-errCh:
+        log.Printf("❌ Stream error: %v", err)
+        return
+
+    case <-time.After(30 * time.Second): // demo timeout
+        fmt.Println("⏱️ Timeout reached.")
+        return
+    }
 }
+
 ```
 
 ---
