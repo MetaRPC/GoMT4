@@ -18,7 +18,7 @@ tickCh, errCh := mt4.OnSymbolTick(context.Background(), symbols)
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()
 
-fmt.Println("\uD83D\uDD04 Streaming ticks...")
+fmt.Println("🔄 Streaming ticks...")
 for {
     select {
     case tick, ok := <-tickCh:
@@ -59,13 +59,13 @@ func (s *MT4Service) StreamQuotes(ctx context.Context)
 | ----- | ----------------- | ------------------------------------------ |
 | `ctx` | `context.Context` | Controls stream lifetime and cancellation. |
 
-> The symbol list is hardcoded in the method (`EURUSD`, `GBPUSD`). Modify as needed.
+> The wrapper uses a predefined symbol list (e.g., `EURUSD`, `GBPUSD`). Adjust as needed.
 
 ---
 
 ## ⬆️ Output
 
-Returns a stream of **tick updates** for each subscribed symbol:
+Stream of `*pb.OnSymbolTickData` packets. Each packet may contain `SymbolTick` with:
 
 | Field    | Type        | Description            |
 | -------- | ----------- | ---------------------- |
@@ -78,11 +78,21 @@ Returns a stream of **tick updates** for each subscribed symbol:
 
 ## 🎯 Purpose
 
-Use this method to receive real-time market data continuously for selected symbols.
-Ideal for:
+Receive continuous **real-time market data** for selected symbols — ideal for live dashboards, widgets, and spread tracking.
 
-* Building live dashboards
-* Updating price widgets in trading UIs
-* Tracking bid/ask spreads and reacting to ticks
+---
 
-Streams can be combined with context timeouts or cancellation logic for graceful control.
+## 🧩 Notes & Tips
+
+* **Per-symbol cache:** Keep a `map[string]Quote]` of last values and update only on change to reduce UI churn.
+* **Both channels:** Always consume **data and error** channels to avoid leaks.
+* **Display precision:** Use symbol `Digits` (from `SymbolParams`) for formatting; keep raw doubles for math.
+
+---
+
+## ⚠️ Pitfalls
+
+* **Nil checks:** `SymbolTick` can be nil in a packet — guard before reading fields (as in example).
+* **Ordering:** Do not assume packets are strictly chronological across symbols.
+* **Bursts:** Rapid bursts can overwhelm rendering; debounce or batch prints.
+
