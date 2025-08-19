@@ -8,14 +8,22 @@
 ### Code Example
 
 ```go
-// Using service wrapper
+// --- Quick use (service wrapper) ---
+// Prints tick value/size/contract size for given symbols.
 symbols := []string{"EURUSD", "XAUUSD"}
-service.ShowTickValues(context.Background(), symbols)
+svc.ShowTickValues(ctx, symbols)
 
-// Or directly from MT4Account
-data, err := mt4.TickValueWithSize(context.Background(), symbols)
+// --- Low-level (direct account call) ---
+// Preconditions: account is already connected.
+
+symbols := []string{"EURUSD", "XAUUSD"}
+
+ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+defer cancel()
+
+data, err := account.TickValueWithSize(ctx, symbols)
 if err != nil {
-    log.Fatalf("Error retrieving tick values: %v", err)
+    log.Fatalf("❌ TickValueWithSize error: %v", err)
 }
 
 for _, info := range data.Infos {
