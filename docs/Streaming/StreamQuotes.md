@@ -1,4 +1,4 @@
-# Streaming Real-Time Quotes
+# 🧊 Streaming Real-Time Quotes
 
 > **Request:** subscribe to live tick updates for predefined symbols
 > Continuously streams the latest bid/ask prices and timestamps for each symbol.
