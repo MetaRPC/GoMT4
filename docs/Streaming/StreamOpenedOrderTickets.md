@@ -1,4 +1,4 @@
-# Streaming Opened Order Tickets
+# ✨ Streaming Opened Order Tickets
 
 > **Request:** subscribe to stream of currently open order ticket numbers
 > Returns only the **ticket IDs** of all open orders as they change in real time.
