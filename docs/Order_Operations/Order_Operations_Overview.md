@@ -22,7 +22,7 @@ It’s the practical toolkit for working with active and historical trades.
 * [ShowOrderCloseByExample.md](ShowOrderCloseByExample.md)
   Demonstrates closing one order against another (`CloseBy`).
 
-* [OrderCloseExample](OrderCloseExample.md)
+* [ShowOrderCloseExample](OrderCloseExample.md)
   Standard order close example by ticket.
 
 * [ShowOrderDeleteExample.md](ShowOrderDeleteExample.md)
