@@ -7,26 +7,30 @@ It’s the practical toolkit for working with active and historical trades.
 
 ## 📂 Methods in this Section
 
-* [ShowOpenedOrders.md](ShowOpenedOrders.md)
-  Get full details of all currently opened orders.
+* [ShowOrderSendExample.md](ShowOrderSendExample.md)  
+  Example of placing a new order.
 
-* [ShowOpenedOrderTickets.md](ShowOpenedOrderTickets.md)
-  Stream only the **ticket IDs** of active orders.
-
-* [ShowOrdersHistory.md](ShowOrdersHistory.md)
-  Retrieve closed trades within a selected date range.
-
-* [ShowOrderModifyExample.md](ShowOrderModifyExample.md)
+* [ShowOrderModifyExample.md](ShowOrderModifyExample.md)  
   Example of updating SL/TP or other order parameters.
 
-* [ShowOrderCloseByExample.md](ShowOrderCloseByExample.md)
-  Demonstrates closing one order against another (`CloseBy`).
+* [ShowOpenedOrders.md](ShowOpenedOrders.md)  
+  Get full details of all currently opened orders.
 
-* [ShowOrderCloseExample](OrderCloseExample.md)
+* [ShowOpenedOrderTickets.md](ShowOpenedOrderTickets.md)  
+  Stream only the **ticket IDs** of active orders.
+
+* [ShowOrderCloseExample.md](ShowOrderCloseExample.md)  
   Standard order close example by ticket.
 
-* [ShowOrderDeleteExample.md](ShowOrderDeleteExample.md)
+* [ShowOrderCloseByExample.md](ShowOrderCloseByExample.md)  
+  Demonstrates closing one order against another (`CloseBy`).
+
+* [ShowOrderDeleteExample.md](ShowOrderDeleteExample.md)  
   Example of deleting a pending order.
+
+* [ShowOrdersHistory.md](ShowOrdersHistory.md)  
+  Retrieve closed trades within a selected date range.
+
 
 ---
 
