@@ -1,7 +1,7 @@
 site_name: MetaRPC MT4 Golang Documentation
 
 nav:
-  - Home: Introduction.md
+  - Home: GoMT4_Documentation_Skeleton.md
   - Account:
       - Show Account Summary: Account/ShowAccountSummary.md
   - Market Info:
