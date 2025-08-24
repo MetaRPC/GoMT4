@@ -38,10 +38,11 @@ This documentation will help you:
 * [Show Opened Orders](Order_Operations/ShowOpenedOrders.md)
 * [Show Opened Order Tickets](Order_Operations/ShowOpenedOrderTickets.md)
 * [Show Orders History](Order_Operations/ShowOrdersHistory.md)
-* [Order Close Example](Order_Operations/ShowOrderCloseExample.md)
-* [Order Close By Example](Order_Operations/ShowOrderCloseByExample.md)
-* [Order Delete Example](Order_Operations/ShowOrderDeleteExample.md)
-* [Order Modify Example](Order_Operations/ShowOrderModifyExample.md)
+* [Show Order Close Example](Order_Operations/ShowOrderCloseExample.md)
+* [Show Order Close By Example](Order_Operations/ShowOrderCloseByExample.md)
+* [Show Order Delete Example](Order_Operations/ShowOrderDeleteExample.md)
+* [Show Order Modify Example](Order_Operations/ShowOrderModifyExample.md)
+
 
 ---
 
