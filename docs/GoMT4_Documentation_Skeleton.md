@@ -42,8 +42,6 @@
 * Subscribe to quotes.
 * Place/close an order in a safe way.
 
-> **Note:** Keep comments in code samples **in English** (team preference).
-
 ---
 
 ## Setup & Environment
@@ -63,8 +61,6 @@
 3. Configure MT4 terminal path and credentials via `.env`.
 4. Open VS Code; provide `launch.json` for debugging.
 
-> TODO: add exact commands and screenshots.
-
 ---
 
 ## Architecture & Data Flow
@@ -76,7 +72,6 @@
 * Streams: Quotes, Orders; channels and backpressure.
 * Where retries/backoff happen.
 
-> TODO: add sequence diagram and component diagram.
 
 ---
 
@@ -125,7 +120,6 @@ for attempt := 0; ; attempt++ {
 * **“Digits mismatch”** → Use symbol `Digits` to format prices.
 * **“No connection / timeouts”** → Firewall/UAC, terminal path, server ping.
 
-> TODO: expand with real error codes and checklists.
 
 ---
 
@@ -148,7 +142,6 @@ for attempt := 0; ; attempt++ {
 
 * Paginate history; write batched inserts; idempotency tips.
 
-> TODO: real code snippets with comments.
 
 ---
 
@@ -204,19 +197,3 @@ for attempt := 0; ; attempt++ {
 * Supported MT4 builds; OS notes.
 * Known limitations and planned items (e.g., history paging).
 
----
-
-## Appendix: Project Map (to fill from your file tree)
-
-```
-<repo-root>/
-  go.work
-  examples/
-  server/
-  client/
-  proto/
-  tools/
-  docs/
-```
-
-> Paste your actual tree here; we’ll map sections to files and add deep links.
