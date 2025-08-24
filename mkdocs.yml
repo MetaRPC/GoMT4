@@ -2,8 +2,24 @@ site_name: MetaRPC MT4 Golang Documentation
 
 nav:
   - Home: GoMT4_Documentation_Skeleton.md
+
+  - Guides:
+      - Introduction: Introduction.md
+      - Your Easy Start: Your_Easy_Start.md
+      - Beginner Run Guide: Beginner_Run_Guide.md
+      - Setup & Environment: setup.md
+      - Architecture & Data Flow: Architecture_DataFlow.md
+      - Reliability (Timeouts, Reconnects, Backoff): ReTimeouts_Reconnects_Backoff.md
+      - Troubleshooting & FAQ: Troubleshooting_FAQ.md
+      - Performance Notes: Performance_Notes.md
+      - Security & Secrets: Security_Secrets.md
+      - Observability (Logs & Metrics): Observability.md
+      - Glossary (MT4 Terms): Glossary.md
+      - CLI Usage (Playground): cli_usage.md
+
   - Account:
       - Show Account Summary: Account/ShowAccountSummary.md
+
   - Market Info:
       - Overview: Market_Info/Market_Info_Overview.md
       - AllSymbols: Market_Info/ShowAllSymbols.md
@@ -13,6 +29,7 @@ nav:
       - SymbolParams: Market_Info/ShowSymbolParams.md
       - Symbols: Market_Info/ShowSymbols.md
       - TickValues: Market_Info/ShowTickValues.md
+
   - Order Operations:
       - Overview: Order_Operations/Order_Operations_Overview.md
       - OpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
@@ -23,6 +40,7 @@ nav:
       - OrderModifyExample: Order_Operations/ShowOrderModifyExample.md
       - OrderSendExample: Order_Operations/ShowOrderSendExample.md
       - OrdersHistory: Order_Operations/ShowOrdersHistory.md
+
   - Streaming:
       - Overview: Streaming/Streaming_Overview.md
       - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
@@ -31,23 +49,13 @@ nav:
       - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
       - StreamOrdersHistoryExample: Streaming/StreamOrdersHistoryExample.md
       - StreamQuoteHistoryExample: Streaming/StreamQuoteHistoryExample.md
-  - Guides:
-      - Beginner Run Guide: Beginner_Run_Guide.md
-      - Your Easy Start: Your_Easy_Start.md
-      - CLI Usage: cli_usage.md
-      - Setup & Environment: setup.md
-      - Architecture & Data Flow: Architecture_DataFlow.md
-      - Reliability: ReTimeouts_Reconnects_Backoff.md
-      - Troubleshooting & FAQ: Troubleshooting_FAQ.md
-      - Performance Notes: Performance_Notes.md
-      - Security & Secrets: Security_Secrets.md
-      - Observability (Logs & Metrics): Observability.md
-      - Glossary (MT4 Terms): Glossary.md
+
   - API Reference:
-      - Overview: 'API Reference/Overview.md'
-      - Enums: 'API Reference/Enums.md'
-      - Messages: 'API Reference/Messages.md'
-      - Streaming: 'API Reference/Streaming.md'
+      - Overview: "API Reference/Overview.md"
+      - Enums: "API Reference/Enums.md"
+      - Messages: "API Reference/Messages.md"
+      - Streaming: "API Reference/Streaming.md"
+
   - Cookbook:
       - Account:
           - Show Account Summary: Cookbook/Account/AccountSummary.md
