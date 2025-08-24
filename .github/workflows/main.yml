@@ -1,31 +1,63 @@
-name: Deploy MkDocs
+name: ci
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master, main ]
   workflow_dispatch:
 
 permissions:
-  contents: write   # gh-deploy делает пуш в gh-pages
+  contents: write   # mkdocs gh-deploy пушит в gh-pages
 
 jobs:
-  build-deploy:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
+      - name: Cache MkDocs Dependencies (weekly key)
+        run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+
       - name: Install MkDocs
         run: pip install mkdocs-material pymdown-extensions
 
-      # опционально, чтобы заранее ловить битые пути
+      
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install godoc2md (optional)
+        continue-on-error: true
+        run: go install github.com/davecheney/godoc2md@latest
+
+      - name: Generate Go API docs (optional)
+        continue-on-error: true
+        run: |
+          mkdir -p docs
+          ~/go/bin/godoc2md mt4go > docs/api.md || echo "skip godoc2md"
+
+      
       - name: Build (strict)
         run: mkdocs build --strict
 
-      - name: Deploy to GitHub Pages (gh-pages)
+      - name: Deploy Docs to GitHub Pages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mkdocs gh-deploy --force --clean --remote-branch gh-pages
