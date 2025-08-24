@@ -23,7 +23,6 @@
 * [Security & Secrets](#security--secrets)
 * [Observability (Logs & Metrics)](#observability-logs--metrics)
 * [Glossary (MT4 Terms)](#glossary-mt4-terms)
-* [Roadmap & Compatibility](#roadmap--compatibility)
 
 ---
 
@@ -190,10 +189,4 @@ for attempt := 0; ; attempt++ {
 * Digits, Point, TickSize, TickValue, Lot, ContractSize.
 * Hedging vs Netting (note if MT5 differences matter).
 
----
-
-## Roadmap & Compatibility
-
-* Supported MT4 builds; OS notes.
-* Known limitations and planned items (e.g., history paging).
 
