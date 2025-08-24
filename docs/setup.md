@@ -195,10 +195,3 @@ Create `.vscode/launch.json` with:
 * **Symbol not found (`EURUSD`)** → broker may use suffix (e.g. `EURUSD.m`); ensure the symbol is visible in MT4.
 * **Volume/price rejected** → always round using symbol `Digits` and `LotStep`.
 
----
-
-## 11) Next steps
-
-* Continue to **Architecture & Data Flow** (`docs/architecture.md`).
-* Add **Troubleshooting & FAQ** with MT4 specifics.
-* Use the **Cookbook** for practical code recipes.
