@@ -85,11 +85,21 @@ Tune them for your environment (home Wi‑Fi vs VPS/LAN). Timeouts in the health
 
 ## 🧰 Usage example (service layer)
 
+⚠️ Note: Your base project does not include a method named `EnsureHealthy`. This section is shown only as a **convenience wrapper idea** — a way to combine the health‑check calls (`AccountSummary` + `Quote`) into one place. You may add such a method if you want a single entry point to verify that MT4 is ready.
+
+Why useful?
+
+* Before running strategies or bots, you can call `EnsureHealthy` to quickly confirm the terminal is connected and symbols are available.
+* It saves copy‑pasting the same two checks (`AccountSummary` + `Quote`) everywhere.
+* If something is wrong (wrong server, hidden symbol, no connection) you fail fast with a clear error.
+
+Example implementation:
+
 ```go
 func (s *MT4Service) EnsureHealthy(ctx context.Context) error {
     // 1) Summary probe
     if err := HealthCheck(ctx, s.account); err != nil {
-        return fmt.Errorf("health summary failed: %w", err)
+        return fmt.Errorf("health summary failed: %w", err)")
     }
 
     // 2) Quote probe for default symbol
