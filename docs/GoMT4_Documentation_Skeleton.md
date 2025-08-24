@@ -1,88 +1,77 @@
 # GoMT4 Documentation – Skeleton
 
-> Version: v0 (starter scaffold). Goal: fill step‑by‑step with clear, beginner‑friendly explanations and runnable snippets.
+> Version: v0 (starter scaffold). Goal: fill step-by-step with clear, beginner-friendly explanations and runnable snippets.
 
 ---
 
 ## 📑 Table of Contents
 
-* [Introduction](Introduction.md)
+- [Introduction](Introduction.md)
+- [Setup & Environment](setup.md)
+- [Beginner Run Guide](Beginner_Run_Guide.md)
+- [Your Easy Start](Your_Easy_Start.md)
+- [Architecture & Data Flow](Architecture_DataFlow.md)
+- [Reliability: Timeouts, Reconnects, Backoff](ReTimeouts_Reconnects_Backoff.md)
+- [Troubleshooting & FAQ](Troubleshooting_FAQ.md)
+- [Cookbook (Recipes)](Cookbook/index.md)
 
-* [Setup & Environment](setup.md)
+  **Account**
+  - [Show Account Summary](Cookbook/Account/AccountSummary.md)
+  - [Stream Opened Order Profits](Cookbook/Account/StreamOpenedOrderProfits.md)
 
-* [Beginner Run Guide](Beginner_Run_Guide.md)
+  **Market Info**
+  - [Get Quote](Cookbook/Market_Info/GetQuote.md)
+  - [Get Multiple Quotes](Cookbook/Market_Info/GetMultipleQuotes.md)
+  - [Stream Quotes](Cookbook/Market_Info/StreamQuotes.md)
+  - [Symbol Params](Cookbook/Market_Info/SymbolParams.md)
 
-* [Your Easy Start](Your_Easy_Start.md)
+  **Orders**
+  - [Place Market Order](Cookbook/Orders/PlaceMarketOrder.md)
+  - [Place Pending Order](Cookbook/Orders/PlacePendingOrder.md)
+  - [Modify Order](Cookbook/Orders/ModifyOrder.md)
+  - [Close Order](Cookbook/Orders/CloseOrder.md)
+  - [Close By Orders](Cookbook/Orders/CloseByOrders.md)
+  - [Delete Pending](Cookbook/Orders/DeletePending.md)
+  - [History Orders](Cookbook/Orders/HistoryOrders.md)
 
-* [Architecture & Data Flow](Architecture_DataFlow.md)
+  **Reliability & Connection**
+  - [Handle Reconnect](Cookbook/Reliability_Connection/HandleReconnect.md)
+  - [Unary Retries](Cookbook/Reliability_Connection/UnaryRetries.md)
+  - [Health Check](Cookbook/Reliability_Connection/HealthCheck.md)
 
-* [Reliability: Timeouts, Reconnects, Backoff](ReTimeouts_Reconnects_Backoff.md)
+  **Utils & Helpers**
+  - [Round Volume/Price](Cookbook/Utils_Helpers/RoundVolumePrice.md)
+  - [Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md)
+  - [Config Example](Cookbook/Utils_Helpers/ConfigExample.md)
 
-* [Troubleshooting & FAQ](Troubleshooting_FAQ.md)
-
-* [Cookbook (Recipes)](Cookbook/)
-
-  * Account
-
-    * [Show Account Summary](Cookbook/Account/AccountSummary.md)
-    * [Stream Opened Order Profits](Cookbook/Account/StreamOpenedOrderProfits.md)
-  * Market Info
-
-    * [Get Symbol Params](Cookbook/Market_Info/SymbolParams.md)
-    * [History Orders](Cookbook/Market_Info/HistoryOrders.md)
-  * Orders
-
-    * [Place Market Order](Cookbook/Orders/PlaceMarketOrder.md)
-    * [Place Pending Order](Cookbook/Orders/PlacePendingOrder.md)
-    * [Modify Order](Cookbook/Orders/ModifyOrder.md)
-    * [Close Order](Cookbook/Orders/CloseOrder.md)
-    * [Close By Orders](Cookbook/Orders/CloseByOrders.md)
-    * [Delete Pending](Cookbook/Orders/DeletePending.md)
-    * [History Orders](Cookbook/Orders/HistoryOrders.md)
-  * Reliability & Connection
-
-    * [Handle Reconnect](Cookbook/Reliability_Connection/HandleReconnect.md)
-    * [Unary Retries](Cookbook/Reliability_Connection/UnaryRetries.md)
-    * [Health Check](Cookbook/Reliability_Connection/HealthCheck.md)
-  * Utils & Helpers
-
-    * [Round Volume/Price](Cookbook/Utils_Helpers/RoundVolumePrice.md)
-    * [Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md)
-    * [Config Example](Cookbook/Utils_Helpers/ConfigExample.md)
-
-* [CLI Usage (Playground)](cli_usage.md)
-
-* [API Reference (Types & Enums)](API%20Reference/Overview.md)
-
-  * [Enums](API%20Reference/Enums.md)
-  * [Messages](API%20Reference/Messages.md)
-  * [Streaming](API%20Reference/Streaming.md)
-
-* [Performance Notes](Performance_Notes.md)
-
-* [Security & Secrets](Security_Secrets.md)
-
-* [Observability (Logs & Metrics)](Observability.md)
-
-* [Glossary (MT4 Terms)](Glossary.md)
-
+- [CLI Usage (Playground)](cli_usage.md)
+- [API Reference (Types & Enums)](API%20Reference/Overview.md)
+  - [Enums](API%20Reference/Enums.md)
+  - [Messages](API%20Reference/Messages.md)
+  - [Streaming](API%20Reference/Streaming.md)
+- [Performance Notes](Performance_Notes.md)
+- [Security & Secrets](Security_Secrets.md)
+- [Observability (Logs & Metrics)](Observability.md)
+- [Glossary (MT4 Terms)](Glossary.md)
 
 ---
 
 ## Introduction
 
-**What is GoMT4?**
+**What is GoMT4?**  
+Small, pragmatic bridge between **MT4 Terminal** and your **Go** code via gRPC.
 
-* Short description of the project and its purpose.
-* Who is it for: beginners, algo devs, ops.
-* Quick links: Getting Started, CLI, Example app.
+**Who is it for?**  
+Beginners, algo developers, ops teams who need a scriptable MT4 integration.
 
-**Outcomes after reading:**
+**After reading you can:**
+- Run a local demo.
+- Connect to MT4.
+- Subscribe to quotes.
+- Place & close an order safely.
 
-* Run a local demo.
-* Connect to a terminal.
-* Subscribe to quotes.
-* Place/close an order in a safe way.
+Quick links:  
+👉 [Your Easy Start](Your_Easy_Start.md) · 👉 [Beginner Run Guide](Beginner_Run_Guide.md) · 👉 [CLI Usage](cli_usage.md)
 
 ---
 
@@ -91,145 +80,118 @@
 **Goal:** Run everything on Windows with MT4 installed.
 
 ### Prerequisites
+- Windows 10/11, MT4 Terminal.
+- Go ≥ 1.21.
+- (Optional) VS Code + Go extension.
 
-* Windows 10/11, MT4 Terminal installed.
-* Go ≥ 1.21, protoc + gRPC plugins.
-* VS Code (recommended) with Go extension.
-
-### Install Steps (draft)
-
-1. Install Go and protoc.
-2. Clone repo and run `go mod tidy` in modules.
-3. Configure MT4 terminal path and credentials via `.env`.
-4. Open VS Code; provide `launch.json` for debugging.
+### Install (draft)
+1. Clone the repo, run `go mod tidy` in `examples/`.
+2. Configure credentials (see [Config Example](Cookbook/Utils_Helpers/ConfigExample.md)).
+3. Open in VS Code and launch the debug profile.
 
 ---
 
 ## Architecture & Data Flow
 
-**Goal:** Make the system non‑magical.
+Make the system non-magical:
+- MT4 Terminal ⇄ **GoMT4 gRPC server** ⇄ client code.
+- Lifecycles: connect → use → disconnect.
+- Streams: Quotes, Orders; buffering & backpressure.
+- Where retries/backoff kick in.
 
-* Diagram: MT4 Terminal ⇄ gRPC server ⇄ Go client(s).
-* Lifecycles: connect → use → disconnect.
-* Streams: Quotes, Orders; channels and backpressure.
-* Where retries/backoff happen.
-
+See details: [Architecture & Data Flow](Architecture_DataFlow.md)
 
 ---
 
 ## Reliability: Timeouts, Reconnects, Backoff
 
-**Guidelines:**
+- `context.WithTimeout` for unary calls (2–5s baseline).
+- Treat `io.EOF` as transient on streams; reconnect with jitter.
+- Ensure cancelation closes goroutines.
+- Don’t leak streams; add health checks.
 
-* `context.WithTimeout` for unary calls (2–5s baseline).
-* Treat `io.EOF` as transient on streams; reconnect with jitter (±250ms).
-* Cancel path wiring: context cancellation closes goroutines.
-* Avoid leaking streams; health checks.
-
-**Code patterns:**
-
-```go
-// Pseudocode for unary with timeout
-ctx, cancel := context.WithTimeout(parent, 3*time.Second)
-defer cancel()
-resp, err := client.Do(ctx, req)
-// handle err
-```
-
-```go
-// Stream reconnection loop (outline)
-for attempt := 0; ; attempt++ {
-  stream, err := client.Stream(ctx, req)
-  if err != nil { backoff(attempt); continue }
-  for {
-    msg, err := stream.Recv()
-    if err == io.EOF || isTransient(err) {
-      backoff(attempt)
-      break // reconnect
-    }
-    if err != nil { return err }
-    handle(msg)
-  }
-}
-```
+See recipes:
+- [Handle Reconnect](Cookbook/Reliability_Connection/HandleReconnect.md)
+- [Unary Retries](Cookbook/Reliability_Connection/UnaryRetries.md)
+- [Health Check](Cookbook/Reliability_Connection/HealthCheck.md)
 
 ---
 
 ## Troubleshooting & FAQ
 
-* **“Symbol not found EURUSD”** → Broker suffix: try `EURUSD.m`.
-* **“Invalid volume”** → Check `MinLot`/`LotStep` and round correctly.
-* **“Digits mismatch”** → Use symbol `Digits` to format prices.
-* **“No connection / timeouts”** → Firewall/UAC, terminal path, server ping.
+- “**Symbol not found EURUSD**” → Try broker suffix `EURUSD.m`.
+- “**Invalid volume**” → Respect `LotStep`/`LotMin` and round.
+- “**Digits mismatch**” → Format prices using `Digits`.
+- “**No connection**” → Firewall/UAC, terminal path, server reachability.
 
+Full page: [Troubleshooting & FAQ](Troubleshooting_FAQ.md)
 
 ---
 
 ## Cookbook (Recipes)
 
-### Watchlist & Quotes
+Jump into ready-made snippets:
 
-* Build a list of symbols; ensure visibility; poll or stream quotes.
-* Example code block (to be filled with actual API calls).
+- Watchlist & Quotes → [Get Quote](Cookbook/Market_Info/GetQuote.md), [Multiple Quotes](Cookbook/Market_Info/GetMultipleQuotes.md), [Stream](Cookbook/Market_Info/StreamQuotes.md)  
+- Place Order Safely → [Place Market](Cookbook/Orders/PlaceMarketOrder.md) / [Pending](Cookbook/Orders/PlacePendingOrder.md) / [Modify](Cookbook/Orders/ModifyOrder.md) / [Close](Cookbook/Orders/CloseOrder.md)  
+- Compute PnL Correctly → [Symbol Params](Cookbook/Market_Info/SymbolParams.md)  
+- Stream History to DB → [History Orders](Cookbook/Orders/HistoryOrders.md)
 
-### Place Order Safely
-
-* Validate symbol trading mode; round volume/price; slippage; error handling.
-
-### Compute PnL Correctly
-
-* Use `TickValue`/`ContractSize`; convert to account currency if needed.
-
-### Stream History to DB
-
-* Paginate history; write batched inserts; idempotency tips.
-
+Full list: [Cookbook index](Cookbook/index.md)
 
 ---
 
 ## CLI Usage (Playground)
 
-* Subscribe to quotes.
-* Dump symbol params.
-* Close orders by filter.
+- Subscribe to quotes.
+- Dump symbol params.
+- Close orders by filter.
 
-> TODO: list commands and flags + examples.
+See: [CLI Usage](cli_usage.md)
 
 ---
 
 ## API Reference (Types & Enums)
 
-* Autogenerated types index with human‑readable notes.
-* Units, ranges, and gotchas.
+Autogenerated types index with human-readable notes, units, ranges, and gotchas.
 
-> TODO: link to proto docs and add field explanations.
+- [Overview](API%20Reference/Overview.md)
+- [Enums](API%20Reference/Enums.md)
+- [Messages](API%20Reference/Messages.md)
+- [Streaming](API%20Reference/Streaming.md)
 
 ---
 
 ## Performance Notes
 
-* Batch calls where possible; avoid per‑tick RPCs.
-* Expected latencies; simple load test plan.
+- Batch calls when possible; avoid per-tick RPCs.
+- Track expected latencies; simple load test plan.
+
+[Performance Notes](Performance_Notes.md)
 
 ---
 
 ## Security & Secrets
 
-* `.env` handling, do not commit; Windows credential hints.
-* Minimal terminal permissions.
+- `.env` handling (do **not** commit secrets).
+- Windows credentials vault tips.
+
+[Security & Secrets](Security_Secrets.md)
 
 ---
 
 ## Observability (Logs & Metrics)
 
-* Log format and levels.
-* Basic metrics: latency, reconnects, dropped ticks.
+- Log format and levels.
+- Basic metrics: latency, reconnects, dropped ticks.
+
+[Observability](Observability.md)
 
 ---
 
 ## Glossary (MT4 Terms)
 
-* Digits, Point, TickSize, TickValue, Lot, ContractSize.
-* Hedging vs Netting (note if MT5 differences matter).
+- Digits, Point, TickSize, TickValue, Lot, ContractSize.
+- Hedging vs Netting (MT5 nuances for reference).
 
-
+[Glossary](Glossary.md)
