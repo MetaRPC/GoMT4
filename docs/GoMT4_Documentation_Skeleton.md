@@ -47,7 +47,6 @@
 * [Security & Secrets](Security_Secrets.md)
 * [Observability (Logs & Metrics)](Observability.md)
 * [Glossary (MT4 Terms)](Glossary.md)
-* [Roadmap & Compatibility](Roadmap%20&%20Compatibility.md)
 
 
 ---
