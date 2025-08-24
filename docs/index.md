@@ -57,32 +57,6 @@ This documentation will help you:
 
 ---
 
-## 🚀 Quick Start
-
-1. Configure your `config.json` with MT4 credentials and connection details.
-2. Initialize an `MT4Account` and wrap it with `MT4Service`.
-3. Run examples from `main.go` or call the `Show*` helpers.
-
-```go
-ctx := context.Background()
-svc := mt4.NewMT4Service(account)
-
-// Example: quick account & quote
-svc.ShowAccountSummary(ctx)
-svc.ShowQuote(ctx, "EURUSD")
-```
-
----
-
-## 🛠 Requirements
-
-* Go 1.21+
-* gRPC-Go
-* Protobuf Go bindings
-* VS Code / GoLand / LiteIDE
-
----
-
 ## 🧭 Navigation
 
 * Sections above link **directly** to the markdown files in your repo.
