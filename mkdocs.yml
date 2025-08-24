@@ -1,7 +1,7 @@
 site_name: MetaRPC MT4 Golang Documentation
 
 nav:
-  - Home: index.md
+  - Home: Introduction.md
   - Account:
       - Show Account Summary: Account/ShowAccountSummary.md
   - Market Info:
@@ -32,9 +32,34 @@ nav:
       - StreamOrdersHistoryExample: Streaming/StreamOrdersHistoryExample.md
       - StreamQuoteHistoryExample: Streaming/StreamQuoteHistoryExample.md
   - Guides:
-      - CLI Usage: cli_usage.md
       - Beginner Run Guide: Beginner_Run_Guide.md
       - Your Easy Start: Your_Easy_Start.md
+      - CLI Usage: cli_usage.md
+      - Setup & Environment: setup.md
+      - Architecture & Data Flow: Architecture_DataFlow.md
+      - Reliability: ReTimeouts_Reconnects_Backoff.md
+      - Troubleshooting & FAQ: Troubleshooting_FAQ.md
+      - Performance Notes: Performance_Notes.md
+      - Security & Secrets: Security_Secrets.md
+      - Observability (Logs & Metrics): Observability.md
+      - Glossary (MT4 Terms): Glossary.md
+  - API Reference:
+      - Overview: 'API Reference/Overview.md'
+      - Enums: 'API Reference/Enums.md'
+      - Messages: 'API Reference/Messages.md'
+      - Streaming: 'API Reference/Streaming.md'
+  - Cookbook:
+      - Account:
+          - Show Account Summary: Cookbook/Account/AccountSummary.md
+          - Stream Opened Order Profits: Cookbook/Account/StreamOpenedOrderProfits.md
+      - Market Info:
+          - Symbol Params: Cookbook/Market_Info/SymbolParams.md
+      - Orders:
+          - History Orders: Cookbook/Orders/HistoryOrders.md
+      - Reliability & Connection:
+          - Health Check: Cookbook/Reliability_Connection/HealthCheck.md
+      - Utils & Helpers:
+          - Config Example: Cookbook/Utils_Helpers/ConfigExample.md
 
 theme:
   name: material
@@ -50,10 +75,21 @@ theme:
         icon: material/weather-sunny
         name: Switch to light mode
   features:
+    - navigation.sections
+    - navigation.tracking
+    - search.highlight
     - palette.toggle
     - palette.auto
 
 markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.superfences
+
+plugins:
+  - search
