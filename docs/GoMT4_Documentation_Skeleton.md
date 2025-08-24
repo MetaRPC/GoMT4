@@ -21,7 +21,6 @@
 * [API Reference (Types & Enums)](#api-reference-types--enums)
 * [Performance Notes](#performance-notes)
 * [Security & Secrets](#security--secrets)
-* [Testing Strategies](#testing-strategies)
 * [Observability (Logs & Metrics)](#observability-logs--metrics)
 * [Glossary (MT4 Terms)](#glossary-mt4-terms)
 * [Roadmap & Compatibility](#roadmap--compatibility)
@@ -183,14 +182,6 @@ for attempt := 0; ; attempt++ {
 
 * `.env` handling, do not commit; Windows credential hints.
 * Minimal terminal permissions.
-
----
-
-## Testing Strategies
-
-* Mocks/fakes for RPC clients.
-* Table‑driven tests for math/conversions.
-* CI smoke tests without live broker.
 
 ---
 
