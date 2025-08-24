@@ -141,8 +141,8 @@ for {
 }
 ```
 
-* Heavy work → отправляй в воркер через буферизованный канал.
-* Не забывай `ctx.Done()` для чистого завершения.
+* Heavy work → send to the worker via a buffered channel.
+* Don't forget `ctx.Done()` for a clean finish.
 
 ---
 
@@ -159,22 +159,22 @@ const (
 )
 ```
 
-* **Home Wi‑Fi / unstable** → попробуй `backoffMax=8–10s`, `jitterRange=300–400ms`.
+* **Home Wi‑Fi / unstable** → try `backoffMax=8–10s`, `jitterRange=300–400ms`.
 * **VPS / LAN** → `backoffBase=150ms`, `backoffMax=3–5s`.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* **Ретраим бизнес-ошибки** → нельзя. Ретраим только транспортные (`Unavailable`, `EOF`).
-* **Забыли отменить контекст** → утечки горутин. Всегда `defer cancel()`.
-* **Блокируем dataCh** → поток встанет. Либо буфер, либо быстрый приём.
-* **Бесконечные ретраи** → ограничивай `maxRetries`, логируй финальную ошибку.
+* **Retrain business errors** → not allowed. We only use transport options (`Unavailable`, `EOF`).
+* **Forgot to cancel the context** → goroutin leaks. Always `defer cancel()'.
+* **Blocking dataCh** → the stream will stop. Either a buffer or a fast reception.
+* **Endless retreats** → limit `MaxRetries', log the final error.
 
 ---
 
 ## 🔗 See also
 
 * `Reliability (en)` — timeouts, reconnects & backoff summary.
-* `StreamQuotes.md`, `StreamOpenedOrderProfits.md` — готовые обёртки.
-* `UnaryRetries.md` — точечные примеры для отдельных методов.
+* `StreamQuotes.md `, `StreamOpenedOrderProfits.md ` — ready-made wrappers.
+* `UnaryRetries.md ` — point examples for individual methods.
