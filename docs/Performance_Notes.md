@@ -195,6 +195,3 @@ for {
 
 * **Light logs around hot paths** → `examples/mt4/MT4_service.go` stream handlers print `Tick/Profit/Trade` lines — replace with counters/rate meters in production.
 
----
-
-If you want, я добавлю **точные вытяжки кода** под каждый пункт (короткие блоки `▶ snippet`) прямо в этот файл. Скажи, какие пункты показать первыми — например: `StreamOpenedOrderProfits`, `ShowQuotesMany`, `ShowOrderSendExample`.
