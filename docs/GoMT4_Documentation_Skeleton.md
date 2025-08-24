@@ -4,25 +4,51 @@
 
 ---
 
-## Table of Contents
+## 📑 Table of Contents
 
-* [Introduction](#introduction)
-* [Setup & Environment](#setup--environment)
-* [Architecture & Data Flow](#architecture--data-flow)
-* [Reliability: Timeouts, Reconnects, Backoff](#reliability-timeouts-reconnects-backoff)
-* [Troubleshooting & FAQ](#troubleshooting--faq)
-* [Cookbook (Recipes)](#cookbook-recipes)
+* [Introduction](Introduction.md)
+* [Setup & Environment](setup.md)
+* [Architecture & Data Flow](Architecture_DataFlow.md)
+* [Reliability: Timeouts, Reconnects, Backoff](ReTimeouts_Reconnects_Backoff.md)
+* [Troubleshooting & FAQ](Troubleshooting_FAQ.md)
+* [Cookbook (Recipes)](Cookbook/)
 
-  * [Watchlist & Quotes](#watchlist--quotes)
-  * [Place Order Safely](#place-order-safely)
-  * [Compute PnL Correctly](#compute-pnl-correctly)
-  * [Stream History to DB](#stream-history-to-db)
-* [CLI Usage (Playground)](#cli-usage-playground)
-* [API Reference (Types & Enums)](#api-reference-types--enums)
-* [Performance Notes](#performance-notes)
-* [Security & Secrets](#security--secrets)
-* [Observability (Logs & Metrics)](#observability-logs--metrics)
-* [Glossary (MT4 Terms)](#glossary-mt4-terms)
+  * Account
+    - [Show Account Summary](Cookbook/Account/AccountSummary.md)
+    - [Stream Opened Order Profits](Cookbook/Account/StreamOpenedOrderProfits.md)
+  * Market Info
+    - [Get Symbol Params](Cookbook/Market_Info/SymbolParams.md)
+    - [History Orders](Cookbook/Market_Info/HistoryOrders.md)
+  * Orders
+    - [Place Market Order](Cookbook/Orders/PlaceMarketOrder.md)
+    - [Place Pending Order](Cookbook/Orders/PlacePendingOrder.md)
+    - [Modify Order](Cookbook/Orders/ModifyOrder.md)
+    - [Close Order](Cookbook/Orders/CloseOrder.md)
+    - [Close By Orders](Cookbook/Orders/CloseByOrders.md)
+    - [Delete Pending](Cookbook/Orders/DeletePending.md)
+    - [History Orders](Cookbook/Orders/HistoryOrders.md)
+  * Reliability & Connection
+    - [Handle Reconnect](Cookbook/Reliability_Connection/HandleReconnect.md)
+    - [Unary Retries](Cookbook/Reliability_Connection/UnaryRetries.md)
+    - [Health Check](Cookbook/Reliability_Connection/HealthCheck.md)
+  * Utils & Helpers
+    - [Round Volume/Price](Cookbook/Utils_Helpers/RoundVolumePrice.md)
+    - [Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md)
+    - [Config Example](Cookbook/Utils_Helpers/ConfigExample.md)
+
+* [CLI Usage (Playground)](cli_usage.md)
+* [API Reference (Types & Enums)](API%20Reference/Overview.md)
+
+  * [Enums](API%20Reference/Enums.md)
+  * [Messages](API%20Reference/Messages.md)
+  * [Streaming](API%20Reference/Streaming.md)
+
+* [Performance Notes](Performance_Notes.md)
+* [Security & Secrets](Security_Secrets.md)
+* [Observability (Logs & Metrics)](Observability.md)
+* [Glossary (MT4 Terms)](Glossary.md)
+* [Roadmap & Compatibility](Roadmap%20&%20Compatibility.md)
+
 
 ---
 
