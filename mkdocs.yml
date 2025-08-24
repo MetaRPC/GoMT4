@@ -6,7 +6,7 @@ nav:
   - Guides:
       - Introduction: Introduction.md
       - Your Easy Start: Your_Easy_Start.md
-      - Beginner Run Guide: Beginner_Run_Guide.md 
+      - Beginner Run Guide: Beginner_Run_Guide.md
       - Setup & Environment: setup.md
       - Architecture & Data Flow: Architecture_DataFlow.md
       - Reliability (Timeouts, Reconnects, Backoff): ReTimeouts_Reconnects_Backoff.md
