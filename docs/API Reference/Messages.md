@@ -16,7 +16,7 @@ Numbers, names and field order match the source. Enums are on a separate page.
 
 ## 🧾 Account & Orders
 
-### 📊 Mt4AccountSummary
+### 📊 Mt4AccountSummary (AccountSummary)
 
 |                                                                      # | Field          | Type   |
 | ---------------------------------------------------------------------: | -------------- | ------ |
@@ -33,75 +33,75 @@ Numbers, names and field order match the source. Enums are on a separate page.
 |                                                                     11 | `profit`       | double |
 | **Notes:** snapshot for health/risk checks. `margin_level` in percent. |                |        |
 
-### 📌 Mt4OpenedOrder
+### 📌 Mt4OpenedOrder (OpenedOrder)
 
-|                                                           # | Field        | Type           |
-| ----------------------------------------------------------: | ------------ | -------------- |
-|                                                           1 | `ticket`     | int64          |
-|                                                           2 | `symbol`     | string         |
-|                                                           3 | `type`       | `Mt4OrderType` |
-|                                                           4 | `volume`     | double         |
-|                                                           5 | `open_price` | double         |
-|                                                           6 | `sl`         | double         |
-|                                                           7 | `tp`         | double         |
-|                                                           8 | `open_time`  | Timestamp      |
-|                                                           9 | `commission` | double         |
-|                                                          10 | `swap`       | double         |
-|                                                          11 | `magic`      | int32          |
-|                                                          12 | `comment`    | string         |
-| **Notes:** live positions; use with `OpenedOrders`/streams. |              |                |
+|                                                           # | Field        | Type        |
+| ----------------------------------------------------------: | ------------ | ----------- |
+|                                                           1 | `ticket`     | int64       |
+|                                                           2 | `symbol`     | string      |
+|                                                           3 | `type`       | `OrderType` |
+|                                                           4 | `volume`     | double      |
+|                                                           5 | `open_price` | double      |
+|                                                           6 | `sl`         | double      |
+|                                                           7 | `tp`         | double      |
+|                                                           8 | `open_time`  | Timestamp   |
+|                                                           9 | `commission` | double      |
+|                                                          10 | `swap`       | double      |
+|                                                          11 | `magic`      | int32       |
+|                                                          12 | `comment`    | string      |
+| **Notes:** live positions; use with `OpenedOrders`/streams. |              |             |
 
-### 📜 Mt4OrderHistory
+### 📜 Mt4OrderHistory (OrderHistory)
 
-|                                                   # | Field         | Type           |
-| --------------------------------------------------: | ------------- | -------------- |
-|                                                   1 | `ticket`      | int64          |
-|                                                   2 | `symbol`      | string         |
-|                                                   3 | `type`        | `Mt4OrderType` |
-|                                                   4 | `volume`      | double         |
-|                                                   5 | `open_price`  | double         |
-|                                                   6 | `close_price` | double         |
-|                                                   7 | `sl`          | double         |
-|                                                   8 | `tp`          | double         |
-|                                                   9 | `open_time`   | Timestamp      |
-|                                                  10 | `close_time`  | Timestamp      |
-|                                                  11 | `commission`  | double         |
-|                                                  12 | `swap`        | double         |
-|                                                  13 | `profit`      | double         |
-|                                                  14 | `magic`       | int32          |
-|                                                  15 | `comment`     | string         |
-| **Notes:** closed deals; combine with history APIs. |               |                |
+|                                                   # | Field         | Type        |
+| --------------------------------------------------: | ------------- | ----------- |
+|                                                   1 | `ticket`      | int64       |
+|                                                   2 | `symbol`      | string      |
+|                                                   3 | `type`        | `OrderType` |
+|                                                   4 | `volume`      | double      |
+|                                                   5 | `open_price`  | double      |
+|                                                   6 | `close_price` | double      |
+|                                                   7 | `sl`          | double      |
+|                                                   8 | `tp`          | double      |
+|                                                   9 | `open_time`   | Timestamp   |
+|                                                  10 | `close_time`  | Timestamp   |
+|                                                  11 | `commission`  | double      |
+|                                                  12 | `swap`        | double      |
+|                                                  13 | `profit`      | double      |
+|                                                  14 | `magic`       | int32       |
+|                                                  15 | `comment`     | string      |
+| **Notes:** closed deals; combine with history APIs. |               |             |
 
-### 📨 Mt4OrderSendRequest
+### 📨 Mt4OrderSendRequest (OrderSendRequest)
 
-|          # | Field        | Type                        | Optional |
-| ---------: | ------------ | --------------------------- | :------: |
-|          1 | `symbol`     | string                      |          |
-|          2 | `operation`  | `Mt4OrderSendOperationType` |          |
-|          3 | `volume`     | double                      |          |
-|          4 | `price`      | DoubleValue                 |     ✓    |
-|          5 | `slippage`   | int32                       |          |
-|          6 | `sl`         | DoubleValue                 |     ✓    |
-|          7 | `tp`         | DoubleValue                 |     ✓    |
-|          8 | `comment`    | StringValue                 |     ✓    |
-|          9 | `magic`      | Int32Value                  |     ✓    |
-|         10 | `expiration` | Timestamp                   |     ✓    |
-| **Notes:** |              |                             |          |
+|          # | Field        | Type                     | Optional |
+| ---------: | ------------ | ------------------------ | :------: |
+|          1 | `symbol`     | string                   |          |
+|          2 | `operation`  | `OrderSendOperationType` |          |
+|          3 | `volume`     | double                   |          |
+|          4 | `price`      | DoubleValue              |     ✓    |
+|          5 | `slippage`   | int32                    |          |
+|          6 | `sl`         | DoubleValue              |     ✓    |
+|          7 | `tp`         | DoubleValue              |     ✓    |
+|          8 | `comment`    | StringValue              |     ✓    |
+|          9 | `magic`      | Int32Value               |     ✓    |
+|         10 | `expiration` | Timestamp                |     ✓    |
+| **Notes:** |              |                          |          |
 
 * Market orders: `price` usually omitted (server uses current Bid/Ask, with `slippage`).
 * Pending orders: set `price` and (optionally) `expiration`.
 
-### 📬 Mt4OrderSendResult
+### 📬 Mt4OrderSendResult (OrderSendResult)
 
-|                                                   # | Field       | Type            |
-| --------------------------------------------------: | ----------- | --------------- |
-|                                                   1 | `ticket`    | int64           |
-|                                                   2 | `price`     | double          |
-|                                                   3 | `open_time` | Timestamp       |
-|                                                   4 | `error`     | `Mt4OrderError` |
-| **Notes:** `error` filled on broker-side rejection. |             |                 |
+|                                                   # | Field       | Type         |
+| --------------------------------------------------: | ----------- | ------------ |
+|                                                   1 | `ticket`    | int64        |
+|                                                   2 | `price`     | double       |
+|                                                   3 | `open_time` | Timestamp    |
+|                                                   4 | `error`     | `OrderError` |
+| **Notes:** `error` filled on broker-side rejection. |             |              |
 
-### ✏️ Mt4OrderModifyRequest
+### ✏️ Mt4OrderModifyRequest (OrderModifyRequest)
 
 |  # | Field        | Type        | Optional |
 | -: | ------------ | ----------- | :------: |
@@ -111,7 +111,7 @@ Numbers, names and field order match the source. Enums are on a separate page.
 |  4 | `tp`         | DoubleValue |     ✓    |
 |  5 | `expiration` | Timestamp   |     ✓    |
 
-### ❌ Mt4OrderCloseRequest
+### ❌ Mt4OrderCloseRequest (OrderCloseRequest)
 
 |  # | Field      | Type        | Optional |
 | -: | ---------- | ----------- | :------: |
@@ -120,14 +120,14 @@ Numbers, names and field order match the source. Enums are on a separate page.
 |  3 | `price`    | DoubleValue |     ✓    |
 |  4 | `slippage` | int32       |          |
 
-### 🗑️ Mt4OrderDeleteRequest
+### 🗑️ Mt4OrderDeleteRequest (OrderDeleteRequest)
 
 |  # | Field      | Type  |
 | -: | ---------- | ----- |
 |  1 | `ticket`   | int64 |
 |  2 | `slippage` | int32 |
 
-### 🔄 Mt4OrderCloseByRequest
+### 🔄 Mt4OrderCloseByRequest (OrderCloseByRequest)
 
 |  # | Field        | Type  |
 | -: | ------------ | ----- |
@@ -135,20 +135,20 @@ Numbers, names and field order match the source. Enums are on a separate page.
 |  2 | `ticket_dst` | int64 |
 |  3 | `slippage`   | int32 |
 
-### 📑 Mt4OrderActionResult
+### 📑 Mt4OrderActionResult (OrderActionResult)
 
-|  # | Field    | Type            |
-| -: | -------- | --------------- |
-|  1 | `ticket` | int64           |
-|  2 | `price`  | double          |
-|  3 | `time`   | Timestamp       |
-|  4 | `error`  | `Mt4OrderError` |
+|  # | Field    | Type         |
+| -: | -------- | ------------ |
+|  1 | `ticket` | int64        |
+|  2 | `price`  | double       |
+|  3 | `time`   | Timestamp    |
+|  4 | `error`  | `OrderError` |
 
 ---
 
 ## 💹 Quotes & Market Info
 
-### 💱 Mt4Quote
+### 💱 Mt4Quote (Quote)
 
 |                                                           # | Field    | Type      |
 | ----------------------------------------------------------: | -------- | --------- |
@@ -160,7 +160,7 @@ Numbers, names and field order match the source. Enums are on a separate page.
 |                                                           6 | `time`   | Timestamp |
 | **Notes:** compute spread in points: `(ask - bid) / point`. |          |           |
 
-### 📊 Mt4SymbolParams
+### 📊 Mt4SymbolParams (SymbolParams)
 
 |                                                                      # | Field           | Type   |
 | ---------------------------------------------------------------------: | --------------- | ------ |
@@ -179,30 +179,26 @@ Numbers, names and field order match the source. Enums are on a separate page.
 
 ## 🔌 Connection & Health
 
-### 🔐 Connect/Disconnect
+### 🔐 Mt4ConnectRequest / Mt4ConnectResponse (Connect)
 
-* **Mt4ConnectRequest**: `login,password,server` → **Mt4ConnectResponse**: `ok,error`.
-* **Mt4DisconnectRequest**: `reason` → **Mt4DisconnectResponse**: `ok,error`.
+* **Request**: `login,password,server`
+* **Response**: `ok,error`.
 
-### 📡 State & Heartbeat
+### 📡 Mt4ConnectionState (ConnectionState)
 
-* **Mt4ConnectionState**: `connected,login,server`.
-* **Mt4Heartbeat**: `time` (keep-alive).
+* Fields: `connected,login,server`.
 
-### 🏓 Ping & Version
+### 🏓 Mt4PingRequest / Mt4PingResponse (Ping)
 
-* **Mt4Ping{Request,Response}**: echo `payload`.
-* **Mt4Version**: `plugin_version`, `api_version`. Request is dummy.
+* Echo `payload`.
 
-### 🖥️ Server info & time
+### 🖥️ Mt4ServerInfo (ServerInfo)
 
-* **Mt4ServerInfo**: `name,address,timezone`.
-* **Mt4Time**: `server_time`. Request is dummy.
+* Fields: `name,address,timezone`.
 
-### ❤️ Health-check API
+### ❤️ Mt4HealthSummary / Mt4HealthCheck (HealthCheck)
 
-* **Mt4HealthSummary**: `ok`, `error`.
-* \*\*Mt4HealthCheck{Request,Response}`**: wraps `summary\`.
+* Summary: `ok,error`. Used to quickly verify connection stability.
 
 ---
 
@@ -210,20 +206,20 @@ Numbers, names and field order match the source. Enums are on a separate page.
 
 > Detailed stream methods & chunk types are documented on the **Streaming** page.
 
-* **Quotes**: `Mt4QuoteUpdate`, `Mt4QuoteStream{Request,Chunk}`.
-* **Orders history (paged/stream)**: `Mt4OrdersHistoryPaged{Request,Chunk}`.
-* **Trade updates**: `Mt4TradeUpdate`, `Mt4TradeUpdateStream{Request,Chunk}`.
-* **Opened order tickets**: `Mt4OpenedOrdersTicketStream{Request,Chunk}`.
-* **Opened order profits**: `Mt4OpenedOrdersProfit{StreamRequest,Snapshot,StreamChunk}`.
-* **Chart streams**: `Mt4Chart{StreamRequest,StreamChunk}`, `Mt4ChartHistoryStreamRequest`.
-* **Internal charts**: `Mt4InternalChart{StreamRequest,StreamChunk,HistoryStreamRequest}`.
+* **Quotes**: `QuoteUpdate`, `QuoteStream{Request,Chunk}`.
+* **Orders history (paged/stream)**: `OrdersHistoryPaged{Request,Chunk}`.
+* **Trade updates**: `TradeUpdate`, `TradeUpdateStream{Request,Chunk}`.
+* **Opened order tickets**: `OpenedOrdersTicketStream{Request,Chunk}`.
+* **Opened order profits**: `OpenedOrdersProfit{StreamRequest,Snapshot,StreamChunk}`.
+* **Chart streams**: `Chart{StreamRequest,StreamChunk}`, `ChartHistoryStreamRequest`.
+* **Internal charts**: `InternalChart{StreamRequest,StreamChunk,HistoryStreamRequest}`.
 
 ---
 
 ## ⚠️ Errors (messages only)
 
 * **MrpcError**: `code:int32, message, details`.
-* **Mt4OrderError**: `ticket:int64, reason:int32, text`.
-* **Mt4BatchOrderError**: `errors[]` of `MrpcError`.
+* **OrderError**: `ticket:int64, reason:int32, text`.
+* **BatchOrderError**: `errors[]` of `MrpcError`.
 
 **See also:** the **Enums** page for error/enum value tables.
