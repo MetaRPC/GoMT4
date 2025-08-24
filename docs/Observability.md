@@ -1,14 +1,13 @@
-# 📈 Observability (Logs & Metrics)
+# 📈 Observability (Logs & Metrics) — *optional enhancement*
 
-The Observability section (Logs & Metrics) is not something that already exists, but a suggestion that can be added to make the project observable.:
+> ⚠️ Note: this section is **not yet in the codebase**, but is recommended for developers who want better visibility.
 
-🌐 obs.go helper is a small wrapper over the log.Printf so that all messages are in the same style (INFO/WARN/ERROR with timestamp).
+You can add lightweight observability to GoMT4:
 
-, latency timers — wrap RPC calls to see the delay.
-
-📊 metrics-counters (atomic + ticker) — error count, ticks, RPC.
-
-🧩 (optional) Prometheus is an exporter — if you suddenly need monitoring via Grafana.
+- 🌐 **obs.go helper** — wrapper around `log.Printf` so logs have consistent format (INFO/WARN/ERROR + timestamp).
+- ⏱ **Latency timers** — measure RPC duration (e.g., ShowQuote, ShowOrderSend).
+- 📊 **Counters** — simple `atomic` metrics for errors, ticks, RPC calls (print every 10s).
+- 🧩 **Prometheus exporter** — optional, if you want Grafana dashboards.
 
 Make GoMT4 **debuggable in minutes**, not hours. Below are pragmatic logging patterns and lightweight metrics that fit your current codebase (`examples/mt4/*.go`, `main.go`) and Windows setup.
 
