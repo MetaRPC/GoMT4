@@ -1,6 +1,64 @@
 # GoMT4 Documentation – Skeleton
 
-> Version: v0 (starter scaffold). Goal: fill step-by-step with clear, beginner-friendly explanations and runnable snippets.
+<div class="grid cards" markdown>
+
+-   :material-rocket-launch: **Getting Started**
+    ---
+    Первый запуск, окружение, короткий путь.
+    <br>
+    [:octicons-play-16: Your Easy Start](Your_Easy_Start.md){ .md-button } 
+    [:octicons-gear-16: Setup](setup.md){ .md-button-outline }
+
+-   :material-diagram-project: **Architecture & Reliability**
+    ---
+    Как всё устроено, потоки данных, таймауты и реконнекты.
+    <br>
+    [:material-source-branch: Architecture](Architecture_DataFlow.md){ .md-button }
+    [:material-refresh-auto: Reliability](ReTimeouts_Reconnects_Backoff.md){ .md-button-outline }
+
+-   :material-chart-line: **Market Info**
+    ---
+    Котировки, параметры символов, история.
+    <br>
+    [:material-currency-usd: ShowQuote](Market_Info/ShowQuote.md){ .md-button }
+    [:material-format-list-bulleted: QuotesMany](Market_Info/ShowQuotesMany.md){ .md-button-outline }
+
+-   :material-shopping: **Orders**
+    ---
+    Открытие/модификация/закрытие, примеры.
+    <br>
+    [:material-cart-plus: Place Market](Cookbook/Orders/PlaceMarketOrder.md){ .md-button }
+    [:material-content-save-edit: Modify](Cookbook/Orders/ModifyOrder.md){ .md-button-outline }
+
+-   :material-broadcast: **Streaming**
+    ---
+    Тики, обновления ордеров, история потоками.
+    <br>
+    [:material-rss: Stream Quotes](Streaming/StreamQuotes.md){ .md-button }
+    [:material-finance: Order Profits](Streaming/StreamOpenedOrderProfits.md){ .md-button-outline }
+
+-   :material-book-open-page-variant: **Cookbook**
+    ---
+    Рецепты из реального кода.
+    <br>
+    [:material-notebook: Все рецепты](Cookbook/index.md){ .md-button }
+
+-   :material-api: **API Reference**
+    ---
+    Типы, сообщения, стримы из .proto.
+    <br>
+    [:material-format-list-bulleted-type: Enums](API%20Reference/Enums.md){ .md-button }
+    [:material-email-fast: Streaming](API%20Reference/Streaming.md){ .md-button-outline }
+
+-   :material-shield-lock: **Ops**
+    ---
+    Производительность, секреты, логирование.
+    <br>
+    [:material-speedometer: Performance](Performance_Notes.md){ .md-button }
+    [:material-file-lock: Security](Security_Secrets.md){ .md-button-outline }
+
+</div>
+
 
 ---
 
