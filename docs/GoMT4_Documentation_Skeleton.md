@@ -1,5 +1,8 @@
 # GoMT4 Documentation – Skeleton
 
+**For easier viewing, you can read the information on** https://metarpc.github.io/GoMT4/
+
+
 <div class="grid cards" markdown>
 
 -   :material-rocket-launch: **Getting Started**
