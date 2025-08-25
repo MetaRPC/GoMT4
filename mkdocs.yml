@@ -2,7 +2,7 @@ site_name: MetaRPC MT4 Golang Documentation
 site_url: https://metarpc.github.io/GoMT4/
 
 nav:
-  - Home: GoMT4_Documentation_Skeleton.md
+  - Home: index.md
 
   - Guides:
       - Introduction: Introduction.md
