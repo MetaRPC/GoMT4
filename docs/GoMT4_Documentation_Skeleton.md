@@ -9,7 +9,7 @@
     [:octicons-play-16: Your Easy Start](Your_Easy_Start.md){ .md-button } 
     [:octicons-gear-16: Setup](setup.md){ .md-button-outline }
 
--   :material-diagram-project: **Architecture & Reliability**
+-   :material-diagram-project: **Architecture**
     ---
     How everything works, data flows, timeouts, and reconnects.  
     <br>
@@ -18,7 +18,7 @@
 
 -   :material-chart-line: **Market Info**
     ---
-    Quotes, character parameters, history.  
+    Quotes, symbol parameters, history.  
     <br>
     [:material-currency-usd: ShowQuote](Market_Info/ShowQuote.md){ .md-button }
     [:material-format-list-bulleted: QuotesMany](Market_Info/ShowQuotesMany.md){ .md-button-outline }
@@ -58,6 +58,7 @@
     [:material-file-lock: Security](Security_Secrets.md){ .md-button-outline }
 
 </div>
+
 
 
 ---
