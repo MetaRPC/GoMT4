@@ -1,5 +1,60 @@
 site_name: MetaRPC MT4 Golang Documentation
 site_url: https://metarpc.github.io/GoMT4/
+repo_name: MetaRPC/GoMT4
+repo_url: https://github.com/MetaRPC/GoMT4
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.png          # (опционально) добавь файл в docs/assets/logo.png
+  favicon: assets/favicon.png    # (опционально) добавь файл в docs/assets/favicon.png
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    # Навигация и UX
+    - navigation.instant          # мгновенная загрузка страниц
+    - navigation.tracking         # подсветка активного пункта
+    - navigation.sections         # секции в боковом меню
+    - navigation.top              # "Back to top" и заголовок наверху
+    - navigation.tabs             # вкладки верхнего уровня (Home/Guides/…)
+    - toc.integrate               # оглавление в правой колонке
+    # Контент
+    - content.code.copy           # кнопка "copy" у кода
+    - content.action.edit         # кнопка "Edit this page"
+    - content.tabs.link           # связные табы
+    - search.highlight            # подсветка совпадений в поиске
+    - search.suggest              # подсказки в поиске
+    - palette.toggle
+    - palette.auto
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/MetaRPC/GoMT4
+      name: GitHub
+  generator: false
+  # Низ страницы
+  consent:
+    title: Cookies & telemetry
+    description: We use GitHub Pages basic analytics only. No tracking cookies.
+
+copyright: >
+  © {{ date | strftime("%Y") }} MetaRPC. MT4 is a MetaQuotes software. This site is a community-made documentation.
 
 nav:
   - Home: index.md
@@ -62,43 +117,52 @@ nav:
           - Show Account Summary: Cookbook/Account/AccountSummary.md
           - Stream Opened Order Profits: Cookbook/Account/StreamOpenedOrderProfits.md
       - Market Info:
+          - Get Quote: Cookbook/Market_Info/GetQuote.md
+          - Get Multiple Quotes: Cookbook/Market_Info/GetMultipleQuotes.md
+          - Stream Quotes: Cookbook/Market_Info/StreamQuotes.md
           - Symbol Params: Cookbook/Market_Info/SymbolParams.md
+          - Quote History: Cookbook/Market_Info/QuoteHistory.md
       - Orders:
+          - Place Market Order: Cookbook/Orders/PlaceMarketOrder.md
+          - Place Pending Order: Cookbook/Orders/PlacePendingOrder.md
+          - Modify Order: Cookbook/Orders/ModifyOrder.md
+          - Close Order: Cookbook/Orders/CloseOrder.md
+          - Close By Orders: Cookbook/Orders/CloseByOrders.md
+          - Delete Pending: Cookbook/Orders/DeletePending.md
           - History Orders: Cookbook/Orders/HistoryOrders.md
       - Reliability & Connection:
+          - Handle Reconnect: Cookbook/Reliability_Connection/HandleReconnect.md
+          - Unary Retries: Cookbook/Reliability_Connection/UnaryRetries.md
           - Health Check: Cookbook/Reliability_Connection/HealthCheck.md
       - Utils & Helpers:
+          - Round Volume/Price: Cookbook/Utils_Helpers/RoundVolumePrice.md
+          - Ensure Symbol Visible: Cookbook/Utils_Helpers/EnsureSymbolVisible.md
           - Config Example: Cookbook/Utils_Helpers/ConfigExample.md
 
-theme:
-  name: material
-  palette:
-    - scheme: default
-      primary: indigo
-      toggle:
-        icon: material/weather-night
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to light mode
-  features:
-    - navigation.sections
-    - navigation.tracking
-    - search.highlight
-    - palette.toggle
-    - palette.auto
-
 markdown_extensions:
+  # Блоки-заметки и раскрывающиеся детали
   - admonition
-  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
+  # Таблицы и якоря
   - tables
   - toc:
       permalink: true
+  # Коды и подсветка
+  - codehilite
+  - pymdownx.inlinehilite
+  - pymdownx.highlight
+  - pymdownx.snippets
+  # Табы и контент
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.superfences
+  - attr_list
+  - def_list
+  - abbr
+  - footnotes
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.critic
 
 plugins:
   - search
