@@ -1,6 +1,6 @@
 # GoMT4 Documentation – Skeleton
 
-<<div class="grid cards" markdown>
+<div class="grid cards" markdown>
 
 -   :material-rocket-launch: **Getting Started**
     ---
@@ -58,6 +58,7 @@
     [:material-file-lock: Security](Security_Secrets.md){ .md-button-outline }
 
 </div>
+
 
 
 
