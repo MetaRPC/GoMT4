@@ -4,55 +4,55 @@
 
 -   :material-rocket-launch: **Getting Started**
     ---
-    Первый запуск, окружение, короткий путь.
+    First launch, environment, shortcut.
     <br>
     [:octicons-play-16: Your Easy Start](Your_Easy_Start.md){ .md-button } 
     [:octicons-gear-16: Setup](setup.md){ .md-button-outline }
 
 -   :material-diagram-project: **Architecture & Reliability**
     ---
-    Как всё устроено, потоки данных, таймауты и реконнекты.
+    How everything works, data flows, timeouts, and reconnects.
     <br>
     [:material-source-branch: Architecture](Architecture_DataFlow.md){ .md-button }
     [:material-refresh-auto: Reliability](ReTimeouts_Reconnects_Backoff.md){ .md-button-outline }
 
 -   :material-chart-line: **Market Info**
     ---
-    Котировки, параметры символов, история.
+    Quotes, character parameters, history.
     <br>
     [:material-currency-usd: ShowQuote](Market_Info/ShowQuote.md){ .md-button }
     [:material-format-list-bulleted: QuotesMany](Market_Info/ShowQuotesMany.md){ .md-button-outline }
 
 -   :material-shopping: **Orders**
     ---
-    Открытие/модификация/закрытие, примеры.
+    Opening/modification/closing, examples.
     <br>
     [:material-cart-plus: Place Market](Cookbook/Orders/PlaceMarketOrder.md){ .md-button }
     [:material-content-save-edit: Modify](Cookbook/Orders/ModifyOrder.md){ .md-button-outline }
 
 -   :material-broadcast: **Streaming**
     ---
-    Тики, обновления ордеров, история потоками.
+    Ticks, order updates, flow history.
     <br>
     [:material-rss: Stream Quotes](Streaming/StreamQuotes.md){ .md-button }
     [:material-finance: Order Profits](Streaming/StreamOpenedOrderProfits.md){ .md-button-outline }
 
 -   :material-book-open-page-variant: **Cookbook**
     ---
-    Рецепты из реального кода.
+    Recipes from real code.
     <br>
     [:material-notebook: Все рецепты](Cookbook/index.md){ .md-button }
 
 -   :material-api: **API Reference**
     ---
-    Типы, сообщения, стримы из .proto.
+    Types, messages, and streams from .proto.
     <br>
     [:material-format-list-bulleted-type: Enums](API%20Reference/Enums.md){ .md-button }
     [:material-email-fast: Streaming](API%20Reference/Streaming.md){ .md-button-outline }
 
 -   :material-shield-lock: **Ops**
     ---
-    Производительность, секреты, логирование.
+    Performance, secrets, logging.
     <br>
     [:material-speedometer: Performance](Performance_Notes.md){ .md-button }
     [:material-file-lock: Security](Security_Secrets.md){ .md-button-outline }
