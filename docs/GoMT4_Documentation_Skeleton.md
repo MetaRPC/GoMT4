@@ -113,11 +113,11 @@
 
   **🧰 Utils & Helpers**
 
-  * [🎯 Round Volume/Price](Cookbook/Utils_Helpers/RoundVolumePrice.md)
-  * [👁️ Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md)
-  * [⚙️ Config Example](Cookbook/Utils_Helpers/ConfigExample.md)
+  * [ Round Volume/Price](Cookbook/Utils_Helpers/RoundVolumePrice.md)
+  * [ Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md)
+  * [ Config Example](Cookbook/Utils_Helpers/ConfigExample.md)
 
-* [🖥️ CLI Usage (Playground)](cli_usage.md)
+* [ CLI Usage (Playground)](cli_usage.md)
 
 * [ API Reference (Types & Enums)](API%20Reference/Overview.md)
 
