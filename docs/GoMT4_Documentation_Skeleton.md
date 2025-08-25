@@ -44,6 +44,7 @@
   - [Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md)
   - [Config Example](Cookbook/Utils_Helpers/ConfigExample.md)
 
+
 - [CLI Usage (Playground)](cli_usage.md)
 - [API Reference (Types & Enums)](API%20Reference/Overview.md)
   - [Enums](API%20Reference/Enums.md)
