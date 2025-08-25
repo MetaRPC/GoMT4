@@ -24,19 +24,19 @@ theme:
         icon: material/weather-sunny
         name: Switch to light mode
   features:
-    # Навигация и UX
-    - navigation.instant          # мгновенная загрузка страниц
-    - navigation.tracking         # подсветка активного пункта
-    - navigation.sections         # секции в боковом меню
-    - navigation.top              # "Back to top" и заголовок наверху
-    - navigation.tabs             # вкладки верхнего уровня (Home/Guides/…)
-    - toc.integrate               # оглавление в правой колонке
-    # Контент
-    - content.code.copy           # кнопка "copy" у кода
-    - content.action.edit         # кнопка "Edit this page"
-    - content.tabs.link           # связные табы
-    - search.highlight            # подсветка совпадений в поиске
-    - search.suggest              # подсказки в поиске
+    
+    - navigation.instant          
+    - navigation.tracking         
+    - navigation.sections         
+    - navigation.top              
+    - navigation.tabs             
+    - toc.integrate               
+    
+    - content.code.copy           
+    - content.action.edit         
+    - content.tabs.link           
+    - search.highlight            
+    - search.suggest              
     - palette.toggle
     - palette.auto
 
@@ -46,7 +46,7 @@ extra:
       link: https://github.com/MetaRPC/GoMT4
       name: GitHub
   generator: false
-  # Низ страницы
+  
   consent:
     title: Cookies & telemetry
     description: We use GitHub Pages basic analytics only. No tracking cookies.
