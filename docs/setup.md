@@ -1,64 +1,64 @@
-# Setup & Environment (Windows, GoMT4 Project)
+# 💻 Setup & Environment (Windows, GoMT4 Project)
 
 Audience: **beginner-friendly**. Comments in code are **English only**.
 
 ---
 
-## 1) Prerequisites
+## 📦 1) Prerequisites
 
 * **Windows 10/11 recommended** (Windows 7/8 may work but not tested)
 * **Git** ([https://git-scm.com/download/win](https://git-scm.com/download/win))
 * **Go ≥ 1.21** ([https://go.dev/dl/](https://go.dev/dl/))
 * **VS Code** + Go extension (by Google)
 
-> Why: Go builds and runs the project; VS Code is the recommended IDE.
+👉 Why: Go builds and runs the project; VS Code is the recommended IDE.
 
 ---
 
-## 2) Where the pb files live
+## 📂 2) Where the pb files live
 
 * The generated protobuf stubs are published as a **Go module**:
 
   ```
   git.mtapi.io/root/mrpc-proto/mt4/libraries/go
   ```
-* Your code imports it like this (no `.git` suffix):
+* Import without `.git` suffix:
 
   ```go
   import pb "git.mtapi.io/root/mrpc-proto/mt4/libraries/go"
   ```
-* Because this is a Go module and it is public, **you do not need to clone another repository**. Go will automatically fetch it on the first build.
+* You do **not need to clone another repo**. Go fetches it automatically.
 
 ---
 
-## 3) How Go manages pb files
+## ⚙️ 3) How Go manages pb files
 
-* Running `go mod tidy` will:
+* `go mod tidy` will:
 
-  * Download any missing modules (including the pb module).
+  * Download missing modules (including pb).
   * Update `go.sum` with checksums.
-  * It does **not overwrite your local code**; it only ensures dependencies in `go.mod` are present.
-* If the pb module is already downloaded, `go mod tidy` just verifies it. If a new version is requested (`go get -u`), then Go will update it.
+  * It does **not overwrite your code**, just ensures deps exist.
+* `go get -u` → updates to newer pb version.
 
 ---
 
-## 4) Working offline: `go mod vendor`
+## 📦 4) Working offline: `go mod vendor`
 
-* `go mod vendor` copies all dependencies (including pb stubs) into a local `vendor/` folder.
-* After running it, the project can be built offline because Go will use the `vendor/` folder instead of the internet.
-* This is optional; useful for CI builds without internet access.
+* `go mod vendor` → copies all deps into `vendor/`.
+* Project can then build offline.
+* Useful for CI/CD builds without internet.
 
 ---
 
-## 5) Configuration with `config.json`
+## ⚙️ 5) Configuration with `config.json`
 
-The project reads account and server settings from a JSON config file:
+Config file path:
 
 ```
 examples/config/config.json
 ```
 
-Example config:
+Example:
 
 ```json
 {
@@ -69,11 +69,11 @@ Example config:
 }
 ```
 
-Adjust these values for your broker before running the project. Prefer using **investor (read‑only) password** for safety unless you need trading operations.
+🔑 Use **investor password** for read-only unless you need trading.
 
 ---
 
-## 6) Project checkout & first run
+## ▶️ 6) Project checkout & first run
 
 ```powershell
 # Clone ONLY your GoMT4 repo
@@ -81,25 +81,20 @@ cd C:\Users\malin
 git clone <YOUR-GoMT4-REPO-URL> GoMT4
 cd GoMT4
 
-# Install deps (fetches pb module too)
+# Install deps
 go mod tidy
 
-# Run the example (entrypoint lives in examples/main.go)
+# Run example (entrypoint: examples/main.go)
 go run ./examples/main.go
 ```
 
-You should see logs and the first RPC interactions.
+Expected: logs + first RPC interactions.
 
 ---
 
-## 7) VS Code debug configuration
+## 🐞 7) VS Code debug configuration
 
-The file `.vscode/launch.json` tells VS Code **how to run and debug your program**.
-
-* `program`: which Go file to launch (`examples/main.go`).
-* `cwd`: current working directory when running.
-
-**.vscode/launch.json**
+File: `.vscode/launch.json`
 
 ```json
 {
@@ -117,7 +112,7 @@ The file `.vscode/launch.json` tells VS Code **how to run and debug your program
 }
 ```
 
-**.vscode/settings.json**
+File: `.vscode/settings.json`
 
 ```json
 {
@@ -132,23 +127,25 @@ The file `.vscode/launch.json` tells VS Code **how to run and debug your program
 
 ---
 
-## 8) First run checklist
+## ✅ 8) First run checklist
 
-1. Start MT4 terminal once manually (to initialize its data folders).
-2. Ensure firewall allows `RPC_LISTEN_ADDR` port (e.g. 50051) if you plan to connect from outside your machine. For local use on `127.0.0.1`, this is usually not required.
-3. Run the example:
+1. Start MT4 terminal manually once (initializes data).
+
+2. Firewall: allow port if connecting externally. For local `127.0.0.1`, not needed.
+
+3. Run:
 
    ```powershell
    cd C:\Users\malin\GoMT4
    go run ./examples/main.go
    ```
-4. You should see logs like `listening on 127.0.0.1:50051` and first RPC interactions.
+
+4. You should see logs like `listening on 127.0.0.1:50051`.
 
 ---
 
-## 9) Common pitfalls
+## ⚠️ 9) Common pitfalls
 
-* **Timeouts / no connection** → Check `config.json` values, firewall, MT4 terminal connectivity.
-* **Symbol not found (`EURUSD`)** → Broker may add suffix (e.g. `EURUSD.m`). Ensure symbol is visible in MT4.
+* **Timeouts / no connection** → Check `config.json`, firewall, MT4 connectivity.
+* **Symbol not found (`EURUSD`)** → Broker may add suffix (e.g., `EURUSD.m`). Ensure symbol is visible.
 * **Volume or price rejected** → Always round with `Digits` and `LotStep` values.
-
