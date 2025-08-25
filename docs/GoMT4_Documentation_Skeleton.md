@@ -1,6 +1,6 @@
 # GoMT4 Documentation – Skeleton
 
-<div class="grid cards" markdown>
+<<div class="grid cards" markdown>
 
 -   :material-rocket-launch: **Getting Started**
     ---
@@ -9,7 +9,7 @@
     [:octicons-play-16: Your Easy Start](Your_Easy_Start.md){ .md-button } 
     [:octicons-gear-16: Setup](setup.md){ .md-button-outline }
 
--   :material-diagram-project: **Architecture**
+-   :material-source-branch: **Architecture**
     ---
     How everything works, data flows, timeouts, and reconnects.  
     <br>
@@ -58,6 +58,7 @@
     [:material-file-lock: Security](Security_Secrets.md){ .md-button-outline }
 
 </div>
+
 
 
 
