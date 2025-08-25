@@ -66,21 +66,21 @@
 
 ## 📑 Table of Contents
 
-* [✨ Introduction](Introduction.md)
+* [ Introduction](Introduction.md)
 
-* [⚙️ Setup & Environment](setup.md)
+* [ Setup & Environment](setup.md)
 
-* [🚀 Beginner Run Guide](Beginner_Run_Guide.md)
+* [ Beginner Run Guide](Beginner_Run_Guide.md)
 
-* [🌟 Your Easy Start](Your_Easy_Start.md)
+* [ Your Easy Start](Your_Easy_Start.md)
 
-* [🏗️ Architecture & Data Flow](Architecture_DataFlow.md)
+* [ Architecture & Data Flow](Architecture_DataFlow.md)
 
-* [🔒 Reliability: Timeouts, Reconnects, Backoff](ReTimeouts_Reconnects_Backoff.md)
+* [ Reliability: Timeouts, Reconnects, Backoff](ReTimeouts_Reconnects_Backoff.md)
 
-* [🛠️ Troubleshooting & FAQ](Troubleshooting_FAQ.md)
+* [ Troubleshooting & FAQ](Troubleshooting_FAQ.md)
 
-* [📚 Cookbook (Recipes)](Cookbook/index.md)
+*  Cookbook (Recipes)](Cookbook/index.md)
 
   **📊 Account**
 
@@ -118,19 +118,19 @@
 
 * [🖥️ CLI Usage (Playground)](cli_usage.md)
 
-* [📖 API Reference (Types & Enums)](API%20Reference/Overview.md)
+* [ API Reference (Types & Enums)](API%20Reference/Overview.md)
 
-  * [🔢 Enums](API%20Reference/Enums.md)
-  * [📬 Messages](API%20Reference/Messages.md)
-  * [📡 Streaming](API%20Reference/Streaming.md)
+  * [ Enums](API%20Reference/Enums.md)
+  * [ Messages](API%20Reference/Messages.md)
+  * [ Streaming](API%20Reference/Streaming.md)
 
-* [⚡ Performance Notes](Performance_Notes.md)
+* [ Performance Notes](Performance_Notes.md)
 
-* [🔑 Security & Secrets](Security_Secrets.md)
+* [ Security & Secrets](Security_Secrets.md)
 
-* [📊 Observability (Logs & Metrics)](Observability.md)
+* [ Observability (Logs & Metrics)](Observability.md)
 
-* [📘 Glossary (MT4 Terms)](Glossary.md)
+* [ Glossary (MT4 Terms)](Glossary.md)
 
 ---
 
