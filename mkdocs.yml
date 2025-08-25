@@ -138,7 +138,6 @@ nav:
           - Config Example: Cookbook/Utils_Helpers/ConfigExample.md
 
 markdown_extensions:
-  
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -146,15 +145,12 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
-  
   - codehilite
   - pymdownx.inlinehilite
   - pymdownx.highlight
   - pymdownx.snippets
-  
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.details 
   - attr_list
   - def_list
   - abbr
@@ -162,9 +158,10 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.critic
-- pymdownx.emoji:     
+  - pymdownx.emoji:     
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
+
 
 plugins:
   - search
