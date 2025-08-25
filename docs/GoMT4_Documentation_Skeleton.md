@@ -7,7 +7,7 @@
 ## 📑 Table of Contents
 
 - [Introduction](Introduction.md)
-- [Setup & Environment](setup.md)
+- [Setup & Environment](setup.md) 
 - [Beginner Run Guide](Beginner_Run_Guide.md)
 - [Your Easy Start](Your_Easy_Start.md)
 - [Architecture & Data Flow](Architecture_DataFlow.md)
