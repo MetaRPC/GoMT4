@@ -1,79 +1,79 @@
-# Architecture & Data Flow (GoMT4)
+# 🏗️ Architecture & Data Flow (GoMT4)
 
 This section describes the overall structure of the GoMT4 project and how data flows between components.
 
 ---
 
-## General Diagram
+##  General Diagram
 
 ```
           ┌─────────────────────────────┐
-          │        MT4 Terminal         │
-          │ (local, broker connection,  │
-          │  quotes, orders handling)   │
+          │        💻 MT4 Terminal      │
+          │ (local, broker connection, │
+          │  quotes, orders handling)  │
           └──────────────┬──────────────┘
                          │
                          ▼
           ┌─────────────────────────────┐
-          │        GoMT4 gRPC Server    │
-          │ (examples/main.go + pb API) │
+          │   🚀 GoMT4 gRPC Server      │
+          │ (examples/main.go + pb API)│
           └───────┬───────────┬────────┘
                   │           │
                   ▼           ▼
        ┌────────────────┐   ┌───────────────────┐
-       │ Client Apps    │   │ Streaming Handlers│
-       │ (Go, C#, etc.) │   │ (quotes, orders,  │
-       │                │   │ account updates)  │
+       │ 👩‍💻 Client Apps │   │ 🔄 Streaming      │
+       │ (Go, C#, etc.) │   │ Handlers (quotes, │
+       │                │   │ orders, updates)  │
        └────────────────┘   └───────────────────┘
 
-Config.json → used by GoMT4 to log into account and select symbol.
-pb module  → external Go module with generated structures and services.
+📄 Config.json → used by GoMT4 to log into account and select symbol.  
+📦 pb module  → external Go module with generated structures and services.
 ```
 
 ---
 
-## Components
+## ⚙️ Components
 
-* **MT4 Terminal**
+* **💻 MT4 Terminal**
   Runs locally. Connects to broker, stores history, handles trading operations.
 
-* **GoMT4 gRPC Server**
+* **🚀 GoMT4 gRPC Server**
   Proxy between MT4 and external apps. Implemented in `examples/main.go` and code that uses pb module.
 
-* **pb module**
+* **📦 pb module**
   Contains generated structures and services from `.proto` files (`mrpc-proto` repository).
 
-* **examples/**
+* **📂 examples/**
   Contains entrypoint and usage examples.
 
-* **docs/**
+* **📑 docs/**
   Documentation for each feature.
 
-* **config.json**
+* **📄 config.json**
   Stores login, password, server and default symbol.
 
 ---
 
-## Data Flow
+## 🔀 Data Flow
 
-1. **RPC call**
+1. **📡 RPC call**
    A client (Go, C#, etc.) sends an RPC to the gRPC server (`127.0.0.1:50051`).
 
-2. **GoMT4 server**
+2. **⚙️ GoMT4 server**
    Receives the request, translates it into MT4 calls, processes the response.
 
-3. **MT4 Terminal** 
+3. **💻 MT4 Terminal**
    Executes the operation (e.g., get a quote or send an order) and returns the result.
 
-4. **Return path**
+4. **⬅️ Return path**
    Result goes back to the client through GoMT4.
 
-5. **Streaming calls**
+5. **🔄 Streaming calls**
    If the client subscribed (quotes, orders updates), GoMT4 keeps the connection open and pushes updates in real time.
 
 ---
 
-## Highlights
+## ✨ Highlights
 
 * Default gRPC port: `127.0.0.1:50051`.
 * To extend the API, edit `.proto` files in `mrpc-proto` repo.
@@ -82,7 +82,7 @@ pb module  → external Go module with generated structures and services.
 
 ---
 
-## Developer Notes
+## 🛠️ Developer Notes
 
 * Main entry logic: `examples/main.go`.
 * Account config: `examples/config/config.json`.
