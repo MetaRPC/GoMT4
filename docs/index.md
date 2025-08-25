@@ -5,3 +5,5 @@
 
 If you are not redirected automatically, open
 [GoMT4 Documentation – Skeleton](GoMT4_Documentation_Skeleton.md).
+
+**For easier viewing, you can read the information on** https://metarpc.github.io/GoMT4/
