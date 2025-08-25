@@ -1,10 +1,10 @@
-# Troubleshooting & FAQ (GoMT4)
+# 🛠️ Troubleshooting & FAQ (GoMT4)
 
 Short, practical answers. Each item points to real code paths where relevant.
 
 ---
 
-## 1) “No quotes / symbol not found (EURUSD)”
+## ❓ 1) “No quotes / symbol not found (EURUSD)”
 
 **Symptoms:** `symbol not found`, empty quotes, or RPC returns OK but payload is empty.
 
@@ -15,33 +15,33 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 **Fix:**
 
-* Open MT4 → *Market Watch* → *Show All* → note the exact symbol name and put it into `examples/config/config.json` → `DefaultSymbol`.
-* If your code has an `EnsureSymbolVisible(symbol)` helper, call it before requests; otherwise, add one. (Typical place: `examples/mt4/MT4Account.go`.)
+* Open MT4 → *Market Watch* → *Show All* → note exact symbol name → put into `examples/config/config.json` → `DefaultSymbol`.
+* If available, call `EnsureSymbolVisible(symbol)` before requests. Otherwise, add one (see `examples/mt4/MT4Account.go`).
 
-**Tip:** print `Digits`, `Point`, `LotStep` in logs when selecting a symbol—this quickly reveals mismatches.
+💡 Tip: print `Digits`, `Point`, `LotStep` in logs when selecting a symbol.
 
 ---
 
-## 2) “Timeout / context deadline exceeded” on simple reads
+## ⏱️ 2) “Timeout / context deadline exceeded” on simple reads
 
-**Symptoms:** `context deadline exceeded` on read‑only calls (quotes, account summary).
+**Symptoms:** `context deadline exceeded` on read-only calls (quotes, account summary).
 
 **Causes:**
 
-* MT4 not fully connected to broker or just launched.
+* MT4 not fully connected or just launched.
 * Network latency spikes.
 
 **Fix:**
 
-* Start MT4 **manually once** and wait for *connected* state.
-* Use a short per‑call timeout (2–5s) and retry only **transport** errors (see §3 in `Docs/reliability (en)`).
-* Code reference: a 3s health‑check with `AccountSummary` in `examples/mt4/MT4Account.go`.
+* Start MT4 manually once and wait until *connected*.
+* Use per-call timeout (2–5s) and retry only transport errors.
+* Reference: 3s health-check with `AccountSummary` in `examples/mt4/MT4Account.go`.
 
 ---
 
-## 3) “Max retries reached” / frequent reconnects in streams
+## 🔁 3) “Max retries reached” / frequent reconnects in streams
 
-**Symptoms:** stream stops with an error after several reconnect attempts; logs mention `io.EOF` or `codes.Unavailable`.
+**Symptoms:** stream stops with error after reconnect attempts; logs mention `io.EOF` or `codes.Unavailable`.
 
 **Causes:**
 
@@ -49,22 +49,20 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 **Fix:**
 
-* Increase `backoffMax` or `backoffBase` in retry settings (see `examples/mt4/MT4Account.go`).
-* Ensure the parent `ctx` is not canceled by your app prematurely.
-* Consumer pattern: always select on `dataCh`, `errCh`, and `<-ctx.Done()`; exit cleanly when channels close.
+* Increase `backoffMax` or `backoffBase` (see `examples/mt4/MT4Account.go`).
+* Ensure parent `ctx` is not canceled prematurely.
+* Consumer loop: always select on `dataCh`, `errCh`, `<-ctx.Done()`.
 
 ---
 
-## 4) “Can’t connect to gRPC: connection refused”
-
-**Symptoms:** client can’t dial the server; `connection refused` or hangs.
+## 🚫 4) “Can’t connect to gRPC: connection refused”
 
 **Checklist:**
 
-* Is server running? (`go run ./examples/main.go`)
-* Is it listening on the expected address? (`127.0.0.1:50051` by default)
-* `netstat -ano | findstr LISTENING | findstr :50051` — do you see a listener?
-* Windows Firewall: if you bind to `0.0.0.0` or external IP, allow the port:
+* Server running? (`go run ./examples/main.go`)
+* Listening on correct address? (`127.0.0.1:50051` default)
+* Check listener: `netstat -ano | findstr LISTENING | findstr :50051`
+* Windows Firewall: allow port if bound externally:
 
   ```powershell
   New-NetFirewallRule -DisplayName "GoMT4 gRPC" -Direction Inbound -Protocol TCP -LocalPort 50051 -Action Allow
@@ -72,108 +70,109 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 ---
 
-## 5) “Invalid volume / invalid price” when sending orders
+## 📊 5) “Invalid volume / invalid price” when sending orders
 
-**Symptoms:** `invalid volume`, `invalid price`, or broker rejects the order.
+**Symptoms:** `invalid volume`, `invalid price`, or broker rejects order.
 
 **Causes:**
 
-* Volume not aligned to `LotStep`.
-* Price/SL/TP not aligned to `Digits`/`Point` / too close to the market.
+* Volume misaligned with `LotStep`.
+* Price/SL/TP not aligned to `Digits`/`Point` or too close to market.
 
 **Fix:**
 
 * Query symbol params first, then round:
 
-  * volume → to `LotStep` (clamp to `MinLot`…`MaxLot`).
-  * prices → to `Digits` using `Point` (or 10^Digits helper).
-* In logs, print the calculated price, `Digits`, `Point`, `LotStep`.
-* Put the rounding into a small helper in `examples/mt4/MT4Account.go` (or your order module) and reuse it.
+  * volume → `LotStep` (clamp to `MinLot`…`MaxLot`).
+  * prices → round to `Digits` using `Point`.
+* Print logs: price, `Digits`, `Point`, `LotStep`.
+* Create helper in `examples/mt4/MT4Account.go` for rounding.
 
 ---
 
-## 6) “Quotes freeze after a while”
+## 💤 6) “Quotes freeze after a while”
 
-**Symptoms:** stream was active but stopped emitting data; no errors printed.
+**Symptoms:** stream stops emitting data; no errors.
 
 **Causes:**
 
-* Consumer stopped reading from `dataCh` (blocked).
+* Consumer stopped reading from `dataCh`.
 * `ctx` canceled elsewhere.
 
 **Fix:**
 
-* Ensure your consumer loop **never blocks** (use a bounded queue or backpressure strategy).
-* Always monitor `errCh` and `<-ctx.Done()>` and exit cleanly. The helper closes channels on terminal errors.
+* Ensure consumer loop never blocks (use bounded queue/backpressure).
+* Always monitor `errCh` and `<-ctx.Done()>`.
 
 ---
 
-## 7) “module … not found / checksum mismatch” (Go modules)
+## 📦 7) “module … not found / checksum mismatch” (Go modules)
 
 **Symptoms:** during `go mod tidy` or build.
 
 **Fix:**
 
-* Make sure the pb import path matches the module path (no `.git` suffix):
+* Ensure pb import path matches module path:
 
   ```go
   import pb "git.mtapi.io/root/mrpc-proto/mt4/libraries/go"
   ```
-* Update or pin the module:
+* Update/pin module:
 
   ```powershell
   go get -u git.mtapi.io/root/mrpc-proto/mt4/libraries/go@latest
   go mod tidy
   ```
-* If CI needs offline builds: `go mod vendor` and build with `-mod=vendor`.
+* For offline CI: `go mod vendor` + build with `-mod=vendor`.
 
 ---
 
-## 8) “TLS handshake / certificate” issues
-
-**Symptoms:** errors around TLS when using secure channels.
+## 🔐 8) “TLS handshake / certificate” issues
 
 **Fix:**
 
-* For local dev, prefer plaintext on `127.0.0.1` (no TLS) unless you explicitly configured creds.
-* If using TLS, verify you pass `grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{ /* … */ }))` consistently on both sides and that CN/SAN match the host you dial.
+* For local dev, prefer plaintext on `127.0.0.1`.
+* If TLS, use consistent creds: `grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{ ... }))`.
+* Ensure CN/SAN matches host.
 
 ---
 
-## 9) “No history / partial history returned”
+## 📉 9) “No history / partial history returned”
 
-**Symptoms:** history calls return fewer records than expected.
+**Symptoms:** history calls return fewer records.
 
 **Causes:**
 
-* MT4 hasn’t downloaded that range yet.
-* Too big range in a single request.
+* MT4 hasn’t downloaded range yet.
+* Request range too large.
 
 **Fix:**
 
-* Open the symbol chart in MT4 once to let it preload more history.
-* Use **paging/batching** for long ranges (day‑by‑day or month‑by‑month) instead of one massive call.
+* Open symbol chart in MT4 to preload.
+* Use paging (day-by-day / month-by-month).
 
 ---
 
-## 10) “High CPU / goroutine leak”
+## 🔥 10) “High CPU / goroutine leak”
 
-**Symptoms:** CPU climbs or goroutines accumulate.
+**Symptoms:** CPU climbs; goroutines accumulate.
 
 **Causes:**
 
-* Missing `defer cancel()`; streams not canceled; consumer loop busy‑spins.
+* Missing `defer cancel()`.
+* Streams not canceled.
+* Consumer loop busy-spins.
 
 **Fix:**
 
-* After every `WithTimeout/WithCancel`, add `defer cancel()`.
-* On shutdown: cancel parent `ctx` first, then wait for goroutines to exit, then `Disconnect()`.
+* Always `defer cancel()`.
+* On shutdown: cancel parent `ctx`, wait for goroutines, then `Disconnect()`.
 
 ---
 
-## 11) Quick reference (commands)
+## 📝 11) Quick reference (commands)
 
-* Verify port listener:
+* Verify listener:
 
   ```powershell
   netstat -ano | findstr LISTENING | findstr :50051
@@ -185,7 +184,7 @@ Short, practical answers. Each item points to real code paths where relevant.
   go mod tidy
   go get -u git.mtapi.io/root/mrpc-proto/mt4/libraries/go@latest
   ```
-* Vendor for offline builds:
+* Vendor offline builds:
 
   ```powershell
   go mod vendor
@@ -194,9 +193,9 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 ---
 
-## 12) Where in code
+## 📂 12) Where in code
 
-* Retry/backoff & helpers: `examples/mt4/MT4Account.go`
-* Streaming wrappers (ticks/orders/history): `examples/mt4/MT4Account.go`
-* Entrypoint & cleanup: `examples/main.go`
-* Config shape: `examples/config/config.json`
+* Retry/backoff & helpers → `examples/mt4/MT4Account.go`
+* Streaming wrappers (ticks/orders/history) → `examples/mt4/MT4Account.go`
+* Entrypoint & cleanup → `examples/main.go`
+* Config shape → `examples/config/config.json`
