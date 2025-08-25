@@ -62,7 +62,7 @@ pb module  → external Go module with generated structures and services.
 2. **GoMT4 server**
    Receives the request, translates it into MT4 calls, processes the response.
 
-3. **MT4 Terminal**
+3. **MT4 Terminal** 
    Executes the operation (e.g., get a quote or send an order) and returns the result.
 
 4. **Return path**
