@@ -7,8 +7,6 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   language: en
-  logo: assets/logo.png          # (опционально) добавь файл в docs/assets/logo.png
-  favicon: assets/favicon.png    # (опционально) добавь файл в docs/assets/favicon.png
   font:
     text: Inter
     code: JetBrains Mono
