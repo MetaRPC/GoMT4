@@ -1,7 +1,4 @@
-# GoMT4 Documentation – Skeleton
-
-**For easier viewing, you can read the information on** https://metarpc.github.io/GoMT4/
-
+# GoMT4 The documentary BASE
 
 <div class="grid cards" markdown>
 
