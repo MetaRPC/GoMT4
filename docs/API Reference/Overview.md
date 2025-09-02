@@ -57,13 +57,4 @@ This reference is generated from your `.proto` files (mrpc‑proto). When proto 
 * New enum values can appear in the future — handle **unknown** values defensively on the client side.
 * Streaming: always process `is_last = true` and surface transport errors to your retry logic.
 
----
-
-## 🧭 Quick task → where to go
-
-* “Place a market order with SL/TP” → **Cookbook → Orders → PlaceMarketOrder.md**
-* “Get quotes for 5 symbols” → **Cookbook → MarketInfo → GetMultipleQuotes.md**
-* “Stream PnL per opened order” → **Cookbook → Streaming → StreamAccountProfits.md**
-* “Reconnect with backoff on errors” → **Cookbook → Reliability → HandleReconnect.md**
-
 Happy building! ✨
