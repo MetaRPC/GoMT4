@@ -28,6 +28,9 @@ type MarketInfoClient interface {
 	QuoteMany(ctx context.Context, in *QuoteManyRequest, opts ...grpc.CallOption) (*QuoteManyReply, error)
 	Symbols(ctx context.Context, in *SymbolsRequest, opts ...grpc.CallOption) (*SymbolsReply, error)
 	QuoteHistory(ctx context.Context, in *QuoteHistoryRequest, opts ...grpc.CallOption) (*QuoteHistoryReply, error)
+	// Selects a symbol in the Market Watch window or removes a symbol from the window
+	// https://docs.mql4.com/marketinformation/symbolselect
+	SymbolSelect(ctx context.Context, in *SymbolSelectRequest, opts ...grpc.CallOption) (*SymbolSelectReply, error)
 }
 
 type marketInfoClient struct {
@@ -74,6 +77,15 @@ func (c *marketInfoClient) QuoteHistory(ctx context.Context, in *QuoteHistoryReq
 	return out, nil
 }
 
+func (c *marketInfoClient) SymbolSelect(ctx context.Context, in *SymbolSelectRequest, opts ...grpc.CallOption) (*SymbolSelectReply, error) {
+	out := new(SymbolSelectReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.MarketInfo/SymbolSelect", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MarketInfoServer is the server API for MarketInfo service.
 // All implementations should embed UnimplementedMarketInfoServer
 // for forward compatibility
@@ -84,6 +96,9 @@ type MarketInfoServer interface {
 	QuoteMany(context.Context, *QuoteManyRequest) (*QuoteManyReply, error)
 	Symbols(context.Context, *SymbolsRequest) (*SymbolsReply, error)
 	QuoteHistory(context.Context, *QuoteHistoryRequest) (*QuoteHistoryReply, error)
+	// Selects a symbol in the Market Watch window or removes a symbol from the window
+	// https://docs.mql4.com/marketinformation/symbolselect
+	SymbolSelect(context.Context, *SymbolSelectRequest) (*SymbolSelectReply, error)
 }
 
 // UnimplementedMarketInfoServer should be embedded to have forward compatible implementations.
@@ -101,6 +116,9 @@ func (UnimplementedMarketInfoServer) Symbols(context.Context, *SymbolsRequest) (
 }
 func (UnimplementedMarketInfoServer) QuoteHistory(context.Context, *QuoteHistoryRequest) (*QuoteHistoryReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QuoteHistory not implemented")
+}
+func (UnimplementedMarketInfoServer) SymbolSelect(context.Context, *SymbolSelectRequest) (*SymbolSelectReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SymbolSelect not implemented")
 }
 
 // UnsafeMarketInfoServer may be embedded to opt out of forward compatibility for this service.
@@ -186,6 +204,24 @@ func _MarketInfo_QuoteHistory_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MarketInfo_SymbolSelect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SymbolSelectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketInfoServer).SymbolSelect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.MarketInfo/SymbolSelect",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketInfoServer).SymbolSelect(ctx, req.(*SymbolSelectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MarketInfo_ServiceDesc is the grpc.ServiceDesc for MarketInfo service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -208,6 +244,10 @@ var MarketInfo_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QuoteHistory",
 			Handler:    _MarketInfo_QuoteHistory_Handler,
+		},
+		{
+			MethodName: "SymbolSelect",
+			Handler:    _MarketInfo_SymbolSelect_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
