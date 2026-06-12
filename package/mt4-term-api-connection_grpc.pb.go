@@ -65,6 +65,16 @@ type ConnectionClient interface {
 	// If you need to recreate terminal instance with the same id
 	Reconnect(ctx context.Context, in *ReconnectRequest, opts ...grpc.CallOption) (*ReconnectReply, error)
 	GetBrokerServersByBrokerName(ctx context.Context, in *GetBrokerServersByBrokerNameRequest, opts ...grpc.CallOption) (*GetBrokerServersByBrokerNameReply, error)
+	// Generates a deterministic GUID from user and password.
+	// The same user/password combination always produces the same GUID.
+	// Use this GUID as the 'id' header for Connect and other endpoints.
+	// [DefaultValues]
+	//
+	//	{
+	//	  "user": "1124213727",
+	//	  "password": "1tjvjck"
+	//	}
+	GetId(ctx context.Context, in *GetIdRequest, opts ...grpc.CallOption) (*GetIdReply, error)
 }
 
 type connectionClient struct {
@@ -138,6 +148,15 @@ func (c *connectionClient) GetBrokerServersByBrokerName(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *connectionClient) GetId(ctx context.Context, in *GetIdRequest, opts ...grpc.CallOption) (*GetIdReply, error) {
+	out := new(GetIdReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Connection/GetId", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConnectionServer is the server API for Connection service.
 // All implementations should embed UnimplementedConnectionServer
 // for forward compatibility
@@ -185,6 +204,16 @@ type ConnectionServer interface {
 	// If you need to recreate terminal instance with the same id
 	Reconnect(context.Context, *ReconnectRequest) (*ReconnectReply, error)
 	GetBrokerServersByBrokerName(context.Context, *GetBrokerServersByBrokerNameRequest) (*GetBrokerServersByBrokerNameReply, error)
+	// Generates a deterministic GUID from user and password.
+	// The same user/password combination always produces the same GUID.
+	// Use this GUID as the 'id' header for Connect and other endpoints.
+	// [DefaultValues]
+	//
+	//	{
+	//	  "user": "1124213727",
+	//	  "password": "1tjvjck"
+	//	}
+	GetId(context.Context, *GetIdRequest) (*GetIdReply, error)
 }
 
 // UnimplementedConnectionServer should be embedded to have forward compatible implementations.
@@ -211,6 +240,9 @@ func (UnimplementedConnectionServer) Reconnect(context.Context, *ReconnectReques
 }
 func (UnimplementedConnectionServer) GetBrokerServersByBrokerName(context.Context, *GetBrokerServersByBrokerNameRequest) (*GetBrokerServersByBrokerNameReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBrokerServersByBrokerName not implemented")
+}
+func (UnimplementedConnectionServer) GetId(context.Context, *GetIdRequest) (*GetIdReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetId not implemented")
 }
 
 // UnsafeConnectionServer may be embedded to opt out of forward compatibility for this service.
@@ -350,6 +382,24 @@ func _Connection_GetBrokerServersByBrokerName_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Connection_GetId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectionServer).GetId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Connection/GetId",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectionServer).GetId(ctx, req.(*GetIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Connection_ServiceDesc is the grpc.ServiceDesc for Connection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -384,6 +434,10 @@ var Connection_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBrokerServersByBrokerName",
 			Handler:    _Connection_GetBrokerServersByBrokerName_Handler,
+		},
+		{
+			MethodName: "GetId",
+			Handler:    _Connection_GetId_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
