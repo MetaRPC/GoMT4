@@ -443,3 +443,139 @@ var Connection_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "mt4-term-api-connection.proto",
 }
+
+// LogsClient is the client API for Logs service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type LogsClient interface {
+	// Returns log entries from the terminal Journal tab.
+	// The Journal tab contains system messages about terminal connection status,
+	// network activity, server synchronization and other internal events.
+	// Works regardless of which tab is currently active in the terminal UI.
+	Journal(ctx context.Context, in *JournalRequest, opts ...grpc.CallOption) (*JournalReply, error)
+	// Returns log entries from the terminal Experts tab.
+	// The Experts tab contains messages from Expert Advisors (EAs), scripts and indicators
+	// including Print() output, initialization/deinitialization events and runtime errors.
+	// Works regardless of which tab is currently active in the terminal UI.
+	Experts(ctx context.Context, in *JournalRequest, opts ...grpc.CallOption) (*JournalReply, error)
+}
+
+type logsClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewLogsClient(cc grpc.ClientConnInterface) LogsClient {
+	return &logsClient{cc}
+}
+
+func (c *logsClient) Journal(ctx context.Context, in *JournalRequest, opts ...grpc.CallOption) (*JournalReply, error) {
+	out := new(JournalReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Logs/Journal", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *logsClient) Experts(ctx context.Context, in *JournalRequest, opts ...grpc.CallOption) (*JournalReply, error) {
+	out := new(JournalReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Logs/Experts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// LogsServer is the server API for Logs service.
+// All implementations should embed UnimplementedLogsServer
+// for forward compatibility
+type LogsServer interface {
+	// Returns log entries from the terminal Journal tab.
+	// The Journal tab contains system messages about terminal connection status,
+	// network activity, server synchronization and other internal events.
+	// Works regardless of which tab is currently active in the terminal UI.
+	Journal(context.Context, *JournalRequest) (*JournalReply, error)
+	// Returns log entries from the terminal Experts tab.
+	// The Experts tab contains messages from Expert Advisors (EAs), scripts and indicators
+	// including Print() output, initialization/deinitialization events and runtime errors.
+	// Works regardless of which tab is currently active in the terminal UI.
+	Experts(context.Context, *JournalRequest) (*JournalReply, error)
+}
+
+// UnimplementedLogsServer should be embedded to have forward compatible implementations.
+type UnimplementedLogsServer struct {
+}
+
+func (UnimplementedLogsServer) Journal(context.Context, *JournalRequest) (*JournalReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Journal not implemented")
+}
+func (UnimplementedLogsServer) Experts(context.Context, *JournalRequest) (*JournalReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Experts not implemented")
+}
+
+// UnsafeLogsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to LogsServer will
+// result in compilation errors.
+type UnsafeLogsServer interface {
+	mustEmbedUnimplementedLogsServer()
+}
+
+func RegisterLogsServer(s grpc.ServiceRegistrar, srv LogsServer) {
+	s.RegisterService(&Logs_ServiceDesc, srv)
+}
+
+func _Logs_Journal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JournalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogsServer).Journal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Logs/Journal",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogsServer).Journal(ctx, req.(*JournalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Logs_Experts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JournalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogsServer).Experts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Logs/Experts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogsServer).Experts(ctx, req.(*JournalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Logs_ServiceDesc is the grpc.ServiceDesc for Logs service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Logs_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "mt4_term_api.Logs",
+	HandlerType: (*LogsServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Journal",
+			Handler:    _Logs_Journal_Handler,
+		},
+		{
+			MethodName: "Experts",
+			Handler:    _Logs_Experts_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "mt4-term-api-connection.proto",
+}
