@@ -75,6 +75,10 @@ type ConnectionClient interface {
 	//	  "password": "1tjvjck"
 	//	}
 	GetId(ctx context.Context, in *GetIdRequest, opts ...grpc.CallOption) (*GetIdReply, error)
+	// Captures a screenshot of the terminal instance window.
+	// Handled by Terminal Manager: the per-terminal in-process responder grabs the
+	// MT4 window and the manager returns the image. Requires 'id' header.
+	Screenshot(ctx context.Context, in *ScreenshotRequest, opts ...grpc.CallOption) (*ScreenshotReply, error)
 }
 
 type connectionClient struct {
@@ -157,6 +161,15 @@ func (c *connectionClient) GetId(ctx context.Context, in *GetIdRequest, opts ...
 	return out, nil
 }
 
+func (c *connectionClient) Screenshot(ctx context.Context, in *ScreenshotRequest, opts ...grpc.CallOption) (*ScreenshotReply, error) {
+	out := new(ScreenshotReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Connection/Screenshot", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConnectionServer is the server API for Connection service.
 // All implementations should embed UnimplementedConnectionServer
 // for forward compatibility
@@ -214,6 +227,10 @@ type ConnectionServer interface {
 	//	  "password": "1tjvjck"
 	//	}
 	GetId(context.Context, *GetIdRequest) (*GetIdReply, error)
+	// Captures a screenshot of the terminal instance window.
+	// Handled by Terminal Manager: the per-terminal in-process responder grabs the
+	// MT4 window and the manager returns the image. Requires 'id' header.
+	Screenshot(context.Context, *ScreenshotRequest) (*ScreenshotReply, error)
 }
 
 // UnimplementedConnectionServer should be embedded to have forward compatible implementations.
@@ -243,6 +260,9 @@ func (UnimplementedConnectionServer) GetBrokerServersByBrokerName(context.Contex
 }
 func (UnimplementedConnectionServer) GetId(context.Context, *GetIdRequest) (*GetIdReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetId not implemented")
+}
+func (UnimplementedConnectionServer) Screenshot(context.Context, *ScreenshotRequest) (*ScreenshotReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Screenshot not implemented")
 }
 
 // UnsafeConnectionServer may be embedded to opt out of forward compatibility for this service.
@@ -400,6 +420,24 @@ func _Connection_GetId_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Connection_Screenshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ScreenshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectionServer).Screenshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Connection/Screenshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectionServer).Screenshot(ctx, req.(*ScreenshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Connection_ServiceDesc is the grpc.ServiceDesc for Connection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -438,6 +476,10 @@ var Connection_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetId",
 			Handler:    _Connection_GetId_Handler,
+		},
+		{
+			MethodName: "Screenshot",
+			Handler:    _Connection_Screenshot_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
