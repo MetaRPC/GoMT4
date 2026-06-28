@@ -79,6 +79,16 @@ type ConnectionClient interface {
 	// Handled by Terminal Manager: the per-terminal in-process responder grabs the
 	// MT4 window and the manager returns the image. Requires 'id' header.
 	Screenshot(ctx context.Context, in *ScreenshotRequest, opts ...grpc.CallOption) (*ScreenshotReply, error)
+	// Same as Connect but streams real-time progress events (incl. live Journal/
+	// Experts log lines) while the connection is established.
+	// Requires 'id' header — use GetId to generate.
+	// Swagger does not support streaming — use /connect-stream interactive viewer.
+	ConnectStream(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Connection_ConnectStreamClient, error)
+	// Same as ConnectEx but streams real-time progress events (incl. live Journal/
+	// Experts log lines) while the connection is established.
+	// Requires 'id' header — use GetId to generate.
+	// Swagger does not support streaming — use /connect-stream interactive viewer.
+	ConnectExStream(ctx context.Context, in *ConnectExRequest, opts ...grpc.CallOption) (Connection_ConnectExStreamClient, error)
 }
 
 type connectionClient struct {
@@ -170,6 +180,70 @@ func (c *connectionClient) Screenshot(ctx context.Context, in *ScreenshotRequest
 	return out, nil
 }
 
+func (c *connectionClient) ConnectStream(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Connection_ConnectStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Connection_ServiceDesc.Streams[0], "/mt4_term_api.Connection/ConnectStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &connectionConnectStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Connection_ConnectStreamClient interface {
+	Recv() (*ConnectStreamEvent, error)
+	grpc.ClientStream
+}
+
+type connectionConnectStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *connectionConnectStreamClient) Recv() (*ConnectStreamEvent, error) {
+	m := new(ConnectStreamEvent)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *connectionClient) ConnectExStream(ctx context.Context, in *ConnectExRequest, opts ...grpc.CallOption) (Connection_ConnectExStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Connection_ServiceDesc.Streams[1], "/mt4_term_api.Connection/ConnectExStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &connectionConnectExStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Connection_ConnectExStreamClient interface {
+	Recv() (*ConnectStreamEvent, error)
+	grpc.ClientStream
+}
+
+type connectionConnectExStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *connectionConnectExStreamClient) Recv() (*ConnectStreamEvent, error) {
+	m := new(ConnectStreamEvent)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ConnectionServer is the server API for Connection service.
 // All implementations should embed UnimplementedConnectionServer
 // for forward compatibility
@@ -231,6 +305,16 @@ type ConnectionServer interface {
 	// Handled by Terminal Manager: the per-terminal in-process responder grabs the
 	// MT4 window and the manager returns the image. Requires 'id' header.
 	Screenshot(context.Context, *ScreenshotRequest) (*ScreenshotReply, error)
+	// Same as Connect but streams real-time progress events (incl. live Journal/
+	// Experts log lines) while the connection is established.
+	// Requires 'id' header — use GetId to generate.
+	// Swagger does not support streaming — use /connect-stream interactive viewer.
+	ConnectStream(*ConnectRequest, Connection_ConnectStreamServer) error
+	// Same as ConnectEx but streams real-time progress events (incl. live Journal/
+	// Experts log lines) while the connection is established.
+	// Requires 'id' header — use GetId to generate.
+	// Swagger does not support streaming — use /connect-stream interactive viewer.
+	ConnectExStream(*ConnectExRequest, Connection_ConnectExStreamServer) error
 }
 
 // UnimplementedConnectionServer should be embedded to have forward compatible implementations.
@@ -263,6 +347,12 @@ func (UnimplementedConnectionServer) GetId(context.Context, *GetIdRequest) (*Get
 }
 func (UnimplementedConnectionServer) Screenshot(context.Context, *ScreenshotRequest) (*ScreenshotReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Screenshot not implemented")
+}
+func (UnimplementedConnectionServer) ConnectStream(*ConnectRequest, Connection_ConnectStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method ConnectStream not implemented")
+}
+func (UnimplementedConnectionServer) ConnectExStream(*ConnectExRequest, Connection_ConnectExStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method ConnectExStream not implemented")
 }
 
 // UnsafeConnectionServer may be embedded to opt out of forward compatibility for this service.
@@ -438,6 +528,48 @@ func _Connection_Screenshot_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Connection_ConnectStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ConnectRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ConnectionServer).ConnectStream(m, &connectionConnectStreamServer{stream})
+}
+
+type Connection_ConnectStreamServer interface {
+	Send(*ConnectStreamEvent) error
+	grpc.ServerStream
+}
+
+type connectionConnectStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *connectionConnectStreamServer) Send(m *ConnectStreamEvent) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Connection_ConnectExStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ConnectExRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ConnectionServer).ConnectExStream(m, &connectionConnectExStreamServer{stream})
+}
+
+type Connection_ConnectExStreamServer interface {
+	Send(*ConnectStreamEvent) error
+	grpc.ServerStream
+}
+
+type connectionConnectExStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *connectionConnectExStreamServer) Send(m *ConnectStreamEvent) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Connection_ServiceDesc is the grpc.ServiceDesc for Connection service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -482,7 +614,18 @@ var Connection_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Connection_Screenshot_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ConnectStream",
+			Handler:       _Connection_ConnectStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ConnectExStream",
+			Handler:       _Connection_ConnectExStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "mt4-term-api-connection.proto",
 }
 
