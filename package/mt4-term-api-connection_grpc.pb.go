@@ -88,6 +88,13 @@ type ConnectionClient interface {
 	// Experts log lines) while the connection is established.
 	// Requires 'id' header — use GetId to generate.
 	// Swagger does not support streaming — use /connect-stream interactive viewer.
+	// [DefaultValues]
+	//
+	//	{
+	//	  "user": "1124213727",
+	//	  "password": "1tjvjck",
+	//	  "mtClusterName": "FreshForex-Demo"
+	//	}
 	ConnectExStream(ctx context.Context, in *ConnectExRequest, opts ...grpc.CallOption) (Connection_ConnectExStreamClient, error)
 }
 
@@ -314,6 +321,13 @@ type ConnectionServer interface {
 	// Experts log lines) while the connection is established.
 	// Requires 'id' header — use GetId to generate.
 	// Swagger does not support streaming — use /connect-stream interactive viewer.
+	// [DefaultValues]
+	//
+	//	{
+	//	  "user": "1124213727",
+	//	  "password": "1tjvjck",
+	//	  "mtClusterName": "FreshForex-Demo"
+	//	}
 	ConnectExStream(*ConnectExRequest, Connection_ConnectExStreamServer) error
 }
 
