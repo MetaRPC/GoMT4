@@ -37,6 +37,11 @@ type SubscriptionServiceClient interface {
 	// Streams real-time ticks for the given symbols.
 	// Requires 'id' header — use GetId to generate.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
+	// [DefaultValues]
+	//
+	//	{
+	//	  "symbolNames": "EURUSD,BTCUSD"
+	//	}
 	OnSymbolTick(ctx context.Context, in *OnSymbolTickRequest, opts ...grpc.CallOption) (SubscriptionService_OnSymbolTickClient, error)
 }
 
@@ -195,6 +200,11 @@ type SubscriptionServiceServer interface {
 	// Streams real-time ticks for the given symbols.
 	// Requires 'id' header — use GetId to generate.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
+	// [DefaultValues]
+	//
+	//	{
+	//	  "symbolNames": "EURUSD,BTCUSD"
+	//	}
 	OnSymbolTick(*OnSymbolTickRequest, SubscriptionService_OnSymbolTickServer) error
 }
 
