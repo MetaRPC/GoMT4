@@ -3,7 +3,7 @@ module github.com/MetaRPC/GoMT4
 go 1.23.6
 
 require (
-	git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go v0.0.0-20250801133633-34bb1da6e4e5
+	github.com/MetaRPC/GoMT4/package v0.0.0
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
@@ -18,3 +18,5 @@ require (
 )
 
 replace github.com/MetaRPC/GoMT4 => ../
+
+replace github.com/MetaRPC/GoMT4/package => ../package

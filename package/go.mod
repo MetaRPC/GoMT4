@@ -1,4 +1,4 @@
-module git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go
+module github.com/MetaRPC/GoMT4/package
 
 go 1.23.6
 

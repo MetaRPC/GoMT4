@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	pb "git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go"
+	pb "github.com/MetaRPC/GoMT4/package"
 )
 
 type MT4Service struct {

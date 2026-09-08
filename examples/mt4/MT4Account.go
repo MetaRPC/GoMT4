@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"time"
 
-	pb "git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go"
+	pb "github.com/MetaRPC/GoMT4/package"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -96,7 +96,8 @@ type MT4Account struct {
 	MarketInfoClient   pb.MarketInfoClient
 	AccountHelper      pb.AccountHelperClient
 	// Id is a unique identifier (UUID) for this account session/instance.
-	Id uuid.UUID
+	Id     uuid.UUID
+	ApiKey string
 }
 
 // NewMT4Account initializes a new MT4Account and establishes the underlying gRPC connection.
@@ -196,15 +197,13 @@ func (a *MT4Account) ConnectByHostPort(
 		ctx = context.Background()
 	}
 
-	// Build request
+	timeoutSec := uint32(timeoutSeconds)
 	req := &pb.ConnectRequest{
-		User:                                   a.User,
-		Password:                               a.Password,
-		Host:                                   host,
-		Port:                                   int32(port),
-		BaseChartSymbol:                        proto.String(baseChartSymbol),
-		WaitForTerminalIsAlive:                 proto.Bool(waitForTerminalIsAlive),
-		TerminalReadinessWaitingTimeoutSeconds: proto.Int32(int32(timeoutSeconds)),
+		User:           a.User,
+		Password:       a.Password,
+		Host:           host,
+		Port:           int32(port),
+		TimeoutSeconds: &timeoutSec,
 	}
 
 	// Call
@@ -257,12 +256,13 @@ func (a *MT4Account) ConnectByServerName(
 		ctx = context.Background()
 	}
 
+	timeoutSec := uint32(timeoutSeconds)
 	req := &pb.ConnectExRequest{
-		User:                                   a.User,
-		Password:                               a.Password,
-		MtClusterName:                          serverName,
-		BaseChartSymbol:                        proto.String(baseChartSymbol),
-		TerminalReadinessWaitingTimeoutSeconds: proto.Int32(int32(timeoutSeconds)),
+		User:            a.User,
+		Password:        a.Password,
+		MtClusterName:   serverName,
+		BaseChartSymbol: proto.String(baseChartSymbol),
+		TimeoutSeconds:  &timeoutSec,
 	}
 
 	md := a.getHeaders()
