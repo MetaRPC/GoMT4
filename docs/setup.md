@@ -20,12 +20,12 @@ Audience: **beginner-friendly**. Comments in code are **English only**.
 * The generated protobuf stubs are published as a **Go module**:
 
   ```
-  git.mtapi.io/root/mrpc-proto/mt4/libraries/go
+  github.com/MetaRPC/GoMT4
   ```
 * Import without `.git` suffix:
 
   ```go
-  import pb "git.mtapi.io/root/mrpc-proto/mt4/libraries/go"
+  import pb "github.com/MetaRPC/GoMT4"
   ```
 * You do **not need to clone another repo**. Go fetches it automatically.
 
@@ -140,7 +140,7 @@ File: `.vscode/settings.json`
    go run ./examples/main.go
    ```
 
-4. You should see logs like `listening on 127.0.0.1:50051`.
+4. You should see logs like `listening on mt4.mrpc.pro:443`.
 
 ---
 

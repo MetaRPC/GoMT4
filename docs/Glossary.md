@@ -104,7 +104,7 @@ This diagram shows a typical order lifecycle: creation → open → closure (SL/
 ## 🔌 Connection & RPC
 
 * **gRPC** → Protocol used by GoMT4 to expose MT4 functions.
-* **Port 50051** → Default local address where server listens (`127.0.0.1:50051`).
+* **Port 50051** → Default local address where server listens (`mt4.mrpc.pro:443`).
 * **Stream** → Long‑lived connection pushing updates (quotes, orders, history).
 * **Unary RPC** → One‑shot request/response (e.g., GetQuote).
 

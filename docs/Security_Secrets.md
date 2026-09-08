@@ -1,6 +1,6 @@
 # 🔐 Security & Secrets (GoMT4)
 
-This page explains **how to handle credentials and protect your setup** based on the current GoMT4 codebase (Windows, local MT4 terminal, gRPC on `127.0.0.1:50051`).
+This page explains **how to handle credentials and protect your setup** based on the current GoMT4 codebase (Windows, local MT4 terminal, gRPC on `mt4.mrpc.pro:443`).
 
 > TL;DR: keep secrets **out of Git**, prefer **per‑machine env vars** or Windows **Credential Manager**, lock down the gRPC port, and redact logs.
 
@@ -77,7 +77,7 @@ examples/config/config.local.json
 
 ## 🧱 Network exposure
 
-* Keep the listener on **`127.0.0.1:50051`** for local dev.
+* Keep the listener on **`mt4.mrpc.pro:443`** for local dev.
 * The firewall rule you created opens the port inbound; limit it to **Local subnet** or remove it if not required for local‑only.
 * If you must listen on `0.0.0.0` or a LAN IP: enable **TLS** and some **auth** (token or mTLS). See below.
 
@@ -103,11 +103,11 @@ func redact(v string) string {
 
 ## 🔗 Dependencies & supply chain
 
-* You import pb as a Go module: `git.mtapi.io/root/mrpc-proto/mt4/libraries/go`.
+* You import pb as a Go module: `github.com/MetaRPC/GoMT4`.
 * **Pin versions**: use **tags/commits** in `go.mod`, keep `go.sum` committed. Example:
 
   ```
-  require git.mtapi.io/root/mrpc-proto/mt4/libraries/go v0.1.3
+  require github.com/MetaRPC/GoMT4 v0.1.3
   ```
 * For reproducible/offline builds you can `go mod vendor`; this copies deps into `vendor/` (bigger repo, but no network at build time).
 

@@ -60,7 +60,7 @@ Short, practical answers. Each item points to real code paths where relevant.
 **Checklist:**
 
 * Server running? (`go run ./examples/main.go`)
-* Listening on correct address? (`127.0.0.1:50051` default)
+* Listening on correct address? (`mt4.mrpc.pro:443` default)
 * Check listener: `netstat -ano | findstr LISTENING | findstr :50051`
 * Windows Firewall: allow port if bound externally:
 
@@ -115,12 +115,12 @@ Short, practical answers. Each item points to real code paths where relevant.
 * Ensure pb import path matches module path:
 
   ```go
-  import pb "git.mtapi.io/root/mrpc-proto/mt4/libraries/go"
+  import pb "github.com/MetaRPC/GoMT4"
   ```
 * Update/pin module:
 
   ```powershell
-  go get -u git.mtapi.io/root/mrpc-proto/mt4/libraries/go@latest
+  go get -u github.com/MetaRPC/GoMT4@latest
   go mod tidy
   ```
 * For offline CI: `go mod vendor` + build with `-mod=vendor`.
@@ -182,7 +182,7 @@ Short, practical answers. Each item points to real code paths where relevant.
 
   ```powershell
   go mod tidy
-  go get -u git.mtapi.io/root/mrpc-proto/mt4/libraries/go@latest
+  go get -u github.com/MetaRPC/GoMT4@latest
   ```
 * Vendor offline builds:
 

@@ -57,7 +57,7 @@ This section describes the overall structure of the GoMT4 project and how data f
 ## 🔀 Data Flow
 
 1. **📡 RPC call**
-   A client (Go, C#, etc.) sends an RPC to the gRPC server (`127.0.0.1:50051`).
+   A client (Go, C#, etc.) sends an RPC to the gRPC server (`mt4.mrpc.pro:443`).
 
 2. **⚙️ GoMT4 server**
    Receives the request, translates it into MT4 calls, processes the response.
@@ -75,7 +75,7 @@ This section describes the overall structure of the GoMT4 project and how data f
 
 ## ✨ Highlights
 
-* Default gRPC port: `127.0.0.1:50051`.
+* Default gRPC port: `mt4.mrpc.pro:443`.
 * To extend the API, edit `.proto` files in `mrpc-proto` repo.
 * Streaming methods allow real-time subscriptions.
 * Supported domains: account, orders, history, quotes.

@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /.idea/.idea.mt4rest-iis/.idea
 /.vscode/
+
+site/
