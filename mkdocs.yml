@@ -1,5 +1,7 @@
-site_name: MetaRPC MT4 Golang Documentation
+site_name: GoMT4 SDK Documentation
 site_url: https://metarpc.github.io/GoMT4/
+site_description: Complete Go SDK for MetaTrader 4 trading automation via gRPC
+
 repo_name: MetaRPC/GoMT4
 repo_url: https://github.com/MetaRPC/GoMT4
 edit_uri: edit/main/docs/
@@ -10,158 +12,88 @@ theme:
   font:
     text: Inter
     code: JetBrains Mono
+  icon:
+    logo: material/language-go
+    repo: fontawesome/brands/github
   palette:
-    - scheme: default
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
       primary: indigo
       accent: indigo
       toggle:
-        icon: material/weather-night
+        icon: material/brightness-7
         name: Switch to dark mode
-    - scheme: slate
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
       primary: indigo
       accent: indigo
       toggle:
-        icon: material/weather-sunny
+        icon: material/brightness-4
         name: Switch to light mode
   features:
-    
-    - navigation.instant          
-    - navigation.tracking         
-    - navigation.sections         
-    - navigation.top              
-    - navigation.tabs             
-    - toc.integrate               
-    
-    - content.code.copy           
-    - content.action.edit         
-    - content.tabs.link           
-    - search.highlight            
-    - search.suggest              
-    - palette.toggle
-    - palette.auto
+    - navigation.tracking
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - toc.follow
+  custom_dir: docs/includes
 
 extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/MetaRPC/GoMT4
-      name: GitHub
-  generator: false
-  
-  consent:
-    title: Cookies & telemetry
-    description: We use GitHub Pages basic analytics only. No tracking cookies.
+      name: GoMT4 on GitHub
+
+extra_css:
+  - styles/custom.css
+
+extra_javascript:
+  - javascripts/ux.js
+
+markdown_extensions:
+  - admonition
+  - md_in_html
+  - tables
+  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - toc:
+      permalink: "¶"
+      toc_depth: 3
+
+plugins:
+  - search
 
 copyright: >
-  © {{ date | strftime("%Y") }} MetaRPC. MT4 is a MetaQuotes software. This site is a community-made documentation.
+  Copyright © 2024–2025 MetaRPC. MT4 is a trademark of MetaQuotes Software Corp.
+  This documentation is community-maintained and not affiliated with MetaQuotes.
 
 nav:
   - Home: index.md
 
   - Guides:
-      - Introduction: Introduction.md
-      - Your Easy Start: Your_Easy_Start.md
-      - Beginner Run Guide: Beginner_Run_Guide.md
-      - Setup & Environment: setup.md
-      - Architecture & Data Flow: Architecture_DataFlow.md
-      - Reliability (Timeouts, Reconnects, Backoff): ReTimeouts_Reconnects_Backoff.md
-      - Troubleshooting & FAQ: Troubleshooting_FAQ.md
-      - Performance Notes: Performance_Notes.md
-      - Security & Secrets: Security_Secrets.md
-      - Observability (Logs & Metrics): Observability.md
-      - Glossary (MT4 Terms): Glossary.md
-      - CLI Usage (Playground): cli_usage.md
-
-  - Account:
-      - Show Account Summary: Account/ShowAccountSummary.md
-
-  - Market Info:
-      - Overview: Market_Info/Market_Info_Overview.md
-      - AllSymbols: Market_Info/ShowAllSymbols.md
-      - ShowQuote: Market_Info/ShowQuote.md
-      - QuoteHistory: Market_Info/ShowQuoteHistory.md
-      - QuotesMany: Market_Info/ShowQuotesMany.md
-      - SymbolParams: Market_Info/ShowSymbolParams.md
-      - Symbols: Market_Info/ShowSymbols.md
-      - TickValues: Market_Info/ShowTickValues.md
-
-  - Order Operations:
-      - Overview: Order_Operations/Order_Operations_Overview.md
-      - OpenedOrderTickets: Order_Operations/ShowOpenedOrderTickets.md
-      - OpenedOrders: Order_Operations/ShowOpenedOrders.md
-      - OrderCloseByExample: Order_Operations/ShowOrderCloseByExample.md
-      - OrderCloseExample: Order_Operations/ShowOrderCloseExample.md
-      - OrderDeleteExample: Order_Operations/ShowOrderDeleteExample.md
-      - OrderModifyExample: Order_Operations/ShowOrderModifyExample.md
-      - OrderSendExample: Order_Operations/ShowOrderSendExample.md
-      - OrdersHistory: Order_Operations/ShowOrdersHistory.md
-
-  - Streaming:
-      - Overview: Streaming/Streaming_Overview.md
-      - StreamOpenedOrderProfits: Streaming/StreamOpenedOrderProfits.md
-      - StreamOpenedOrderTickets: Streaming/StreamOpenedOrderTickets.md
-      - StreamQuotes: Streaming/StreamQuotes.md
-      - StreamTradeUpdates: Streaming/StreamTradeUpdates.md
-      - StreamOrdersHistoryExample: Streaming/StreamOrdersHistoryExample.md
-      - StreamQuoteHistoryExample: Streaming/StreamQuoteHistoryExample.md
+    - Getting Started: All_Guides/GETTING_STARTED.md
+    - Your First Project: All_Guides/Your_First_Project.md
+    - Project Map: All_Guides/PROJECT_MAP.md
+    - Glossary: All_Guides/GLOSSARY.md
+    - MT4 for Beginners: All_Guides/MT4_For_Beginners.md
+    - gRPC Streaming: All_Guides/GRPC_STREAM_MANAGEMENT.md
+    - Return Codes: All_Guides/RETURN_CODES_REFERENCE.md
+    - ENUMs Reference: All_Guides/ENUMS_USAGE_REFERENCE.md
+    - Protobuf Inspector: All_Guides/PROTOBUF_INSPECTOR_GUIDE.md
+    - UserCode Sandbox: All_Guides/USERCODE_SANDBOX_GUIDE.md
+    - Sync vs Async: All_Guides/SYNC_VS_ASYNC.md
 
   - API Reference:
-      - Overview: "API Reference/Overview.md"
-      - Enums: "API Reference/Enums.md"
-      - Messages: "API Reference/Messages.md"
-      - Streaming: "API Reference/Streaming.md"
+    - MT4Account API: API_Reference/MT4Account.md
+    - MT4Service API: API_Reference/MT4Service.md
+    - MT4Sugar API: API_Reference/MT4Sugar.md
 
-  - Cookbook:
-      - Account:
-          - Show Account Summary: Cookbook/Account/AccountSummary.md
-          - Stream Opened Order Profits: Cookbook/Account/StreamOpenedOrderProfits.md
-      - Market Info:
-          - Get Quote: Cookbook/Market_Info/GetQuote.md
-          - Get Multiple Quotes: Cookbook/Market_Info/GetMultipleQuotes.md
-          - Stream Quotes: Cookbook/Market_Info/StreamQuotes.md
-          - Symbol Params: Cookbook/Market_Info/SymbolParams.md
-          - Quote History: Cookbook/Market_Info/QuoteHistory.md
-      - Orders:
-          - Place Market Order: Cookbook/Orders/PlaceMarketOrder.md
-          - Place Pending Order: Cookbook/Orders/PlacePendingOrder.md
-          - Modify Order: Cookbook/Orders/ModifyOrder.md
-          - Close Order: Cookbook/Orders/CloseOrder.md
-          - Close By Orders: Cookbook/Orders/CloseByOrders.md
-          - Delete Pending: Cookbook/Orders/DeletePending.md
-          - History Orders: Cookbook/Orders/HistoryOrders.md
-      - Reliability & Connection:
-          - Handle Reconnect: Cookbook/Reliability_Connection/HandleReconnect.md
-          - Unary Retries: Cookbook/Reliability_Connection/UnaryRetries.md
-          - Health Check: Cookbook/Reliability_Connection/HealthCheck.md
-      - Utils & Helpers:
-          - Round Volume/Price: Cookbook/Utils_Helpers/RoundVolumePrice.md
-          - Ensure Symbol Visible: Cookbook/Utils_Helpers/EnsureSymbolVisible.md
-          - Config Example: Cookbook/Utils_Helpers/ConfigExample.md
-
-markdown_extensions:
-  - admonition
-  - pymdownx.details
-  - pymdownx.superfences
-  - md_in_html
-  - tables
-  - toc:
-      permalink: true
-  - codehilite
-  - pymdownx.inlinehilite
-  - pymdownx.highlight
-  - pymdownx.snippets
-  - pymdownx.tabbed:
-      alternate_style: true
-  - attr_list
-  - def_list
-  - abbr
-  - footnotes
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - pymdownx.critic
-  - pymdownx.emoji:     
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
-
-
-plugins:
-  - search
+  - Strategies:
+    - Master Overview: Strategies/Strategies.Master.Overview.md
+    - Presets: Strategies/Presets/AdaptiveMarketModePreset.md
