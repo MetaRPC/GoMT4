@@ -2,11 +2,13 @@ package mt4
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"math/rand"
+	"os"
 	"time"
 
 	pb "github.com/MetaRPC/GoMT4/package"
@@ -100,12 +102,43 @@ type MT4Account struct {
 	ApiKey string
 }
 
+// ComputeDeterministicTerminalId computes a stable deterministic UUID based on credentials.
+// Matches .NET Guid(byte[16]) little-endian byte ordering.
+func ComputeDeterministicTerminalId(user uint64, password string) uuid.UUID {
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%d:%s", user, password)))
+	b := hash[:16]
+	var leBytes [16]byte
+	leBytes[0] = b[3]
+	leBytes[1] = b[2]
+	leBytes[2] = b[1]
+	leBytes[3] = b[0]
+	leBytes[4] = b[5]
+	leBytes[5] = b[4]
+	leBytes[6] = b[7]
+	leBytes[7] = b[6]
+	copy(leBytes[8:], b[8:16])
+	id, _ := uuid.FromBytes(leBytes[:])
+	return id
+}
+
 // NewMT4Account initializes a new MT4Account and establishes the underlying gRPC connection.
+// If id is uuid.Nil, it is deterministically computed from user and password.
 // Returns a pointer to the account object and any error encountered while connecting.
-func NewMT4Account(user uint64, password string, grpcServer string, id uuid.UUID) (*MT4Account, error) {
+func NewMT4Account(user uint64, password string, grpcServer string, id uuid.UUID, apiKey ...string) (*MT4Account, error) {
 	// If no endpoint specified, use production default
 	if grpcServer == "" {
 		grpcServer = "mt4.mrpc.pro:443"
+	}
+
+	if id == uuid.Nil {
+		id = ComputeDeterministicTerminalId(user, password)
+	}
+
+	key := ""
+	if len(apiKey) > 0 && apiKey[0] != "" {
+		key = apiKey[0]
+	} else {
+		key = os.Getenv("MRPC_API_KEY")
 	}
 
 	config := &tls.Config{
@@ -128,9 +161,15 @@ func NewMT4Account(user uint64, password string, grpcServer string, id uuid.UUID
 		TradeClient:        pb.NewTradingHelperClient(conn),
 		MarketInfoClient:   pb.NewMarketInfoClient(conn),
 		Id:                 id,
+		ApiKey:             key,
 		Port:               443,
 		ConnectTimeout:     30,
 	}, nil
+}
+
+// NewMT4AccountWithApiKey creates a new MT4Account instance using credentials and API key.
+func NewMT4AccountWithApiKey(user uint64, password string, grpcServer string, apiKey string) (*MT4Account, error) {
+	return NewMT4Account(user, password, grpcServer, uuid.Nil, apiKey)
 }
 
 // isConnected returns true if this account is associated with any host or server name.
@@ -166,12 +205,19 @@ func (a *MT4Account) ensureMarketInfoClient() error {
 	return nil
 }
 
-// getHeaders builds the gRPC metadata headers (adds "id" if present).
+// getHeaders builds the gRPC metadata headers (adds "id" and "apikey" if present).
 func (a *MT4Account) getHeaders() metadata.MD {
-	if a.Id == uuid.Nil {
+	pairs := []string{}
+	if a.Id != uuid.Nil {
+		pairs = append(pairs, "id", a.Id.String())
+	}
+	if a.ApiKey != "" {
+		pairs = append(pairs, "apikey", a.ApiKey)
+	}
+	if len(pairs) == 0 {
 		return nil
 	}
-	return metadata.Pairs("id", a.Id.String())
+	return metadata.Pairs(pairs...)
 }
 
 // wrapAPIError converts pb.Error into a Go error with code + message.
