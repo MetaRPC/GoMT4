@@ -24,6 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 type ChartsClient interface {
 	GetEaParams(ctx context.Context, in *GetEaParamsRequest, opts ...grpc.CallOption) (*GetEaParamsReply, error)
 	OpenTerminalChartWithEa(ctx context.Context, in *OpenTerminalChartWithEaRequest, opts ...grpc.CallOption) (*OpenTerminalChartWithEaReply, error)
+	AttachEa(ctx context.Context, in *AttachEaRequest, opts ...grpc.CallOption) (*AttachEaReply, error)
+	GetRunningEas(ctx context.Context, in *GetRunningEasRequest, opts ...grpc.CallOption) (*GetRunningEasReply, error)
+	GetEaLogs(ctx context.Context, in *GetEaLogsRequest, opts ...grpc.CallOption) (*GetEaLogsReply, error)
+	StopEa(ctx context.Context, in *StopEaRequest, opts ...grpc.CallOption) (*StopEaReply, error)
 }
 
 type chartsClient struct {
@@ -52,12 +56,52 @@ func (c *chartsClient) OpenTerminalChartWithEa(ctx context.Context, in *OpenTerm
 	return out, nil
 }
 
+func (c *chartsClient) AttachEa(ctx context.Context, in *AttachEaRequest, opts ...grpc.CallOption) (*AttachEaReply, error) {
+	out := new(AttachEaReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Charts/AttachEa", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chartsClient) GetRunningEas(ctx context.Context, in *GetRunningEasRequest, opts ...grpc.CallOption) (*GetRunningEasReply, error) {
+	out := new(GetRunningEasReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Charts/GetRunningEas", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chartsClient) GetEaLogs(ctx context.Context, in *GetEaLogsRequest, opts ...grpc.CallOption) (*GetEaLogsReply, error) {
+	out := new(GetEaLogsReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Charts/GetEaLogs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chartsClient) StopEa(ctx context.Context, in *StopEaRequest, opts ...grpc.CallOption) (*StopEaReply, error) {
+	out := new(StopEaReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Charts/StopEa", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChartsServer is the server API for Charts service.
 // All implementations should embed UnimplementedChartsServer
 // for forward compatibility
 type ChartsServer interface {
 	GetEaParams(context.Context, *GetEaParamsRequest) (*GetEaParamsReply, error)
 	OpenTerminalChartWithEa(context.Context, *OpenTerminalChartWithEaRequest) (*OpenTerminalChartWithEaReply, error)
+	AttachEa(context.Context, *AttachEaRequest) (*AttachEaReply, error)
+	GetRunningEas(context.Context, *GetRunningEasRequest) (*GetRunningEasReply, error)
+	GetEaLogs(context.Context, *GetEaLogsRequest) (*GetEaLogsReply, error)
+	StopEa(context.Context, *StopEaRequest) (*StopEaReply, error)
 }
 
 // UnimplementedChartsServer should be embedded to have forward compatible implementations.
@@ -69,6 +113,18 @@ func (UnimplementedChartsServer) GetEaParams(context.Context, *GetEaParamsReques
 }
 func (UnimplementedChartsServer) OpenTerminalChartWithEa(context.Context, *OpenTerminalChartWithEaRequest) (*OpenTerminalChartWithEaReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method OpenTerminalChartWithEa not implemented")
+}
+func (UnimplementedChartsServer) AttachEa(context.Context, *AttachEaRequest) (*AttachEaReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AttachEa not implemented")
+}
+func (UnimplementedChartsServer) GetRunningEas(context.Context, *GetRunningEasRequest) (*GetRunningEasReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunningEas not implemented")
+}
+func (UnimplementedChartsServer) GetEaLogs(context.Context, *GetEaLogsRequest) (*GetEaLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEaLogs not implemented")
+}
+func (UnimplementedChartsServer) StopEa(context.Context, *StopEaRequest) (*StopEaReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopEa not implemented")
 }
 
 // UnsafeChartsServer may be embedded to opt out of forward compatibility for this service.
@@ -118,6 +174,78 @@ func _Charts_OpenTerminalChartWithEa_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Charts_AttachEa_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AttachEaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChartsServer).AttachEa(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Charts/AttachEa",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChartsServer).AttachEa(ctx, req.(*AttachEaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Charts_GetRunningEas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunningEasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChartsServer).GetRunningEas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Charts/GetRunningEas",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChartsServer).GetRunningEas(ctx, req.(*GetRunningEasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Charts_GetEaLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEaLogsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChartsServer).GetEaLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Charts/GetEaLogs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChartsServer).GetEaLogs(ctx, req.(*GetEaLogsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Charts_StopEa_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopEaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChartsServer).StopEa(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Charts/StopEa",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChartsServer).StopEa(ctx, req.(*StopEaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Charts_ServiceDesc is the grpc.ServiceDesc for Charts service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -132,6 +260,22 @@ var Charts_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "OpenTerminalChartWithEa",
 			Handler:    _Charts_OpenTerminalChartWithEa_Handler,
+		},
+		{
+			MethodName: "AttachEa",
+			Handler:    _Charts_AttachEa_Handler,
+		},
+		{
+			MethodName: "GetRunningEas",
+			Handler:    _Charts_GetRunningEas_Handler,
+		},
+		{
+			MethodName: "GetEaLogs",
+			Handler:    _Charts_GetEaLogs_Handler,
+		},
+		{
+			MethodName: "StopEa",
+			Handler:    _Charts_StopEa_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
