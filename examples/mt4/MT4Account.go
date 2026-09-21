@@ -137,8 +137,10 @@ func NewMT4Account(user uint64, password string, grpcServer string, id uuid.UUID
 	key := ""
 	if len(apiKey) > 0 && apiKey[0] != "" {
 		key = apiKey[0]
+	} else if k := os.Getenv("MRPC_API_KEY"); k != "" {
+		key = k
 	} else {
-		key = os.Getenv("MRPC_API_KEY")
+		key = "TRIAL"
 	}
 
 	config := &tls.Config{
@@ -188,9 +190,11 @@ func (a *MT4Account) GetId(ctx ...context.Context) (uuid.UUID, error) {
 		callCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 	}
-	if a.ApiKey != "" {
-		callCtx = metadata.AppendToOutgoingContext(callCtx, "apikey", a.ApiKey)
+	key := a.ApiKey
+	if key == "" {
+		key = "TRIAL"
 	}
+	callCtx = metadata.AppendToOutgoingContext(callCtx, "apikey", key)
 	reply, err := a.ConnectionClient.GetId(callCtx, req)
 	if err == nil && reply != nil {
 		if data := reply.GetData(); data != nil && data.GetId() != "" {
@@ -248,12 +252,11 @@ func (a *MT4Account) getHeaders() metadata.MD {
 	if a.Id != uuid.Nil {
 		pairs = append(pairs, "id", a.Id.String())
 	}
-	if a.ApiKey != "" {
-		pairs = append(pairs, "apikey", a.ApiKey)
+	key := a.ApiKey
+	if key == "" {
+		key = "TRIAL"
 	}
-	if len(pairs) == 0 {
-		return nil
-	}
+	pairs = append(pairs, "apikey", key)
 	return metadata.Pairs(pairs...)
 }
 
