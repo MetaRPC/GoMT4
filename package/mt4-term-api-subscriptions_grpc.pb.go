@@ -23,19 +23,19 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SubscriptionServiceClient interface {
 	// Streams real-time order/trade events.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	OnTrade(ctx context.Context, in *OnTradeRequest, opts ...grpc.CallOption) (SubscriptionService_OnTradeClient, error)
 	// Streams the tickets of currently opened orders as they change.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	OnOpenedOrdersTickets(ctx context.Context, in *OnOpenedOrdersTicketsRequest, opts ...grpc.CallOption) (SubscriptionService_OnOpenedOrdersTicketsClient, error)
 	// Streams the live profit of currently opened orders.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	OnOpenedOrdersProfit(ctx context.Context, in *OnOpenedOrdersProfitRequest, opts ...grpc.CallOption) (SubscriptionService_OnOpenedOrdersProfitClient, error)
 	// Streams real-time ticks for the given symbols.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	// [DefaultValues]
 	//
@@ -186,19 +186,19 @@ func (x *subscriptionServiceOnSymbolTickClient) Recv() (*OnSymbolTickReply, erro
 // for forward compatibility
 type SubscriptionServiceServer interface {
 	// Streams real-time order/trade events.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	OnTrade(*OnTradeRequest, SubscriptionService_OnTradeServer) error
 	// Streams the tickets of currently opened orders as they change.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	OnOpenedOrdersTickets(*OnOpenedOrdersTicketsRequest, SubscriptionService_OnOpenedOrdersTicketsServer) error
 	// Streams the live profit of currently opened orders.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	OnOpenedOrdersProfit(*OnOpenedOrdersProfitRequest, SubscriptionService_OnOpenedOrdersProfitServer) error
 	// Streams real-time ticks for the given symbols.
-	// Requires 'id' header — use GetId to generate.
+	// Requires 'id' header returned by Connect/ConnectEx.
 	// Swagger does not support streaming — use /subscription-stream interactive viewer.
 	// [DefaultValues]
 	//
