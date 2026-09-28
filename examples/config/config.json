@@ -1,6 +1,7 @@
 {
-  "Login": 501401178,
-  "Password": "v8gctta",
-  "Server": "RoboForex-Demo",
-  "DefaultSymbol": "EURUSD"
+  "Login": 0,
+  "Password": "",
+  "Server": "MetaQuotes-Demo",
+  "DefaultSymbol": "EURUSD",
+  "ApiKey": "TRIAL"
 }

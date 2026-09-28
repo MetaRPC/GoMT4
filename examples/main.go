@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/MetaRPC/GoMT4/config"
 	"github.com/MetaRPC/GoMT4/mt4"
 	"github.com/google/uuid"
-	"log"
 )
 
 func main() {
@@ -16,8 +19,24 @@ func main() {
 		log.Fatalf("❌ Failed to load config.json: %v", err)
 	}
 
+	apiKey := cfg.ApiKey
+	for i := 1; i < len(os.Args); i++ {
+		arg := os.Args[i]
+		if strings.HasPrefix(arg, "--api-key=") {
+			apiKey = strings.TrimPrefix(arg, "--api-key=")
+		} else if arg == "--api-key" && i+1 < len(os.Args) {
+			apiKey = os.Args[i+1]
+			i++
+		} else if !strings.HasPrefix(arg, "-") && i == 1 {
+			apiKey = arg
+		}
+	}
+	if apiKey != "" {
+		cfg.ApiKey = apiKey
+	}
+
 	// Creating an account
-	account, err := mt4.NewMT4Account(uint64(cfg.Login), cfg.Password, "", uuid.Nil)
+	account, err := mt4.NewMT4Account(uint64(cfg.Login), cfg.Password, "", uuid.Nil, cfg.ApiKey)
 	if err != nil {
 		log.Fatalf("❌ Failed to create MT4 account: %v", err)
 	}
@@ -89,5 +108,12 @@ func main() {
 	if enableHistoryStreams {
 		svc.StreamOrdersHistoryExample(ctx)                   // page-by-page history (30 days)
 		svc.StreamQuoteHistoryExample(ctx, cfg.DefaultSymbol) // candle chunks (90 days)
+	}
+
+	fmt.Println("\n📴 Disconnecting from MT4...")
+	if err := account.Disconnect(); err != nil {
+		fmt.Printf("⚠️ Disconnect notice: %v\n", err)
+	} else {
+		fmt.Println("✅ Disconnected successfully")
 	}
 }

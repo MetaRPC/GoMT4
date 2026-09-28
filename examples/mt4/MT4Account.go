@@ -9,6 +9,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	pb "github.com/MetaRPC/GoMT4/package"
@@ -98,8 +99,29 @@ type MT4Account struct {
 	MarketInfoClient   pb.MarketInfoClient
 	AccountHelper      pb.AccountHelperClient
 	// Id is a unique identifier (UUID) for this account session/instance.
-	Id     uuid.UUID
-	ApiKey string
+	Id                   uuid.UUID
+	TerminalInstanceGuid string
+	ApiKey               string
+}
+
+// ParseGuidSafe parses a GUID string into uuid.UUID safely, stripping mt5_live_ or mt4_live_ prefix if present.
+func ParseGuidSafe(guidStr string) uuid.UUID {
+	if guidStr == "" {
+		return uuid.New()
+	}
+	if parsed, err := uuid.Parse(guidStr); err == nil {
+		return parsed
+	}
+	clean := guidStr
+	if strings.HasPrefix(clean, "mt5_live_") {
+		clean = strings.TrimPrefix(clean, "mt5_live_")
+	} else if strings.HasPrefix(clean, "mt4_live_") {
+		clean = strings.TrimPrefix(clean, "mt4_live_")
+	}
+	if parsed, err := uuid.Parse(clean); err == nil {
+		return parsed
+	}
+	return uuid.New()
 }
 
 // ComputeDeterministicTerminalId computes a stable deterministic UUID based on credentials.
@@ -218,7 +240,7 @@ func (a *MT4Account) isConnected() bool {
 	if a == nil {
 		return false
 	}
-	return a.GrpcConn != nil && a.Id != uuid.Nil
+	return a.GrpcConn != nil && (a.TerminalInstanceGuid != "" || a.Id != uuid.Nil)
 }
 
 func (a *MT4Account) ensureSubscriptionClient() error {
@@ -249,7 +271,9 @@ func (a *MT4Account) ensureMarketInfoClient() error {
 // getHeaders builds the gRPC metadata headers (adds "id" and "apikey" if present).
 func (a *MT4Account) getHeaders() metadata.MD {
 	pairs := []string{}
-	if a.Id != uuid.Nil {
+	if a.TerminalInstanceGuid != "" {
+		pairs = append(pairs, "id", a.TerminalInstanceGuid)
+	} else if a.Id != uuid.Nil {
 		pairs = append(pairs, "id", a.Id.String())
 	}
 	key := a.ApiKey
@@ -311,9 +335,8 @@ func (a *MT4Account) ConnectByHostPort(
 	a.ConnectTimeout = timeoutSeconds
 
 	if data := res.GetData(); data != nil && data.GetTerminalInstanceGuid() != "" {
-		if id, parseErr := uuid.Parse(data.GetTerminalInstanceGuid()); parseErr == nil {
-			a.Id = id
-		}
+		a.TerminalInstanceGuid = data.GetTerminalInstanceGuid()
+		a.Id = ParseGuidSafe(data.GetTerminalInstanceGuid())
 	}
 
 	// --- Health-check: ensure terminal is really ready
@@ -344,11 +367,10 @@ func (a *MT4Account) ConnectByServerName(
 
 	timeoutSec := uint32(timeoutSeconds)
 	req := &pb.ConnectExRequest{
-		User:            a.User,
-		Password:        a.Password,
-		MtClusterName:   serverName,
-		BaseChartSymbol: proto.String(baseChartSymbol),
-		TimeoutSeconds:  &timeoutSec,
+		User:           a.User,
+		Password:       a.Password,
+		MtClusterName:  serverName,
+		TimeoutSeconds: &timeoutSec,
 	}
 
 	md := a.getHeaders()
@@ -367,9 +389,8 @@ func (a *MT4Account) ConnectByServerName(
 	a.ConnectTimeout = timeoutSeconds
 
 	if data := res.GetData(); data != nil && data.GetTerminalInstanceGuid() != "" {
-		if id, parseErr := uuid.Parse(data.GetTerminalInstanceGuid()); parseErr == nil {
-			a.Id = id
-		}
+		a.TerminalInstanceGuid = data.GetTerminalInstanceGuid()
+		a.Id = ParseGuidSafe(data.GetTerminalInstanceGuid())
 	}
 
 	// --- Health-check: ensure terminal is really ready
@@ -383,6 +404,17 @@ func (a *MT4Account) ConnectByServerName(
 	}
 
 	return nil
+}
+
+
+// Close closes the underlying gRPC connection without sending Disconnect to terminal.
+func (a *MT4Account) Close() error {
+	if a == nil || a.GrpcConn == nil {
+		return nil
+	}
+	err := a.GrpcConn.Close()
+	a.GrpcConn = nil
+	return err
 }
 
 // ExecuteWithReconnect retries a gRPC call on recoverable errors (network/instance-not-found).
@@ -2110,12 +2142,28 @@ func (a *MT4Account) OnSymbolTick(
 //=========== Working moments =============
 //-----------------------------------------
 
-// Disconnect closes the gRPC connection and resets client state.
+// Disconnect sends a DisconnectRequest to the MT4 terminal, closes the gRPC connection, and resets client state.
 // Safe to call multiple times.
-func (a *MT4Account) Disconnect() error {
+func (a *MT4Account) Disconnect(ctx ...context.Context) error {
 	// nothing to do
 	if a == nil {
 		return nil
+	}
+
+	var disconnectErr error
+	if a.ConnectionClient != nil && (a.TerminalInstanceGuid != "" || a.Id != uuid.Nil) {
+		var callCtx context.Context
+		if len(ctx) > 0 && ctx[0] != nil {
+			callCtx = ctx[0]
+		} else {
+			var cancel context.CancelFunc
+			callCtx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+		}
+		md := a.getHeaders()
+		outCtx := metadata.NewOutgoingContext(callCtx, md)
+		req := &pb.DisconnectRequest{}
+		_, disconnectErr = a.ConnectionClient.Disconnect(outCtx, req)
 	}
 
 	// close gRPC conn if present
@@ -2135,10 +2183,14 @@ func (a *MT4Account) Disconnect() error {
 
 	// wipe runtime connection markers
 	a.Id = uuid.Nil
+	a.TerminalInstanceGuid = ""
 	a.Host = ""
 	a.ServerName = ""
 	a.BaseChartSymbol = ""
 	// keep a.User / a.Password / a.GrpcServer as they are config
 
+	if disconnectErr != nil {
+		return disconnectErr
+	}
 	return closeErr
 }

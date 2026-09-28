@@ -367,6 +367,7 @@ func (s *MT4Service) StreamQuotes(ctx context.Context) {
 	tickCh, errCh := s.account.OnSymbolTick(ctx, symbols)
 
 	fmt.Println("🔄 Streaming ticks...")
+	count := 0
 	for {
 		select {
 		case tick, ok := <-tickCh:
@@ -377,11 +378,15 @@ func (s *MT4Service) StreamQuotes(ctx context.Context) {
 			if sym := tick.GetSymbolTick(); sym != nil {
 				fmt.Printf("[Tick] %s | Bid: %.5f | Ask: %.5f | Time: %s\n",
 					sym.GetSymbol(), sym.GetBid(), sym.GetAsk(), sym.GetTime().AsTime().Format("2006-01-02 15:04:05"))
+				count++
+				if count >= 3 {
+					return
+				}
 			}
 		case err := <-errCh:
 			log.Printf("❌ Stream error: %v", err)
 			return
-		case <-time.After(30 * time.Second):
+		case <-time.After(5 * time.Second):
 			fmt.Println("⏱️ Timeout reached.")
 			return
 		}
@@ -419,7 +424,7 @@ func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context) {
 			log.Printf("❌ Stream error: %v", err)
 			return
 
-		case <-time.After(30 * time.Second):
+		case <-time.After(3 * time.Second):
 			fmt.Println("⏱️ Timeout reached.")
 			return
 		}
@@ -450,7 +455,7 @@ func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context) {
 		case err := <-errCh:
 			log.Printf("❌ Stream error: %v", err)
 			return
-		case <-time.After(30 * time.Second):
+		case <-time.After(3 * time.Second):
 			fmt.Println("⏱️ Timeout reached.")
 			return
 		}
@@ -494,7 +499,7 @@ func (s *MT4Service) StreamTradeUpdates(ctx context.Context) {
 			log.Printf("❌ Stream error: %v", err)
 			return
 
-		case <-time.After(30 * time.Second):
+		case <-time.After(3 * time.Second):
 			fmt.Println("⏱️ Timeout reached.")
 			return
 		}
@@ -582,7 +587,7 @@ func (s *MT4Service) StreamOrdersHistoryExample(ctx context.Context) {
 			log.Printf("❌ Orders history stream error: %v", err)
 			return
 
-		case <-time.After(30 * time.Second):
+		case <-time.After(3 * time.Second):
 			// Demo timeout to keep examples short and safe.
 			// In production, remove this and rely on ctx cancellation.
 			fmt.Println("⏱ Timeout reached.")
@@ -601,7 +606,7 @@ func (s *MT4Service) StreamOrdersHistoryExample(ctx context.Context) {
 //   - Timeframe: H1 (hourly bars).
 //   - Range: last 90 days from now.
 //   - Chunking: 7 days per batch (weekly chunks).
-//   - Stops after ~30 seconds via a demo timeout.
+//   - Stops after ~5 seconds via a demo timeout.
 //   - Prints time, Open and Close for each bar.
 //
 // Production tips:
@@ -650,7 +655,7 @@ func (s *MT4Service) StreamQuoteHistoryExample(ctx context.Context, symbol strin
 			log.Printf("❌ Quote history stream error: %v", err)
 			return
 
-		case <-time.After(30 * time.Second):
+		case <-time.After(5 * time.Second):
 			// Demo timeout to keep examples short and safe.
 			// In production, remove this and rely on ctx cancellation.
 			fmt.Println("⏱ Timeout reached.")
