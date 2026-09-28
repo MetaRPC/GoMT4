@@ -2143,19 +2143,29 @@ func (a *MT4Account) OnSymbolTick(
 //-----------------------------------------
 
 // Disconnect sends a DisconnectRequest to the MT4 terminal, closes the gRPC connection, and resets client state.
+// Arguments can be optional delete bool (default false, true to delete terminal instance) and/or context.Context.
 // Safe to call multiple times.
-func (a *MT4Account) Disconnect(ctx ...context.Context) error {
+func (a *MT4Account) Disconnect(args ...any) error {
 	// nothing to do
 	if a == nil {
 		return nil
 	}
 
+	var callCtx context.Context
+	var deleteOnDisconnect bool
+
+	for _, arg := range args {
+		switch v := arg.(type) {
+		case context.Context:
+			callCtx = v
+		case bool:
+			deleteOnDisconnect = v
+		}
+	}
+
 	var disconnectErr error
 	if a.ConnectionClient != nil && (a.TerminalInstanceGuid != "" || a.Id != uuid.Nil) {
-		var callCtx context.Context
-		if len(ctx) > 0 && ctx[0] != nil {
-			callCtx = ctx[0]
-		} else {
+		if callCtx == nil {
 			var cancel context.CancelFunc
 			callCtx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
@@ -2163,6 +2173,10 @@ func (a *MT4Account) Disconnect(ctx ...context.Context) error {
 		md := a.getHeaders()
 		outCtx := metadata.NewOutgoingContext(callCtx, md)
 		req := &pb.DisconnectRequest{}
+		if deleteOnDisconnect {
+			del := true
+			req.Delete = &del
+		}
 		_, disconnectErr = a.ConnectionClient.Disconnect(outCtx, req)
 	}
 

@@ -40,7 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("❌ Failed to create MT4 account: %v", err)
 	}
-	defer account.Disconnect() // ensure cleanup on exit
+	defer account.Disconnect(true) // ensure cleanup on exit (delete=true)
 
 	// Connecting to the server
 	ctx := context.Background()
@@ -111,7 +111,7 @@ func main() {
 	}
 
 	fmt.Println("\n📴 Disconnecting from MT4...")
-	if err := account.Disconnect(); err != nil {
+	if err := account.Disconnect(true); err != nil {
 		fmt.Printf("⚠️ Disconnect notice: %v\n", err)
 	} else {
 		fmt.Println("✅ Disconnected successfully")
