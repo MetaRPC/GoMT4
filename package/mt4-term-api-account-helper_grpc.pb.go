@@ -32,6 +32,8 @@ type AccountHelperClient interface {
 	OrdersHistory(ctx context.Context, in *OrdersHistoryRequest, opts ...grpc.CallOption) (*OrdersHistoryReply, error)
 	// Full information about exact symbol, or all symbols
 	SymbolParamsMany(ctx context.Context, in *SymbolParamsManyRequest, opts ...grpc.CallOption) (*SymbolParamsManyReply, error)
+	// Tick value as array. Name the symbols (symbolNames); with no names the reply covers the
+	// symbols currently in Market Watch, never the whole server list.
 	TickValueWithSize(ctx context.Context, in *TickValueWithSizeRequest, opts ...grpc.CallOption) (*TickValueWithSizeReply, error)
 }
 
@@ -111,6 +113,8 @@ type AccountHelperServer interface {
 	OrdersHistory(context.Context, *OrdersHistoryRequest) (*OrdersHistoryReply, error)
 	// Full information about exact symbol, or all symbols
 	SymbolParamsMany(context.Context, *SymbolParamsManyRequest) (*SymbolParamsManyReply, error)
+	// Tick value as array. Name the symbols (symbolNames); with no names the reply covers the
+	// symbols currently in Market Watch, never the whole server list.
 	TickValueWithSize(context.Context, *TickValueWithSizeRequest) (*TickValueWithSizeReply, error)
 }
 

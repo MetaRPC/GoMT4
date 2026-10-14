@@ -27,6 +27,8 @@ type MarketInfoClient interface {
 	// Latest quote for the specified symbol
 	QuoteMany(ctx context.Context, in *QuoteManyRequest, opts ...grpc.CallOption) (*QuoteManyReply, error)
 	Symbols(ctx context.Context, in *SymbolsRequest, opts ...grpc.CallOption) (*SymbolsReply, error)
+	// Deprecated: Do not use.
+	// DEPRECATED: use QuoteHistory.Bars (mt4-term-api-quote-history.proto): paged, bounded, oldest first.
 	QuoteHistory(ctx context.Context, in *QuoteHistoryRequest, opts ...grpc.CallOption) (*QuoteHistoryReply, error)
 	// Selects a symbol in the Market Watch window or removes a symbol from the window
 	// https://docs.mql4.com/marketinformation/symbolselect
@@ -68,6 +70,7 @@ func (c *marketInfoClient) Symbols(ctx context.Context, in *SymbolsRequest, opts
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *marketInfoClient) QuoteHistory(ctx context.Context, in *QuoteHistoryRequest, opts ...grpc.CallOption) (*QuoteHistoryReply, error) {
 	out := new(QuoteHistoryReply)
 	err := c.cc.Invoke(ctx, "/mt4_term_api.MarketInfo/QuoteHistory", in, out, opts...)
@@ -95,6 +98,8 @@ type MarketInfoServer interface {
 	// Latest quote for the specified symbol
 	QuoteMany(context.Context, *QuoteManyRequest) (*QuoteManyReply, error)
 	Symbols(context.Context, *SymbolsRequest) (*SymbolsReply, error)
+	// Deprecated: Do not use.
+	// DEPRECATED: use QuoteHistory.Bars (mt4-term-api-quote-history.proto): paged, bounded, oldest first.
 	QuoteHistory(context.Context, *QuoteHistoryRequest) (*QuoteHistoryReply, error)
 	// Selects a symbol in the Market Watch window or removes a symbol from the window
 	// https://docs.mql4.com/marketinformation/symbolselect
