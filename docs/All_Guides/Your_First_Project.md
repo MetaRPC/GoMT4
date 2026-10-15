@@ -20,46 +20,96 @@ Create a new directory for your trading bot:
 ```bash
 mkdir my_gomt4_bot
 cd my_gomt4_bot
+go mod init my_gomt4_bot
 ```
 
 Install the package:
 
 ```bash
-go get github.com/MetaRPC/GoMT4
+go get github.com/MetaRPC/GoMT4/package
 ```
 
 ---
 
 ## Step 2: Write Your Trading Code
 
-Create your main application file and paste the following snippet:
+Create `main.go`:
 
-```
+```go
+package main
+
 import (
-    "context"
-    "fmt"
-    "time"
-    mt "github.com/MetaRPC/GoMT4"
+	"context"
+	"crypto/tls"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"time"
+
+	pb "github.com/MetaRPC/GoMT4/package"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
 )
 
-// Session ID generation on Connect and authentication are handled automatically
-client, err := mt.NewMT4AccountWithApiKey(user, password, grpcServer, apiKey)
-ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-defer cancel()
-err = client.ConnectByServerName(ctx, serverName, "EURUSD")
-summary, err := client.AccountSummary(ctx)
-fmt.Printf("Balance: %.2f, Equity: %.2f\n", summary.Balance, summary.Equity)
+func main() {
+	login, _ := strconv.ParseUint(os.Getenv("MT4_LOGIN"), 10, 64)
+	password := os.Getenv("MT4_PASSWORD")
+	server := os.Getenv("MT4_SERVER") // the broker server name as shown in MetaTrader, e.g. "TeleTrade-Demo"
+	apiKey := os.Getenv("MRPC_API_KEY")
+	grpcServer := os.Getenv("MRPC_GRPC_HOST")
+	if grpcServer == "" {
+		grpcServer = "mt4.mrpc.pro:443"
+	}
+
+	conn, err := grpc.NewClient(grpcServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+
+	// Connect: every call carries the API key; after connecting, also the terminal id ConnectEx returns.
+	timeout := uint32(120)
+	reply, err := pb.NewConnectionClient(conn).ConnectEx(metadata.AppendToOutgoingContext(ctx, "apikey", apiKey),
+		&pb.ConnectExRequest{User: login, Password: password, MtClusterName: server, TimeoutSeconds: &timeout})
+	if err != nil {
+		log.Fatal(err)
+	}
+	if reply.GetError() != nil {
+		log.Fatal(reply.GetError().GetErrorMessage())
+	}
+	ctx = metadata.AppendToOutgoingContext(ctx, "apikey", apiKey, "id", reply.GetData().GetTerminalInstanceGuid())
+	defer pb.NewConnectionClient(conn).Disconnect(ctx, &pb.DisconnectRequest{})
+
+	summary, err := pb.NewAccountHelperClient(conn).AccountSummary(ctx, &pb.AccountSummaryRequest{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Balance: %.2f, Equity: %.2f %s\n", summary.GetData().GetAccountBalance(), summary.GetData().GetAccountEquity(), summary.GetData().GetAccountCurrency())
+}
 ```
+
+The program calls the generated gRPC clients of `github.com/MetaRPC/GoMT4/package` directly: every call carries your API key, and after
+`ConnectEx` also the terminal id it returns.
 
 ---
 
 ## Step 3: Run the Program
 
-Run your application:
-
 ```bash
-# Verify connection output
-# Balance: 10000.00, Equity: 10000.00
+export MRPC_API_KEY=your-api-key
+export MT4_LOGIN=12345678
+export MT4_PASSWORD=your-password
+export MT4_SERVER=TeleTrade-Demo
+go run .
+```
+
+```
+Balance: 10000.00, Equity: 10000.00 USD
 ```
 
 ---

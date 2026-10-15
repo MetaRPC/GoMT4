@@ -25,7 +25,7 @@ Audience: **beginner-friendly**. Comments in code are **English only**.
 * Import without `.git` suffix:
 
   ```go
-  import pb "github.com/MetaRPC/GoMT4"
+  import pb "github.com/MetaRPC/GoMT4/package"
   ```
 * You do **not need to clone another repo**. Go fetches it automatically.
 

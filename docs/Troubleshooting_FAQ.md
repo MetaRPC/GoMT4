@@ -115,12 +115,12 @@ Short, practical answers. Each item points to real code paths where relevant.
 * Ensure pb import path matches module path:
 
   ```go
-  import pb "github.com/MetaRPC/GoMT4"
+  import pb "github.com/MetaRPC/GoMT4/package"
   ```
 * Update/pin module:
 
   ```powershell
-  go get -u github.com/MetaRPC/GoMT4@latest
+  go get -u github.com/MetaRPC/GoMT4/package@latest
   go mod tidy
   ```
 * For offline CI: `go mod vendor` + build with `-mod=vendor`.
@@ -182,7 +182,7 @@ Short, practical answers. Each item points to real code paths where relevant.
 
   ```powershell
   go mod tidy
-  go get -u github.com/MetaRPC/GoMT4@latest
+  go get -u github.com/MetaRPC/GoMT4/package@latest
   ```
 * Vendor offline builds:
 

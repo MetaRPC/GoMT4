@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/MetaRPC/GoMT4/config"
-	"github.com/MetaRPC/GoMT4/mt4"
+	"github.com/MetaRPC/GoMT4/examples/config"
+	"github.com/MetaRPC/GoMT4/examples/mt4"
 	"github.com/google/uuid"
 )
 

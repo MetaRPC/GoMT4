@@ -21,7 +21,7 @@
 Install GoMT4 via your standard Go package manager:
 
 ```bash
-go get github.com/MetaRPC/GoMT4
+go get github.com/MetaRPC/GoMT4/package
 ```
 
 ---

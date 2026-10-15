@@ -1,4 +1,4 @@
-module github.com/MetaRPC/GoMT4
+module github.com/MetaRPC/GoMT4/examples
 
 go 1.23.6
 
@@ -16,7 +16,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250728155136-f173205681a0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 )
-
-replace github.com/MetaRPC/GoMT4 => ../
 
 replace github.com/MetaRPC/GoMT4/package => ../package

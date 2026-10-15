@@ -12,7 +12,7 @@
 ## 📦 Installation
 
 ```bash
-go get github.com/MetaRPC/GoMT4
+go get github.com/MetaRPC/GoMT4/package
 ```
 
 ---
