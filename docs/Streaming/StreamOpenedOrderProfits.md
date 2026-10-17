@@ -9,7 +9,7 @@
 
 ```go
 // --- Quick use (service wrapper) ---
-// Streams profit updates for opened orders; stops after ~30s in demo.
+// Streams profit updates for opened orders; the demo stops after 3s without an update.
 svc.StreamOpenedOrderProfits(ctx)
 
 // --- Low-level (direct account call) ---
@@ -30,9 +30,13 @@ for {
             fmt.Println("✅ Profit stream ended.")
             return
         }
-        for _, info := range profit.OpenedOrdersWithProfitUpdated {
+        for _, info := range profit.GetOpenedOrdersWithProfitUpdated() {
             fmt.Printf("[Profit] Ticket: %d | Symbol: %s | Profit: %.2f\n",
-                info.Ticket, info.Symbol, info.OrderProfit)
+                info.GetTicket(), info.GetSymbol(), info.GetOrderProfit())
+        }
+        if ai := profit.GetAccountInfo(); ai != nil {
+            fmt.Printf("[Account] Equity: %.2f | Margin: %.2f | FreeMargin: %.2f\n",
+                ai.GetEquity(), ai.GetMargin(), ai.GetFreeMargin())
         }
 
     case err := <-errCh:
@@ -53,6 +57,7 @@ for {
 
 ```go
 func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context)
+func (a *MT4Account) OnOpenedOrdersProfit(ctx context.Context, intervalMs int32) (<-chan *pb.OnOpenedOrdersProfitData, <-chan error)
 ```
 
 ---
@@ -62,44 +67,51 @@ func (s *MT4Service) StreamOpenedOrderProfits(ctx context.Context)
 | Field        | Type              | Description                                       |
 | ------------ | ----------------- | ------------------------------------------------- |
 | `ctx`        | `context.Context` | For stream lifetime control and cancellation.     |
-| `intervalMs` | `int`             | Polling interval between updates in milliseconds. |
+| `intervalMs` | `int32`           | Interval between updates in milliseconds (sent as `TimerPeriodMilliseconds`). |
 
-> In the wrapper, `intervalMs` defaults to **1000 ms**.
+> The wrapper uses **1000 ms**.
 
 ---
 
 ## ⬆️ Output
 
-Stream of per-order profit updates.
-Underlying response: `*pb.OnOpenedOrdersProfitData`
+Stream of `*pb.OnOpenedOrdersProfitData`:
 
-Each update contains entries like `OnOpenedOrdersProfitOrderInfo`:
+| Field                           | Type                                  | Description                                |
+| ------------------------------- | ------------------------------------- | ------------------------------------------ |
+| `OpenedOrdersWithProfitUpdated` | `[]*pb.OnOpenedOrdersProfitOrderInfo` | Per-order profit entries.                  |
+| `AccountInfo`                   | `*pb.OnEventAccountInfo`              | `Balance`, `Credit`, `Equity`, `Margin`, `FreeMargin`, `Profit`, `MarginLevel`, `Login`. |
+| `Type`                          | `pb.MT4_SUB_ENUM_EVENT_GROUP_TYPE`    | Event group (`OrderProfit`).               |
+| `TerminalInstanceGuidId`        | `string`                              | Id of the terminal that sent it.           |
 
-| Field          | Type                 | Description                      |
-| -------------- | -------------------- | -------------------------------- |
-| `Ticket`       | `int32`              | Order ticket ID.                 |
-| `Symbol`       | `string`             | Trading symbol (e.g., "EURUSD"). |
-| `Lots`         | `float64`            | Trade volume in lots.            |
-| `Profit`       | `float64`            | Current floating profit/loss.    |
-| `OpenPrice`    | `float64`            | Order open price.                |
-| `CurrentPrice` | `float64`            | Current market price.            |
-| `OpenTime`     | `timestamp`          | Order open time.                 |
-| `OrderType`    | `ENUM_ORDER_TYPE_TF` | Trade type.                      |
-| `Magic`        | `int32`              | Strategy/magic number.           |
-| `Comment`      | `string`             | Order comment.                   |
+Each `*pb.OnOpenedOrdersProfitOrderInfo`:
+
+| Field          | Type                          | Description                      |
+| -------------- | ----------------------------- | -------------------------------- |
+| `Ticket`       | `int32`                       | Order ticket ID.                 |
+| `Symbol`       | `string`                      | Trading symbol (e.g., "EURUSD"). |
+| `Lots`         | `float64`                     | Trade volume in lots.            |
+| `OrderProfit`  | `float64`                     | Current floating profit/loss.    |
+| `OpenPrice`    | `float64`                     | Order open price.                |
+| `StopLoss` / `TakeProfit` | `float64`          | SL / TP levels.                  |
+| `Swap` / `Commission` | `float64`              | Swap and commission.             |
+| `OpenTime` / `OpenTimeUtc` | `*timestamppb.Timestamp` | Order open time (broker server time / UTC). |
+| `Type`         | `pb.SUB_ORDER_OPERATION_TYPE` | Trade type.                      |
+| `MagicNumber`  | `int32`                       | Strategy/magic number.           |
+| `Comment`      | `string`                      | Order comment.                   |
 
 ---
 
-### ENUM: `ENUM_ORDER_TYPE_TF`
+### ENUM: `pb.SUB_ORDER_OPERATION_TYPE`
 
-| Value                  | Description        |
-| ---------------------- | ------------------ |
-| `OrderTypeTfBuy`       | Buy order          |
-| `OrderTypeTfSell`      | Sell order         |
-| `OrderTypeTfBuyLimit`  | Pending Buy Limit  |
-| `OrderTypeTfSellLimit` | Pending Sell Limit |
-| `OrderTypeTfBuyStop`   | Pending Buy Stop   |
-| `OrderTypeTfSellStop`  | Pending Sell Stop  |
+| Value                                  | Description        |
+| -------------------------------------- | ------------------ |
+| `SUB_ORDER_OPERATION_TYPE_SUB_OP_BUY`       | Buy order          |
+| `SUB_ORDER_OPERATION_TYPE_SUB_OP_SELL`      | Sell order         |
+| `SUB_ORDER_OPERATION_TYPE_SUB_OP_BUYLIMIT`  | Pending Buy Limit  |
+| `SUB_ORDER_OPERATION_TYPE_SUB_OP_SELLLIMIT` | Pending Sell Limit |
+| `SUB_ORDER_OPERATION_TYPE_SUB_OP_BUYSTOP`   | Pending Buy Stop   |
+| `SUB_ORDER_OPERATION_TYPE_SUB_OP_SELLSTOP`  | Pending Sell Stop  |
 
 ---
 
@@ -112,13 +124,13 @@ Enable **real-time tracking of floating P/L per open order** for dashboards, exp
 ## 🧩 Notes & Tips
 
 * **Interval trade-off:** Lower `intervalMs` → fresher updates, higher CPU/network use. 500–2000 ms works well for dashboards.
-* **Delta batches:** Updates often include only orders that changed; maintain a map keyed by `Ticket` and apply deltas.
+* **Keep state by ticket:** Maintain a map keyed by `Ticket` and update it from each packet.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* **Timeout vs cancel:** Your example uses a 30s timeout; prefer explicit `cancel()` for controlled shutdowns.
+* **Timeout vs cancel:** The example uses a demo timeout (`time.After`); prefer explicit `cancel()` for controlled shutdowns.
 * **Ordering:** Do not assume chronological ordering across entries; sort by `Ticket` or timestamp if needed.
 * **Float formatting:** Round only for display; keep raw values for calculations.
 

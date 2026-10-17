@@ -7,7 +7,9 @@ This documentation will help you:
 * 📘 Explore all available **account, market, and trading methods**
 * 💡 Learn from **Go usage examples** with context and timeout handling
 * 🔁 Work with **real-time streaming** for quotes, orders, and trades
-* ⚙️ Understand all **input/output types** such as `OrderInfo`, `QuoteData`, and enums like `ENUM_ORDER_TYPE_TF`
+* ⚙️ Understand all **input/output types** such as `OpenedOrderInfo`, `QuoteData`, and enums like `OrderSendOperationType`
+
+**How it fits together:** your Go program uses the client in this repository (`examples/mt4`: `MT4Account` and `MT4Service`, import `github.com/MetaRPC/GoMT4/examples/mt4`, used from a clone of the repo) and the generated protobuf messages (`github.com/MetaRPC/GoMT4/package`). The client talks gRPC over TLS to the MetaRPC cloud API at `mt4.mrpc.pro:443`, which runs and manages the MT4 terminal for your account. You do not install or run MetaTrader or any server yourself.
 
 ---
 
@@ -38,6 +40,7 @@ This documentation will help you:
 * [Show Opened Orders](Order_Operations/ShowOpenedOrders.md)
 * [Show Opened Order Tickets](Order_Operations/ShowOpenedOrderTickets.md)
 * [Show Orders History](Order_Operations/ShowOrdersHistory.md)
+* [Show Order Send Example](Order_Operations/ShowOrderSendExample.md)
 * [Show Order Close Example](Order_Operations/ShowOrderCloseExample.md)
 * [Show Order Close By Example](Order_Operations/ShowOrderCloseByExample.md)
 * [Show Order Delete Example](Order_Operations/ShowOrderDeleteExample.md)

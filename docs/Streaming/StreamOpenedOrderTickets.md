@@ -9,7 +9,7 @@
 
 ```go
 // --- Quick use (service wrapper) ---
-// Streams all opened order tickets (positions + pendings); stops after ~30s in demo.
+// Streams all opened order tickets (positions + pendings); the demo stops after 3s without an update.
 svc.StreamOpenedOrderTickets(ctx)
 
 // --- Low-level (direct account call) ---
@@ -51,6 +51,7 @@ for {
 
 ```go
 func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context)
+func (a *MT4Account) OnOpenedOrdersTickets(ctx context.Context, intervalMs int32) (<-chan *pb.OnOpenedOrdersTicketsData, <-chan error)
 ```
 
 ---
@@ -60,9 +61,9 @@ func (s *MT4Service) StreamOpenedOrderTickets(ctx context.Context)
 | Field        | Type              | Description                                       |
 | ------------ | ----------------- | ------------------------------------------------- |
 | `ctx`        | `context.Context` | Controls streaming lifecycle and cancellation.    |
-| `intervalMs` | `int`             | Polling interval between updates in milliseconds. |
+| `intervalMs` | `int32`           | Polling interval between updates in milliseconds (sent as `PullIntervalMilliseconds`). |
 
-> Wrapper default: **1000 ms**.
+> The wrapper uses **1000 ms**.
 
 ---
 
@@ -74,6 +75,8 @@ Stream of `*pb.OnOpenedOrdersTicketsData` packets. Each packet contains:
 | --------------------- | --------- | ----------------------------- |
 | `PositionTickets`     | `[]int32` | Ticket IDs of open positions. |
 | `PendingOrderTickets` | `[]int32` | Ticket IDs of pending orders. |
+| `ServerTime` / `ServerTimeUtc` | `*timestamppb.Timestamp` | Server time of the snapshot (broker server time / UTC). |
+| `TerminalInstanceGuidId` | `string` | Id of the terminal that sent it. |
 
 Combined, they represent all open orders at the time of the poll.
 

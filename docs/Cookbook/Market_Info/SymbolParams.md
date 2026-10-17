@@ -1,17 +1,17 @@
 # 🧩 SymbolParams (GoMT4)
 
-**Goal:** read **symbol parameters** (Digits, Point, LotStep, Min/Max lot, Stops/Freeze levels, etc.) and use them for rounding & validations.
+**Goal:** read **symbol parameters** (Digits, Point, VolumeStep, Min/Max volume, Stops/Freeze levels, etc.) and use them for rounding & validations.
 
 > Real code refs:
 >
-> * Account: `examples/mt4/MT4Account.go` (`SymbolParams`)
-> * Demo: `examples/mt4/MT4_service.go` (see *ShowSymbolParams* flow)
+> * Account: `examples/mt4/MT4Account.go` (`SymbolParams`, `SymbolParamsMany`)
+> * Demo: `examples/mt4/MT4_service.go` (`ShowSymbolParams`)
 
 ---
 
 ## ✅ 1) Preconditions
 
-* Symbol exists and is visible in MT4 (*Market Watch* → Show All).
+* `account` is connected; the symbol exists on the broker.
 * `config.json` has a known default symbol or you pass one explicitly.
 
 ---
@@ -22,7 +22,7 @@
 p, err := account.SymbolParams(ctx, symbol)
 if err != nil { return err }
 
-fmt.Printf("%s: Digits=%d Point=%.10f LotStep=%.2f MinLot=%.2f MaxLot=%.2f\n",
+fmt.Printf("%s: Digits=%d Point=%.10f VolumeStep=%.2f VolumeMin=%.2f VolumeMax=%.2f\n",
     symbol,
     p.GetDigits(),
     p.GetPoint(),
@@ -31,19 +31,20 @@ fmt.Printf("%s: Digits=%d Point=%.10f LotStep=%.2f MinLot=%.2f MaxLot=%.2f\n",
     p.GetVolumeMax(),
 )
 fmt.Printf("StopsLevel=%d FreezeLevel=%d ContractSize=%.2f\n",
-    p.GetStopsLevel(), p.GetFreezeLevel(), p.GetContractSize(),
+    p.GetTradeStopsLevel(), p.GetTradeFreezeLevel(), p.GetTradeContractSize(),
 )
 ```
 
-**Common fields:**
+**Common fields** (`*pb.SymbolParamsManyInfo`):
 
-* `Digits` —the number of decimal places in the price.
-* `Point` — the tick value (usually `10^-Digits').
+* `Digits` — the number of decimal places in the price.
+* `Point` — the smallest price step (usually `10^-Digits`).
 * `VolumeStep` — the volume step in lots.
 * `VolumeMin`/`VolumeMax` — acceptable volume range.
-* `StopsLevel` — minimum distance (in points) for SL/TP/postponement from the current price.
-* `FreezeLevel` — the area around the current price, where modification/removal of the ban may be limited.
-* `ContractSize` — the size of the contract (for calculating the cost of the item).
+* `TradeStopsLevel` — minimum distance (in points) of SL/TP/pending price from the current price.
+* `TradeFreezeLevel` — the zone around the current price where modification/deletion may be refused.
+* `TradeContractSize` — the size of the contract (for calculating position value).
+* `TradeMode` — whether trading is allowed (`SYMBOL_TRADE_MODE_FULL`, `_CLOSEONLY`, …).
 
 ---
 
@@ -77,7 +78,8 @@ price := roundPrice(1.092345, int(p.GetDigits()))
 
 ```go
 // Distance in points from current price (Bid for SELL, Ask for BUY)
-q, _ := account.Quote(ctx, symbol)
+q, err := account.Quote(ctx, symbol)
+if err != nil { return err }
 
 entry := q.GetAsk() // for BUY; use Bid for SELL
 point := p.GetPoint()
@@ -90,8 +92,8 @@ sl := roundPrice(entry - slDist*point, int(p.GetDigits()))
 tp := roundPrice(entry + tpDist*point, int(p.GetDigits()))
 
 // Respect StopsLevel
-if slDist < float64(p.GetStopsLevel()) || tpDist < float64(p.GetStopsLevel()) {
-    return fmt.Errorf("SL/TP too close: StopsLevel=%d", p.GetStopsLevel())
+if slDist < float64(p.GetTradeStopsLevel()) || tpDist < float64(p.GetTradeStopsLevel()) {
+    return fmt.Errorf("SL/TP too close: StopsLevel=%d", p.GetTradeStopsLevel())
 }
 ```
 
@@ -99,8 +101,8 @@ For **pending** orders:
 
 ```go
 pendingPrice := roundPrice(entry - 10*point, int(p.GetDigits())) // e.g., Buy Limit
-if math.Abs((entry - pendingPrice)/point) < float64(p.GetStopsLevel()) {
-    return fmt.Errorf("pending too close to market: StopsLevel=%d", p.GetStopsLevel())
+if math.Abs((entry - pendingPrice)/point) < float64(p.GetTradeStopsLevel()) {
+    return fmt.Errorf("pending too close to market: StopsLevel=%d", p.GetTradeStopsLevel())
 }
 ```
 
@@ -109,14 +111,15 @@ if math.Abs((entry - pendingPrice)/point) < float64(p.GetStopsLevel()) {
 ## ⚠️ Pitfalls
 
 * **Wrong precision** → always round prices to `Digits` and volumes to `VolumeStep`.
-* **Too close SL/TP** → compare distances in **points** with `StopsLevel`.
-* **FreezeLevel** → The broker may prohibit modifications close to the price; try a little further from the market.
-* **Suffix mismatch** → `EURUSD` vs `EURUSD.m` — different tools.
+* **Too close SL/TP** → compare distances in **points** with `TradeStopsLevel`.
+* **FreezeLevel** → the broker may refuse modifications close to the price; try a little further from the market.
+* **Suffix mismatch** → `EURUSD` vs `EURUSD.m` — different instruments.
+* **Many symbols** → `SymbolParamsMany(ctx, nil)` returns all symbols; with a non-empty slice it filters by the **first** name only.
 
 ---
 
 ## 🔗 See also
 
-* `RoundVolumePrice.md` — rendered helpers for rounding.
-* `PlaceMarketOrder.md` / `PlacePendingOrder.md` — using Digits/LotStep/StopsLevel in orders.
-* `GetQuote.md` — get the current price for calculations.
+* [RoundVolumePrice](../Utils_Helpers/RoundVolumePrice.md) — ready helpers for rounding.
+* [PlaceMarketOrder](../Orders/PlaceMarketOrder.md) / [PlacePendingOrder](../Orders/PlacePendingOrder.md) — using Digits/VolumeStep/StopsLevel in orders.
+* [GetQuote](GetQuote.md) — get the current price for calculations.

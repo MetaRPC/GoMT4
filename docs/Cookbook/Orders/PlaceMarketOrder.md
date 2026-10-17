@@ -4,7 +4,7 @@
 
 > This recipe references real code in this repo:
 >
-> * Account methods: `examples/mt4/MT4Account.go` (`OrderSend`, `SymbolParams`)
+> * Account methods: `examples/mt4/MT4Account.go` (`OrderSend`, `SymbolParams`, `Quote`)
 > * Service example: `examples/mt4/MT4_service.go` (`ShowOrderSendExample`)
 > * Config: `examples/config/config.json`
 
@@ -12,9 +12,10 @@
 
 ## 1) Preconditions
 
-* MT4 terminal is connected to the broker.
+* `account` is connected (`ConnectByServerName` / `ConnectByHostPort`).
 * `examples/config/config.json` contains valid credentials and `DefaultSymbol`.
-* Symbol is **visible** in MT4 *Market Watch* (or call your own `EnsureSymbolVisible`).
+* The symbol exists on the broker (exact name; see [Ensure Symbol Visible](../Utils_Helpers/EnsureSymbolVisible.md)).
+* The account is not logged in with the investor (read‑only) password.
 
 ---
 
@@ -28,10 +29,10 @@ digits    := int(info.GetDigits())
 volMin    := info.GetVolumeMin()
 volMax    := info.GetVolumeMax()
 volStep   := info.GetVolumeStep()
-pointSize := math.Pow10(-digits) // 10^-Digits
+pointSize := info.GetPoint() // usually 10^-Digits
 ```
 
-> Why: exchanges/brokers require amount and price aligned to the symbol settings.
+> Why: brokers require volume and price aligned to the symbol settings.
 
 ---
 
@@ -72,7 +73,8 @@ slippage := int32(5) // 5 points
 // Optional SL/TP (rounded to Digits)
 var sl, tp *float64
 if wantSLTP {
-    bidAsk, _ := account.Quote(ctx, symbol)
+    bidAsk, err := account.Quote(ctx, symbol)
+    if err != nil { return err }
     entry := bidAsk.GetAsk() // for BUY; for SELL use Bid
     stop  := roundPrice(entry-20*pointSize, digits)
     take  := roundPrice(entry+40*pointSize, digits)
@@ -87,7 +89,7 @@ magicNumber := int32(123456)
 
 ## 5) Send the order (with retries handled inside)
 
-`OrderSend` already wraps gRPC with reconnect/retry (see `ExecuteWithReconnect`). You only supply clean inputs.
+`OrderSend` already wraps gRPC with reconnect/retry (see `ExecuteWithReconnect`) and a 5s default timeout. You only supply clean inputs.
 
 ```go
 resp, err := account.OrderSend(
@@ -100,7 +102,7 @@ resp, err := account.OrderSend(
     sl, tp,            // can be nil
     &comment,
     &magicNumber,
-    nil,               // expiration (for pending only)
+    nil /* expiration (for pending only) */,
 )
 if err != nil {
     return fmt.Errorf("OrderSend failed: %w", err)
@@ -109,15 +111,16 @@ fmt.Printf("✅ Order opened! Ticket=%d Price=%.5f Time=%s\n",
     resp.GetTicket(), resp.GetPrice(), resp.GetOpenTime().AsTime().Format("2006-01-02 15:04:05"))
 ```
 
-> See a minimal working example in `examples/mt4/MT4_service.go` → `ShowOrderSendExample` (uses small pointer helpers `ptrInt32`, `ptrString`).
+> See a minimal working example in `examples/mt4/MT4_service.go` → `ShowOrderSendExample` (it uses small unexported pointer helpers `ptrInt32`, `ptrString`; in your own code use `proto.Int32`, `proto.String` from `google.golang.org/protobuf/proto` or take addresses of variables as above).
 
 ---
 
 ## 6) Common pitfalls
 
 * **Invalid volume/price** → make sure to align volume to `VolumeStep` and round prices to `Digits`.
-* **`symbol not found` / empty quotes** → symbol hidden or broker suffix (e.g., `EURUSD.m`). Show all symbols in MT4.
-* **`context deadline exceeded`** → MT4 not ready; use short per‑call timeout and retry transport errors only (see *Reliability* chapter).
+* **`symbol not found` / empty quotes** → wrong name or broker suffix (e.g., `EURUSD.m`). List names with `account.Symbols(ctx)`.
+* **`context deadline exceeded`** → the terminal is not ready or the broker is slow; pass a longer deadline in `ctx` (see *Reliability* chapter).
+* **Trade refused** → check `MqlErrorCode` in the error (e.g. `ERR_INVALID_STOPS`, `ERR_NOT_ENOUGH_MONEY`, `ERR_MARKET_CLOSED`).
 
 ---
 
@@ -125,4 +128,4 @@ fmt.Printf("✅ Order opened! Ticket=%d Price=%.5f Time=%s\n",
 
 * **SELL**: use `pb.OrderSendOperationType_OC_OP_SELL` and entry price = `Bid` when computing SL/TP.
 * **Immediate TP/SL omitted**: pass `nil` and modify later via `OrderModify`.
-* **Pending order**: use the same call with `price!=nil` and `expiration!=nil` (see `PlacePendingOrder.md`).
+* **Pending order**: use the same call with a pending type, `price!=nil` and optionally `expiration` (see [PlacePendingOrder](PlacePendingOrder.md)).

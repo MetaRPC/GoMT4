@@ -11,14 +11,14 @@ Short, practical answers. Each item points to real code paths where relevant.
 **Likely causes:**
 
 * Broker uses a **suffix** (e.g., `EURUSD.m`, `EURUSD.pro`).
-* Symbol is **hidden** in MT4 *Market Watch*.
+* Symbol is **hidden** in the terminal's *Market Watch*.
 
 **Fix:**
 
-* Open MT4 → *Market Watch* → *Show All* → note exact symbol name → put into `examples/config/config.json` → `DefaultSymbol`.
-* If available, call `EnsureSymbolVisible(symbol)` before requests. Otherwise, add one (see `examples/mt4/MT4Account.go`).
+* List the exact names with `svc.ShowAllSymbols(ctx)` (or `account.Symbols(ctx)`) → put the right one into `examples/config/config.json` → `DefaultSymbol`.
+* To show a hidden symbol, call the generated `SymbolSelect` RPC (the client has no wrapper for it) — see [Ensure Symbol Visible](Cookbook/Utils_Helpers/EnsureSymbolVisible.md).
 
-💡 Tip: print `Digits`, `Point`, `LotStep` in logs when selecting a symbol.
+💡 Tip: print `Digits`, `Point`, `VolumeStep` (from `account.SymbolParams`) in logs when selecting a symbol.
 
 ---
 
@@ -28,45 +28,47 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 **Causes:**
 
-* MT4 not fully connected or just launched.
+* The terminal for the account is still starting or connecting to the broker (first connect, or after a restart on the MetaRPC side).
 * Network latency spikes.
 
 **Fix:**
 
-* Start MT4 manually once and wait until *connected*.
-* Use per-call timeout (2–5s) and retry only transport errors.
+* Connect first (`ConnectByServerName` / `ConnectByHostPort`) and only call methods after it returns without error.
+* Pass a `ctx` with a longer deadline if the default per-call timeout (3s for reads) is too short for you.
 * Reference: 3s health-check with `AccountSummary` in `examples/mt4/MT4Account.go`.
 
 ---
 
-## 🔁 3) “Max retries reached” / frequent reconnects in streams
+## 🔁 3) “exceeded retries” / frequent reconnects in streams
 
-**Symptoms:** stream stops with error after reconnect attempts; logs mention `io.EOF` or `codes.Unavailable`.
+**Symptoms:** stream stops with `exceeded retries ...` after reconnect attempts; logs mention `io.EOF`, `codes.Unavailable` or `TERMINAL_INSTANCE_NOT_FOUND`.
 
 **Causes:**
 
 * Unstable connection; too aggressive backoff; context canceled early.
+* The terminal is not connected (any more) under the id the client sends.
 
 **Fix:**
 
 * Increase `backoffMax` or `backoffBase` (see `examples/mt4/MT4Account.go`).
 * Ensure parent `ctx` is not canceled prematurely.
 * Consumer loop: always select on `dataCh`, `errCh`, `<-ctx.Done()`.
+* If the terminal is gone, connect again (a new `MT4Account` + `ConnectByServerName`).
 
 ---
 
-## 🚫 4) “Can’t connect to gRPC: connection refused”
+## 🚫 4) “Can’t connect to gRPC” / “unavailable” / “API_KEY_INVALID”
 
 **Checklist:**
 
-* Server running? (`go run ./examples/main.go`)
-* Listening on correct address? (`mt4.mrpc.pro:443` default)
-* Check listener: `netstat -ano | findstr LISTENING | findstr :50051`
-* Windows Firewall: allow port if bound externally:
+* The client always talks to the MetaRPC cloud API at `mt4.mrpc.pro:443` (gRPC over TLS); there is no local server to start and no port to open.
+* Network: outbound HTTPS (443) to `mt4.mrpc.pro` must be allowed (proxy/firewall):
 
   ```powershell
-  New-NetFirewallRule -DisplayName "GoMT4 gRPC" -Direction Inbound -Protocol TCP -LocalPort 50051 -Action Allow
+  Test-NetConnection -ComputerName mt4.mrpc.pro -Port 443
   ```
+* API key: `API_KEY_INVALID` means the key is not known — copy it again from [https://mrpc.pro/my](https://mrpc.pro/my). Without a key the calls run as a trial (`TRIAL`).
+* Credentials: wrong login/password/server name make `ConnectByServerName` return an error.
 
 ---
 
@@ -76,17 +78,17 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 **Causes:**
 
-* Volume misaligned with `LotStep`.
-* Price/SL/TP not aligned to `Digits`/`Point` or too close to market.
+* Volume misaligned with `VolumeStep`.
+* Price/SL/TP not aligned to `Digits`/`Point` or too close to market (`TradeStopsLevel`).
 
 **Fix:**
 
-* Query symbol params first, then round:
+* Query symbol params first (`account.SymbolParams(ctx, symbol)`), then round:
 
-  * volume → `LotStep` (clamp to `MinLot`…`MaxLot`).
-  * prices → round to `Digits` using `Point`.
-* Print logs: price, `Digits`, `Point`, `LotStep`.
-* Create helper in `examples/mt4/MT4Account.go` for rounding.
+  * volume → `VolumeStep` (clamp to `VolumeMin`…`VolumeMax`).
+  * prices → round to `Digits`.
+* Print logs: price, `Digits`, `Point`, `VolumeStep`.
+* See [Round Volume/Price](Cookbook/Utils_Helpers/RoundVolumePrice.md) for helpers.
 
 ---
 
@@ -98,11 +100,12 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 * Consumer stopped reading from `dataCh`.
 * `ctx` canceled elsewhere.
+* The market is closed (no new ticks arrive).
 
 **Fix:**
 
 * Ensure consumer loop never blocks (use bounded queue/backpressure).
-* Always monitor `errCh` and `<-ctx.Done()>`.
+* Always monitor `errCh` and `<-ctx.Done()`.
 
 ---
 
@@ -117,6 +120,7 @@ Short, practical answers. Each item points to real code paths where relevant.
   ```go
   import pb "github.com/MetaRPC/GoMT4/package"
   ```
+* The client (`github.com/MetaRPC/GoMT4/examples/mt4`) is not fetched by `go get`; use it from a clone (run inside `examples/`, or add a `replace` directive in your module — see [Setup](setup.md)).
 * Update/pin module:
 
   ```powershell
@@ -131,9 +135,9 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 **Fix:**
 
-* For local dev, prefer plaintext on `127.0.0.1`.
-* If TLS, use consistent creds: `grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{ ... }))`.
-* Ensure CN/SAN matches host.
+* The connection is always TLS; `NewMT4Account` uses the system certificate store (`credentials.NewTLS(&tls.Config{})`).
+* A corporate proxy that rewrites TLS needs its root certificate in the system store.
+* Check the system clock (certificate validity).
 
 ---
 
@@ -143,13 +147,13 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 **Causes:**
 
-* MT4 hasn’t downloaded range yet.
+* The terminal hasn't downloaded the range from the broker yet.
 * Request range too large.
 
 **Fix:**
 
-* Open symbol chart in MT4 to preload.
-* Use paging (day-by-day / month-by-month).
+* Repeat the request after a short pause.
+* Use paging: `OrdersHistoryStream` (pages) and `QuoteHistoryStream` (time chunks).
 
 ---
 
@@ -161,7 +165,7 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 * Missing `defer cancel()`.
 * Streams not canceled.
-* Consumer loop busy-spins.
+* Consumer loop busy-spins (e.g. keeps reading from a closed channel without checking `ok`).
 
 **Fix:**
 
@@ -172,11 +176,10 @@ Short, practical answers. Each item points to real code paths where relevant.
 
 ## 📝 11) Quick reference (commands)
 
-* Verify listener:
+* Check reachability of the API:
 
   ```powershell
-  netstat -ano | findstr LISTENING | findstr :50051
-  Test-NetConnection -ComputerName 127.0.0.1 -Port 50051
+  Test-NetConnection -ComputerName mt4.mrpc.pro -Port 443
   ```
 * Refresh deps:
 
@@ -184,7 +187,7 @@ Short, practical answers. Each item points to real code paths where relevant.
   go mod tidy
   go get -u github.com/MetaRPC/GoMT4/package@latest
   ```
-* Vendor offline builds:
+* Vendor offline builds (own module):
 
   ```powershell
   go mod vendor
@@ -198,4 +201,4 @@ Short, practical answers. Each item points to real code paths where relevant.
 * Retry/backoff & helpers → `examples/mt4/MT4Account.go`
 * Streaming wrappers (ticks/orders/history) → `examples/mt4/MT4Account.go`
 * Entrypoint & cleanup → `examples/main.go`
-* Config shape → `examples/config/config.json`
+* Config shape → `examples/config/config.go`, `examples/config/config.json`

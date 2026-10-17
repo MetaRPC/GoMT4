@@ -11,44 +11,51 @@
 
 ## ✅ 1) Preconditions
 
-* Symbol exists and is visible in MT4 (*Market Watch* → Show All).
+* `account` is connected; the symbol exists on the broker (exact name, including any suffix).
 * `config.json` has a valid `DefaultSymbol` or you specify a symbol manually.
 
 ---
 
 ## 📝 2) Request one quote
 
+`QuoteData` has no point/digits; take `Point` from `SymbolParams` to express the spread in points:
+
 ```go
 q, err := account.Quote(ctx, symbol)
 if err != nil { return err }
 
-fmt.Printf("%s: Bid=%.5f Ask=%.5f Spread=%.1f pips Time=%s\n",
+p, err := account.SymbolParams(ctx, symbol)
+if err != nil { return err }
+
+fmt.Printf("%s: Bid=%.5f Ask=%.5f Spread=%.1f points Time=%s\n",
     symbol,
     q.GetBid(),
     q.GetAsk(),
-    (q.GetAsk()-q.GetBid())/q.GetPoint(),
-    q.GetTime().AsTime().Format(time.RFC3339))
+    (q.GetAsk()-q.GetBid())/p.GetPoint(),
+    q.GetDateTime().AsTime().Format(time.RFC3339))
 ```
 
 ---
 
 ## 🔍 3) Inspect fields
 
-`q` (`*pb.Quote`) contains:
+`q` (`*pb.QuoteData`) contains:
 
-* `Bid` — broker’s buy price.
-* `Ask` — broker’s sell price.
-* `Point` — 10^-Digits (used to compute spread in points/pips).
-* `Digits` — precision for price rounding.
-* `Time` — server timestamp.
+* `Symbol` — symbol name.
+* `Bid` — price you sell at.
+* `Ask` — price you buy at.
+* `High` / `Low` — high / low price.
+* `DateTime` — quote time (broker server time); `DateTimeUtc` — the same moment in UTC.
+
+`Point` and `Digits` come from `account.SymbolParams(ctx, symbol)`.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* **symbol not found** → check suffix (`EURUSD.m`, etc.) or ensure visible in MT4.
-* **timeout** → wrap in `context.WithTimeout` (2–3s) and retry on transient errors only.
-* **spread mismatch** → some brokers quote in fractional pips; always divide `(Ask-Bid)` by `Point`.
+* **symbol not found** → check suffix (`EURUSD.m`, etc.) with `account.Symbols(ctx)`.
+* **timeout** → the call has a 3s default timeout; the client retries transient errors itself.
+* **spread units** → 5‑digit brokers quote fractional pips; `(Ask-Bid)/Point` is in **points** (10 points = 1 pip on 5‑digit FX).
 
 ---
 
@@ -58,16 +65,16 @@ fmt.Printf("%s: Bid=%.5f Ask=%.5f Spread=%.1f pips Time=%s\n",
 
 ```go
 sym := cfg.DefaultSymbol
-q, _ := account.Quote(ctx, sym)
+q, err := account.Quote(ctx, sym)
 ```
 
-* **Loop for multiple quotes**: see `GetMultipleQuotes.md` recipe.
-* **Subscribe stream**: see `StreamQuotes.md` recipe.
+* **Many symbols at once**: see [GetMultipleQuotes](GetMultipleQuotes.md).
+* **Subscribe stream**: see [StreamQuotes](StreamQuotes.md).
 
 ---
 
 ## 📎 See also
 
-* `GetMultipleQuotes.md` — batch query for multiple symbols.
-* `StreamQuotes.md` — live stream of quotes.
-* `SymbolParams.md` — detailed info about Digits/LotStep/MinLot.
+* [GetMultipleQuotes](GetMultipleQuotes.md) — batch query for multiple symbols.
+* [StreamQuotes](StreamQuotes.md) — live stream of quotes.
+* [SymbolParams](SymbolParams.md) — `Digits`, `Point`, `VolumeStep`, `VolumeMin`.

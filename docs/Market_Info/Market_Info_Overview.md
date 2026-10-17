@@ -34,11 +34,15 @@ This section contains **market data and instrument metadata** methods for MT4. U
 ### 1) Build a watchlist and show live prices
 
 ```go
-// Discover and pick symbols
-syms, _ := svc.ShowAllSymbols(ctx)
+// Discover and pick symbols (svc.ShowAllSymbols(ctx) prints the same list)
+syms, err := account.ShowAllSymbols(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println("symbols:", len(syms.GetSymbolNameInfos()))
 
-// Get initial snapshot for the shortlist
-_ = svc.ShowQuotesMany(ctx, []string{"EURUSD", "GBPUSD"})
+// Print an initial snapshot for the shortlist
+svc.ShowQuotesMany(ctx, []string{"EURUSD", "GBPUSD"})
 
 // (optional) Subscribe to ticks in the Streaming section
 // svc.StreamQuotes(ctx)
@@ -47,28 +51,39 @@ _ = svc.ShowQuotesMany(ctx, []string{"EURUSD", "GBPUSD"})
 ### 2) Validate trading inputs and display instrument info
 
 ```go
-// Fetch parameters for validation and formatting
-_ = svc.ShowSymbolParams(ctx, "EURUSD")
+// Fetch parameters for validation and formatting (prints them; returns an error on failure)
+if err := svc.ShowSymbolParams(ctx, "EURUSD"); err != nil {
+    log.Printf("symbol params: %v", err)
+}
 
-// Compute monetary values
-_ = svc.ShowTickValues(ctx, []string{"EURUSD"})
+// Print monetary values (tick value / tick size / contract size)
+svc.ShowTickValues(ctx, []string{"EURUSD"})
 ```
 
 ### 3) Chart a symbol
 
 ```go
-// Pull historical candles and render
-_ = svc.ShowQuoteHistory(ctx, "EURUSD")
+// Print the last 5 days of H1 candles
+svc.ShowQuoteHistory(ctx, "EURUSD")
+
+// ...or get the candles to render them yourself
+to := time.Now()
+bars, err := account.QuoteHistory(ctx, "EURUSD", pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_H1, to.AddDate(0, 0, -5), to)
+if err == nil {
+    fmt.Println("bars:", len(bars.GetHistoricalQuotes()))
+}
 ```
+
+The `Show*` methods of `MT4Service` print their results and return nothing (`ShowSymbolParams` returns only an `error`); to work with the data, call the `MT4Account` methods (`ShowAllSymbols`, `Symbols`, `SymbolParams`, `SymbolParamsMany`, `Quote`, `QuoteMany`, `QuoteHistory`, `TickValueWithSize`).
 
 ---
 
 ## ✅ Best Practices
 
 1. **Key by name, not index.** `SymbolIndex` can change across sessions; persist `SymbolName`.
-2. **Format by Digits.** Use `Digits` from `ShowSymbolParams` for UI; keep raw doubles for math.
-3. **Batch when possible.** Prefer `ShowQuotesMany` and `ShowTickValues` to reduce round‑trips.
-4. **Time is UTC.** Quotes and candles come with UTC timestamps—convert only at presentation.
+2. **Format by Digits.** Use `Digits` from `SymbolParams` for UI; keep raw doubles for math.
+3. **Batch when possible.** Prefer `QuoteMany` and `TickValueWithSize` to reduce round‑trips.
+4. **Know the time zone.** Times like `DateTime` / `Time` are **broker server time**; each has a UTC sibling (`DateTimeUtc`, `TimeUtc`) for the same moment. History ranges you pass (`from`, `to`) are read as broker server time.
 5. **Broker suffixes are real.** Treat `EURUSD.m` / `XAUUSD-RAW` as distinct symbols.
 
 ---

@@ -41,7 +41,10 @@ for _, order := range ordersData.GetOrderInfos() {
 
 ```go
 func (s *MT4Service) ShowOpenedOrders(ctx context.Context)
+func (a *MT4Account) OpenedOrders(ctx context.Context) (*pb.OpenedOrdersData, error)
 ```
+
+Related: `account.OrderSelect(ctx, ticket)` finds one opened order by ticket (it calls `OpenedOrders` and searches locally), `account.OrdersTotal(ctx)` counts them.
 
 ---
 
@@ -55,29 +58,36 @@ Required:
 
 ## ⬆️ Output
 
-This method prints opened order information to stdout and does not return data directly. The printed output includes:
+`ShowOpenedOrders` prints opened order information to stdout and does not return data. `account.OpenedOrders` returns `*pb.OpenedOrdersData`, whose `OrderInfos` is a slice of `*pb.OpenedOrderInfo` (market positions and pending orders):
 
-| Field       | Type                 | Description                                |
-| ----------- | -------------------- | ------------------------------------------ |
-| `Ticket`    | `int32`              | Unique ticket ID for the order.            |
-| `Symbol`    | `string`             | Trading symbol (e.g., "EURUSD").           |
-| `Lots`      | `float64`            | Volume of the order in lots.               |
-| `OpenPrice` | `float64`            | Price at which the order was opened.       |
-| `Profit`    | `float64`            | Current floating profit/loss of the order. |
-| `OrderType` | `ENUM_ORDER_TYPE_TF` | Type of the order (Buy, Sell, etc.).       |
+| Field        | Type                 | Description                                |
+| ------------ | -------------------- | ------------------------------------------ |
+| `Ticket`     | `int32`              | Unique ticket ID for the order.            |
+| `Symbol`     | `string`             | Trading symbol (e.g., "EURUSD").           |
+| `OrderType`  | `pb.OpenedOrderType` | Type of the order (Buy, Sell, etc.).       |
+| `Lots`       | `float64`            | Volume of the order in lots.               |
+| `OpenPrice`  | `float64`            | Price at which the order was opened.       |
+| `StopLoss` / `TakeProfit` | `float64` | SL / TP levels (0 = not set).       |
+| `Profit`     | `float64`            | Current floating profit/loss of the order. |
+| `Swap` / `Commision` | `float64`    | Swap and commission (the field is spelled `Commision`). |
+| `MagicNumber`| `int32`              | EA magic number.                           |
+| `Comment`    | `string`             | Order comment.                             |
+| `OpenTime` / `OpenTimeUtc` | `*timestamppb.Timestamp` | Open time (broker server time / UTC). |
+| `ExpirationTime` / `ExpirationTimeUtc` | `*timestamppb.Timestamp` | Pending order expiration. |
+| `AccountLogin` | `int64`            | Account the order belongs to.              |
 
 ---
 
-### ENUM: `ENUM_ORDER_TYPE_TF`
+### ENUM: `pb.OpenedOrderType`
 
-| Value                  | Description        |
-| ---------------------- | ------------------ |
-| `OrderTypeTfBuy`       | Buy order          |
-| `OrderTypeTfSell`      | Sell order         |
-| `OrderTypeTfBuyLimit`  | Pending Buy Limit  |
-| `OrderTypeTfSellLimit` | Pending Sell Limit |
-| `OrderTypeTfBuyStop`   | Pending Buy Stop   |
-| `OrderTypeTfSellStop`  | Pending Sell Stop  |
+| Value                         | Description        |
+| ----------------------------- | ------------------ |
+| `OpenedOrderType_OO_OP_BUY`       | Buy order          |
+| `OpenedOrderType_OO_OP_SELL`      | Sell order         |
+| `OpenedOrderType_OO_OP_BUYLIMIT`  | Pending Buy Limit  |
+| `OpenedOrderType_OO_OP_SELLLIMIT` | Pending Sell Limit |
+| `OpenedOrderType_OO_OP_BUYSTOP`   | Pending Buy Stop   |
+| `OpenedOrderType_OO_OP_SELLSTOP`  | Pending Sell Stop  |
 
 ---
 

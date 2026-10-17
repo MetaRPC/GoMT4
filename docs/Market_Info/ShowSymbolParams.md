@@ -30,7 +30,7 @@ fmt.Printf("• Digits: %d\n", info.GetDigits())
 fmt.Printf("• Volume Min: %.2f\n", info.GetVolumeMin())
 fmt.Printf("• Volume Max: %.2f\n", info.GetVolumeMax())
 fmt.Printf("• Volume Step: %.2f\n", info.GetVolumeStep())
-fmt.Printf("• Trade Mode: %s\n", tradeModeToString(info.GetTradeMode()))
+fmt.Printf("• Trade Mode: %s\n", info.GetTradeMode()) // e.g. SYMBOL_TRADE_MODE_FULL
 fmt.Printf("• Currency Base: %s\n", info.GetCurrencyBase())
 fmt.Printf("• Currency Profit: %s\n", info.GetCurrencyProfit())
 fmt.Printf("• Currency Margin: %s\n", info.GetCurrencyMargin())
@@ -42,7 +42,11 @@ fmt.Printf("• Currency Margin: %s\n", info.GetCurrencyMargin())
 
 ```go
 func (s *MT4Service) ShowSymbolParams(ctx context.Context, symbol string) error
+func (a *MT4Account) SymbolParams(ctx context.Context, symbol string) (*pb.SymbolParamsManyInfo, error)
+func (a *MT4Account) SymbolParamsMany(ctx context.Context, symbols []string) (*pb.SymbolParamsManyData, error)
 ```
+
+`SymbolParams` sends `SymbolParamsMany` with `SymbolName` set and returns the first entry. `SymbolParamsMany` returns all symbols when `symbols` is empty; otherwise it filters by the **first** symbol of the slice only (the request takes one name).
 
 ---
 
@@ -70,7 +74,12 @@ Returns `*pb.SymbolParamsManyInfo` with fields (key subset):
 | `CurrencyBase`   | `string`  | Base currency of the symbol.                |
 | `CurrencyProfit` | `string`  | Profit currency for trades in this symbol.  |
 | `CurrencyMargin` | `string`  | Margin currency for this symbol.            |
-| `TradeMode`      | `int32`   | Trade mode enum (e.g., disabled/long-only). |
+| `TradeMode`      | `pb.SP_ENUM_SYMBOL_TRADE_MODE` | Trade mode (`SYMBOL_TRADE_MODE_DISABLED`, `_LONGONLY`, `_SHORTONLY`, `_CLOSEONLY`, `_FULL`). |
+| `Point`          | `float64` | Point size (smallest price step).           |
+| `TradeStopsLevel`| `int32`   | Minimum SL/TP distance in points.           |
+| `TradeFreezeLevel`| `int32`  | Freeze distance in points.                  |
+| `TradeTickValue` / `TradeTickSize` / `TradeContractSize` | `float64` | Tick value, tick size, contract size. |
+| `Bid` / `Ask` …  | `float64` | Current prices and many more MT4 symbol properties (see `pb.SymbolParamsManyInfo`). |
 
 ---
 

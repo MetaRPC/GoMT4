@@ -24,30 +24,24 @@ A quick reference for common MT4/GoMT4 terms used throughout the docs and code.
 
 ```text
    ┌───────────┐
-   │ New Order │
+   │ New Order │  OrderSend
    └─────┬─────┘
-         │ (executed at market / placed pending)
-         ▼
-   ┌───────────┐
-   │   Open    │
-   └───┬───┬───┘
-       │   │
-       │   │ SL hit (loss)
-       │   ▼
-       │ ┌───────┐
-       │ │Closed │
-       │ └───────┘
-       │
-       │ TP hit (profit)
-       │
-       ▼
-   ┌───────────┐
-   │ Delete/   │
-   │ Cancelled │ (for pending orders)
-   └───────────┘
+         │
+   ┌─────┴──────────────────────┐
+   │ market (BUY/SELL)          │ pending (LIMIT/STOP)
+   ▼                            ▼
+┌───────────┐  price reached ┌───────────┐
+│   Open    │◄───────────────│  Pending  │
+└─────┬─────┘                └─────┬─────┘
+      │ SL/TP hit or               │ OrderDelete
+      │ OrderClose / OrderCloseBy  │ (or expiration)
+      ▼                            ▼
+┌───────────┐                ┌───────────┐
+│  Closed   │                │  Deleted  │
+└───────────┘                └───────────┘
 ```
 
-This diagram shows a typical order lifecycle: creation → open → closure (SL/TP or manual) or cancellation (if pending).
+This diagram shows a typical order lifecycle: creation → open → closure (SL/TP or manual), or for pending orders: trigger → open, or deletion.
 
 ---
 
@@ -71,9 +65,9 @@ This diagram shows a typical order lifecycle: creation → open → closure (SL/
 * **Digits** → Decimal precision of the quote (e.g., 5 digits → 1.23456).
 * **Point** → Smallest price step for the symbol (e.g., 0.00001 for EURUSD).
 * **Lot** → Standard trade size (usually 100,000 units base currency).
-* **Lot Step** → Minimum increment allowed when specifying volume.
+* **Volume Step** (`VolumeStep`, "lot step") → Minimum increment allowed when specifying volume; `VolumeMin` / `VolumeMax` are the limits.
 * **Contract Size** → Amount of base currency per lot.
-* **Stops Level** → Minimum distance (in points) required for SL/TP from current price.
+* **Stops Level** (`TradeStopsLevel`) → Minimum distance (in points) required for SL/TP from current price.
 
 ---
 
@@ -82,7 +76,7 @@ This diagram shows a typical order lifecycle: creation → open → closure (SL/
 * **Order** → Instruction to buy or sell a symbol.
 * **Market Order** → Executed immediately at current market price.
 * **Pending Order** → Placed to execute in the future at a specific price (Limit or Stop).
-* **Ticket** → Unique ID of an order (int64).
+* **Ticket** → Unique ID of an order (`int32` in this API).
 * **SL (Stop Loss)** → Protective level to cap loss.
 * **TP (Take Profit)** → Target level to close with profit.
 * **Magic Number** → User-defined integer to tag EAs/orders.
@@ -92,27 +86,33 @@ This diagram shows a typical order lifecycle: creation → open → closure (SL/
 
 ## 🔄 Order Types (MT4)
 
-* `OP_BUY` → Buy at market.
-* `OP_SELL` → Sell at market.
-* `OP_BUYLIMIT` → Pending: buy if price drops to X.
-* `OP_SELLLIMIT` → Pending: sell if price rises to X.
-* `OP_BUYSTOP` → Pending: buy if price rises to X.
-* `OP_SELLSTOP` → Pending: sell if price drops to X.
+| MT4 | Sending (`pb.OrderSendOperationType`) | In opened/history orders (`pb.OpenedOrderType`) | Meaning |
+| --- | --- | --- | --- |
+| `OP_BUY` | `OrderSendOperationType_OC_OP_BUY` | `OpenedOrderType_OO_OP_BUY` | Buy at market |
+| `OP_SELL` | `OrderSendOperationType_OC_OP_SELL` | `OpenedOrderType_OO_OP_SELL` | Sell at market |
+| `OP_BUYLIMIT` | `OrderSendOperationType_OC_OP_BUYLIMIT` | `OpenedOrderType_OO_OP_BUYLIMIT` | Pending: buy if price drops to X |
+| `OP_SELLLIMIT` | `OrderSendOperationType_OC_OP_SELLLIMIT` | `OpenedOrderType_OO_OP_SELLLIMIT` | Pending: sell if price rises to X |
+| `OP_BUYSTOP` | `OrderSendOperationType_OC_OP_BUYSTOP` | `OpenedOrderType_OO_OP_BUYSTOP` | Pending: buy if price rises to X |
+| `OP_SELLSTOP` | `OrderSendOperationType_OC_OP_SELLSTOP` | `OpenedOrderType_OO_OP_SELLSTOP` | Pending: sell if price drops to X |
+
+Stream events (`OnTrade`, `OnOpenedOrdersProfit`) use `pb.SUB_ORDER_OPERATION_TYPE` (`SUB_ORDER_OPERATION_TYPE_SUB_OP_BUY`, …) with the same six values.
 
 ---
 
 ## 🔌 Connection & RPC
 
-* **gRPC** → Protocol used by GoMT4 to expose MT4 functions.
-* **Port 50051** → Default local address where server listens (`mt4.mrpc.pro:443`).
-* **Stream** → Long‑lived connection pushing updates (quotes, orders, history).
-* **Unary RPC** → One‑shot request/response (e.g., GetQuote).
+* **gRPC** → Protocol used between GoMT4 and the MetaRPC API.
+* **`mt4.mrpc.pro:443`** → The MetaRPC cloud API (gRPC over TLS) the client connects to by default. MetaRPC runs the MT4 terminal for your account.
+* **API key** → Your MetaRPC key, sent as `apikey` metadata on every call (`TRIAL` when none is given).
+* **Terminal id** → GUID of the terminal that serves your account, sent as `id` metadata (`TerminalInstanceGuid` after connect).
+* **Stream** → Long‑lived server‑streaming call pushing updates (ticks, trade events, profits, tickets).
+* **Unary RPC** → One‑shot request/response (e.g., `Quote`).
 
 ---
 
 ## 📊 History & Streaming
 
-* **Quote History** → Past bid/ask points (OHLC bars or ticks).
+* **Quote History** → Past OHLC bars for a timeframe (`QuoteHistory`).
 * **Order History** → List of closed trades for a period.
 * **StreamQuotes** → Continuous tick updates.
 * **StreamTradeUpdates** → Real-time feed of order lifecycle events.
@@ -121,8 +121,8 @@ This diagram shows a typical order lifecycle: creation → open → closure (SL/
 
 ## 🛡️ Errors & Codes
 
-* **MrpcError** → Generic RPC error (code + message).
-* **OrderError** → Error tied to a specific order (invalid volume, price, etc.).
+* **`pb.Error`** → API error inside a reply: `ErrorCode` + `ErrorMessage`, plus `MqlErrorCode` / `MqlErrorIntCode` when MT4 itself refused (invalid volume, price, etc.). The client returns it as a Go error `API error (code=...): ...`.
+* **gRPC status error** → Transport-level failure (e.g., `Unavailable`, `DeadlineExceeded`).
 * **Slippage** → Max price deviation allowed when executing orders.
 * **Requote** → Server rejects trade at requested price, offers new one.
 

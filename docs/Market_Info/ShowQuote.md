@@ -1,7 +1,7 @@
 # Getting a Quote for Symbol
 
 > **Request:** fetch the latest quote for a given symbol
-> Returns current bid/ask prices, spread, and time for a specified trading instrument.
+> Returns current bid/ask prices, high/low, and the quote time for a specified trading instrument.
 
 ---
 
@@ -37,6 +37,7 @@ fmt.Printf("Bid: %.5f, Ask: %.5f, Time: %s\n",
 
 ```go
 func (s *MT4Service) ShowQuote(ctx context.Context, symbol string)
+func (a *MT4Account) Quote(ctx context.Context, symbol string) (*pb.QuoteData, error)
 ```
 
 ---
@@ -56,13 +57,17 @@ Required:
 
 Returns `*pb.QuoteData` with fields:
 
-| Field      | Type        | Description                 |
-| ---------- | ----------- | --------------------------- |
-| `Bid`      | `float64`   | Current bid price.          |
-| `Ask`      | `float64`   | Current ask price.          |
-| `DateTime` | `timestamp` | UTC timestamp of the quote. |
+| Field         | Type                     | Description                                      |
+| ------------- | ------------------------ | ------------------------------------------------ |
+| `Symbol`      | `string`                 | Symbol name.                                     |
+| `Bid`         | `float64`                | Current bid price.                               |
+| `Ask`         | `float64`                | Current ask price.                               |
+| `High`        | `float64`                | High price.                                      |
+| `Low`         | `float64`                | Low price.                                       |
+| `DateTime`    | `*timestamppb.Timestamp` | Time of the quote (broker server time).          |
+| `DateTimeUtc` | `*timestamppb.Timestamp` | The same moment in UTC (unset while the broker's offset is not known yet). |
 
-> **Spread:** If not exposed directly, compute as `Ask - Bid`. For points/pips, divide by the symbol’s `Point` (from `SymbolParams`).
+> **Spread:** Not part of the reply — compute as `Ask - Bid`. For points, divide by the symbol’s `Point` (from `SymbolParams`).
 
 ---
 
@@ -79,7 +84,7 @@ Retrieve **live market pricing** for a specific symbol. Useful for:
 ## 🧩 Notes & Tips
 
 * **Precision:** Print with instrument-specific decimals (e.g., 5 for EURUSD). Keep raw values for calculations.
-* **Timestamp:** `DateTime` is UTC — format for display, log in UTC.
+* **Timestamp:** `DateTime` is broker server time; use `DateTimeUtc` for UTC logs.
 
 ---
 
@@ -93,4 +98,4 @@ Retrieve **live market pricing** for a specific symbol. Useful for:
 ## 🧪 Testing Suggestions
 
 * **Happy path:** `EURUSD` → `Ask > Bid`, timestamp recent.
-* **Error path:** Unknown/disabled symbol → return error or empty data handled gracefully.
+* **Error path:** Unknown/disabled symbol → an API error is returned; handle it gracefully.

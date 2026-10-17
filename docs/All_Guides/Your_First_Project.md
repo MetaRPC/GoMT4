@@ -117,6 +117,6 @@ Balance: 10000.00, Equity: 10000.00 USD
 ## 🚀 Next Steps
 
 Congratulations! You have successfully established a direct gRPC connection to MetaTrader 4. Next:
-- Explore **[gRPC Streaming](GRPC_STREAM_MANAGEMENT.md)** to listen to live ticks.
-- Check the **[API Reference](../API_Reference/MT4Account.md)** for all 40+ available terminal methods.
-- Learn about high-level risk management and auto-normalization in **[MT4Sugar](../API_Reference/MT4Sugar.md)**.
+- Explore **[Streaming](../Streaming/Streaming_Overview.md)** to listen to live ticks.
+- Check the **[API Reference](../API%20Reference/Overview.md)** for the messages and enums of `github.com/MetaRPC/GoMT4/package`.
+- Run the full example app with the `MT4Account` / `MT4Service` client from a clone of the repository: **[Beginner Run Guide](../Beginner_Run_Guide.md)**.

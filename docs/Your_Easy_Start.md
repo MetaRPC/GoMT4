@@ -6,15 +6,16 @@
 
 ## 🪪 Requirements
 
-* `config/config.json` filled with **login**, **password**, **server**, and a **default symbol**.
-* Standard build/run works: `go build ./...` or `go run .`.
-* You **do not** need to call `MT4Account` directly; use the `MT4Service` methods exposed in examples.
+* A clone of the repository; the example app is `examples/main.go` and is run from the `examples` folder.
+* `examples/config/config.json` filled with **Login**, **Password**, **Server**, **DefaultSymbol** and **ApiKey** (with `"Login": 0` the example opens a fresh demo account for you; with `"ApiKey": "TRIAL"` or no key the calls run as a trial).
+* Standard build/run works: `go build ./...` or `go run .` (inside `examples`).
+* `main.go` creates the `MT4Account`, connects it with `ConnectByServerName`, and then uses only the `MT4Service` methods (`svc.Show...`, `svc.Stream...`).
 
 ---
 
 ## Quick Start (Safe Mode)
 
-1. Fill `config/config.json`.
+1. Fill `examples/config/config.json`.
 2. Run the example app (`main.go`) as-is — only **read-only** calls and safe streams will run.
 3. When you’re ready to try trading (open/modify/close orders), enable it via **Feature Toggles** below.
 
@@ -22,7 +23,7 @@
 
 ## ✨ Feature Toggles (Safe by Default)
 
-Place these three flags near the top of your `main.go` (after loading config and creating the account):
+`main.go` has these three flags right after connecting the account:
 
 ```go
 // ===== Feature toggles (safe by default) =====
@@ -107,7 +108,7 @@ if enableHistoryStreams {
 
 **Dangerous (disabled by default):**
 
-* `ShowOrderSendExample` — opens a trade (market or pending).
+* `ShowOrderSendExample` — opens a market BUY of 0.1 lot on the given symbol.
 * `ShowOrderModifyExample` — changes SL/TP.
 * `ShowOrderCloseExample` — closes an order by ticket.
 * `ShowOrderCloseByExample` — closes using an opposite order.
@@ -135,14 +136,14 @@ if enableHistoryStreams {
    * Set `enableTradingExamples = true`.
    * Put **real, valid tickets** into modify/close/close‑by/delete calls.
    * Prefer **DEMO** first.
-5. Run normally (`go run .` or `go build && ./your-binary`).
+5. Run normally from the `examples` folder (`go run .` or `go build && ./examples`).
 
 ---
 
 ## 🏗️ Safety Checklist (before enabling trading)
 
 * ✅ You’re on a **DEMO** account (strongly recommended for first runs).
-* ✅ `ShowAccountSummary` looks sane; you understand `Equity` and `FreeMargin`.
+* ✅ `ShowAccountSummary` looks sane (it prints balance, equity and currency).
 * ✅ Symbol, volume, SL/TP comply with your broker’s rules.
 * ✅ Tickets are **real**, e.g., from `ShowOpenedOrders`.
 
@@ -151,13 +152,13 @@ if enableHistoryStreams {
 ## 🤖 FAQ
 
 **Do I need to call `MT4Account` directly?**
-No. Use `MT4Service` methods (`svc.Show...`, `svc.Stream...`). `MT4Account` is managed under the hood.
+Only to create and connect it (`main.go` already does that). After that you can use `MT4Service` methods (`svc.Show...`, `svc.Stream...`), which call the `MT4Account` methods for you; call `MT4Account` directly when you need the returned data instead of printed output.
 
 **Where can I change date ranges for history?**
 
 * `StreamOrdersHistoryExample` — last 30 days by default.
 * `StreamQuoteHistoryExample` — last 90 days (weekly chunks).
-  Fork those wrappers or add parameters if you need custom ranges.
+  For custom ranges call `svc.StreamOrdersHistory(ctx, sortType, &from, &to, pageSize)` or `svc.StreamQuoteHistory(ctx, symbol, timeframe, from, to, chunk)` directly; they take the range as parameters.
 
 **How do I prevent accidental trades in a team repo?**
 Keep `enableTradingExamples = false` in committed code, add a big comment banner above the toggle. Flip it locally for tests.

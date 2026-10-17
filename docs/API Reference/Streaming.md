@@ -1,186 +1,158 @@
 # 📡 API Reference — Streaming (GoMT4)
 
-This page documents **streaming messages & chunks** used in GoMT4. Streaming APIs are long-lived gRPC calls that continuously send updates.
+This page documents the **streaming messages** used in GoMT4. The four subscriptions are long-lived gRPC server streams (`SubscriptionService`) that continuously send updates; `MT4Account` wraps each in a method that returns a data channel and an error channel and reconnects on transient errors.
+
+```go
+dataCh, errCh := account.OnSymbolTick(ctx, []string{"EURUSD"})
+```
+
+* The data channel is unbuffered; read it promptly.
+* On a final error the client sends it to `errCh` and closes both channels. Cancelling `ctx` ends the stream the same way.
+* Every reply is `{ Data | Error }`; `Error` with `TERMINAL_INSTANCE_NOT_FOUND` / `TERMINAL_REGISTRY_TERMINAL_NOT_FOUND` makes the client reopen the stream, any other `Error` ends it.
 
 ---
 
-## 🔔 Quotes Streaming
+## 🔔 Quotes Streaming — `account.OnSymbolTick(ctx, symbols)`
 
-### Mt4QuoteUpdate (QuoteUpdate)
+Request `OnSymbolTickRequest`: `SymbolNames []string`.
 
-| Field                                                     | Type      |
-| --------------------------------------------------------- | --------- |
-| `symbol`                                                  | string    |
-| `bid`                                                     | double    |
-| `ask`                                                     | double    |
-| `point`                                                   | double    |
-| `digits`                                                  | int32     |
-| `time`                                                    | Timestamp |
-| **Notes:** one tick. Compute spread: `(ask - bid)/point`. |           |
+### OnSymbolTickData
 
-### Mt4QuoteStreamRequest (QuoteStreamRequest)
+| Field                    | Type                      |
+| ------------------------ | ------------------------- |
+| `SymbolTick`             | `*pb.OnSymbolMqlTickInfo` |
+| `TerminalInstanceGuidId` | `string`                  |
 
-* Fields: `symbols[]` (list of symbols to subscribe).
+### OnSymbolMqlTickInfo
 
-### Mt4QuoteStreamChunk (QuoteStreamChunk)
+| Field                      | Type                     |
+| -------------------------- | ------------------------ |
+| `Symbol`                   | `string`                 |
+| `Bid`                      | `float64`                |
+| `Ask`                      | `float64`                |
+| `Last`                     | `float64`                |
+| `Volume`                   | `uint64`                 |
+| `Time` / `TimeUtc`         | `*timestamppb.Timestamp` |
+| `TimeMsc` / `TimeMscUtc`   | `int64` (milliseconds)   |
 
-* Fields: `update: QuoteUpdate`, `is_last: bool`.
-* `is_last = true` marks stream termination.
-
----
-
-## 📑 Orders History Streaming
-
-### Mt4OrdersHistoryPagedRequest (OrdersHistoryPagedRequest)
-
-* Fields: `from`, `to`, optional `symbol`, `page_size`.
-
-### Mt4OrdersHistoryPagedChunk (OrdersHistoryPagedChunk)
-
-| Field                                                             | Type         |
-| ----------------------------------------------------------------- | ------------ |
-| `orders[]`                                                        | OrderHistory |
-| `next_page_token`                                                 | string       |
-| `is_last`                                                         | bool         |
-| **Notes:** chunked history pages. Use token to request next page. |              |
+**Notes:** one tick. Compute spread: `(Ask - Bid) / Point` (`Point` from `SymbolParams`).
 
 ---
 
-## 🔄 Trade Updates
+## 🔄 Trade Updates — `account.OnTrade(ctx)`
 
-### Mt4TradeUpdate (TradeUpdate)
+Request `OnTradeRequest`: no fields.
 
-| Field    | Type             |
-| -------- | ---------------- |
-| `ticket` | int64            |
-| `symbol` | string           |
-| `type`   | OrderType        |
-| `volume` | double           |
-| `price`  | double           |
-| `sl`     | double           |
-| `tp`     | double           |
-| `time`   | Timestamp        |
-| `state`  | TradeUpdateState |
+### OnTradeData
 
-### Mt4TradeUpdateStreamRequest (TradeUpdateStreamRequest)
+| Field                    | Type                               |
+| ------------------------ | ---------------------------------- |
+| `Type`                   | `pb.MT4_SUB_ENUM_EVENT_GROUP_TYPE` |
+| `EventData`              | `*pb.OnTadeEventData`              |
+| `AccountInfo`            | `*pb.OnEventAccountInfo`           |
+| `TerminalInstanceGuidId` | `string`                           |
 
-* Fields: `symbols[]` (subscribe per symbol).
+### OnTadeEventData
 
-### Mt4TradeUpdateStreamChunk (TradeUpdateStreamChunk)
+| Field              | Type                            |
+| ------------------ | ------------------------------- |
+| `NewOrders`        | `[]*pb.OnTradeOrderInfo`        |
+| `UpdatedOrders`    | `[]*pb.OnTradeUpdatedOrderInfo` (`Previous`, `Current`) |
+| `RemovedOrders`    | `[]*pb.OnTradeOrderInfo`        |
+| `NewHistoryOrders` | `[]*pb.OnTradeOrderInfo`        |
 
-* Fields: `update: TradeUpdate`, `is_last: bool`.
+### OnTradeOrderInfo
 
----
+| Field                        | Type                          |
+| ---------------------------- | ----------------------------- |
+| `Ticket`                     | `int32`                       |
+| `Symbol`                     | `string`                      |
+| `Type`                       | `pb.SUB_ORDER_OPERATION_TYPE` |
+| `Lots`                       | `float64`                     |
+| `OpenPrice`                  | `float64`                     |
+| `StopLoss` / `TakeProfit`    | `float64`                     |
+| `OrderProfit`                | `float64`                     |
+| `Swap` / `Commission`        | `float64`                     |
+| `OpenTime` / `OpenTimeUtc`   | `*timestamppb.Timestamp`      |
+| `Expiration` / `ExpirationUtc` | `*timestamppb.Timestamp`    |
+| `ClosePrice`                 | `float64` (history orders only) |
+| `CloseTime` / `CloseTimeUtc` | `*timestamppb.Timestamp` (history orders only) |
+| `IsHistory`                  | `bool`                        |
+| `MagicNumber`                | `int32`                       |
+| `Comment`                    | `string`                      |
+| `Index`                      | `int32`                       |
+| `AccountLogin`               | `int64`                       |
 
-## 🎟️ Opened Orders Tickets
+### OnEventAccountInfo
 
-### Mt4OpenedOrdersTicketStreamRequest (OpenedOrdersTicketStreamRequest)
-
-* Fields: `symbols[]` (subscribe tickets by symbol).
-
-### Mt4OpenedOrdersTicketStreamChunk (OpenedOrdersTicketStreamChunk)
-
-| Field       | Type               |
-| ----------- | ------------------ |
-| `tickets[]` | OpenedOrdersTicket |
-| `is_last`   | bool               |
-
----
-
-## 💰 Opened Orders Profit Stream
-
-### Mt4OpenedOrdersProfitOrderInfo (ProfitOrderInfo)
-
-| Field          | Type   |
-| -------------- | ------ |
-| `ticket`       | int64  |
-| `symbol`       | string |
-| `order_profit` | double |
-| `swap`         | double |
-| `commission`   | double |
-
-### Mt4OpenedOrdersProfitSnapshot (ProfitSnapshot)
-
-* Fields: `opened_orders_with_profit_updated[]: ProfitOrderInfo`, `time: Timestamp`.
-
-### Mt4OpenedOrdersProfitStreamRequest (ProfitStreamRequest)
-
-* Field: `buffer_size: int32` (controls channel buffer).
-
-### Mt4OpenedOrdersProfitStreamChunk (ProfitStreamChunk)
-
-* Fields: `snapshot: ProfitSnapshot`, `is_last: bool`.
-
-**Notes:** updates real-time PnL per order.
+`Balance`, `Credit`, `Equity`, `Margin`, `FreeMargin`, `Profit`, `MarginLevel` (`float64`), `Login` (`int64`).
 
 ---
 
-## 🕒 Quote History Streaming
+## 🎟️ Opened Orders Tickets — `account.OnOpenedOrdersTickets(ctx, intervalMs)`
 
-### Mt4QuoteHistoryPoint (QuoteHistoryPoint)
+Request `OnOpenedOrdersTicketsRequest`: `PullIntervalMilliseconds int32` (= `intervalMs`).
 
-* Fields: `time, bid, ask`.
+### OnOpenedOrdersTicketsData
 
-### Mt4QuoteHistoryChunk (QuoteHistoryChunk)
-
-* Fields: `point: QuoteHistoryPoint`, `is_last: bool`.
-
----
-
-## 📊 Chart Streaming
-
-### Mt4ChartStreamRequest (ChartStreamRequest)
-
-* Fields: `symbol, period`.
-
-### Mt4ChartStreamChunk (ChartStreamChunk)
-
-* Fields: `bar: ChartBar`, `is_last: bool`.
-
-### Mt4ChartHistoryStreamRequest (ChartHistoryStreamRequest)
-
-* Fields: `symbol, period, chunks: ChartTimeChunks`.
-
-### Mt4ChartTimeChunks (ChartTimeChunks)
-
-* Array of `from/to` ranges.
+| Field                          | Type                     |
+| ------------------------------ | ------------------------ |
+| `PositionTickets`              | `[]int32`                |
+| `PendingOrderTickets`          | `[]int32`                |
+| `ServerTime` / `ServerTimeUtc` | `*timestamppb.Timestamp` |
+| `TerminalInstanceGuidId`       | `string`                 |
 
 ---
 
-## 📈 Internal Chart Streaming
+## 💰 Opened Orders Profit Stream — `account.OnOpenedOrdersProfit(ctx, intervalMs)`
 
-### Mt4InternalChartStreamRequest (InternalChartStreamRequest)
+Request `OnOpenedOrdersProfitRequest`: `TimerPeriodMilliseconds int32` (= `intervalMs`).
 
-* Field: `symbol`.
+### OnOpenedOrdersProfitData
 
-### Mt4InternalChartStreamChunk (InternalChartStreamChunk)
+| Field                           | Type                                  |
+| ------------------------------- | ------------------------------------- |
+| `Type`                          | `pb.MT4_SUB_ENUM_EVENT_GROUP_TYPE`    |
+| `OpenedOrdersWithProfitUpdated` | `[]*pb.OnOpenedOrdersProfitOrderInfo` |
+| `AccountInfo`                   | `*pb.OnEventAccountInfo`              |
+| `TerminalInstanceGuidId`        | `string`                              |
 
-* Fields: `point: InternalChartPoint`, `is_last: bool`.
+### OnOpenedOrdersProfitOrderInfo
 
-### Mt4InternalChartHistoryStreamRequest (InternalChartHistoryStreamRequest)
+| Field                        | Type                          |
+| ---------------------------- | ----------------------------- |
+| `Ticket`                     | `int32`                       |
+| `Symbol`                     | `string`                      |
+| `Type`                       | `pb.SUB_ORDER_OPERATION_TYPE` |
+| `Lots`                       | `float64`                     |
+| `OpenPrice`                  | `float64`                     |
+| `OrderProfit`                | `float64`                     |
+| `StopLoss` / `TakeProfit`    | `float64`                     |
+| `Swap` / `Commission`        | `float64`                     |
+| `OpenTime` / `OpenTimeUtc`   | `*timestamppb.Timestamp`      |
+| `Expiration` / `ExpirationUtc` | `*timestamppb.Timestamp`    |
+| `MagicNumber`                | `int32`                       |
+| `Comment`                    | `string`                      |
+| `Index`                      | `int32`                       |
 
-* Fields: `symbol`, `chunks: InternalChartTimeChunks`.
-
-### Mt4InternalChartHistoryResponse (InternalChartHistoryResponse)
-
-* Fields: `series[]: InternalChartSeries`.
+**Notes:** real-time PnL per order plus account margin figures.
 
 ---
 
-## ⚠️ Stream Errors
+## 🕒 History helpers (client-side, not gRPC streams)
 
-### Mt4StreamErrorReason (StreamErrorReason)
+### `account.OrdersHistoryStream(ctx, sortType, from, to, pageSize)` → `<-chan *pb.OrdersHistoryData`
 
-| Name          | Value | Meaning            |
-| ------------- | ----: | ------------------ |
-| `NONE`        |     0 | No error           |
-| `EOF`         |     1 | End of stream      |
-| `UNAVAILABLE` |     2 | Stream unavailable |
+Calls `OrdersHistory` with page 1, 2, 3, … (`ItemsPerPage = pageSize`) and sends each non-empty page; stops at the first empty page. Same as `svc.StreamOrdersHistory(...)`.
+
+### `account.QuoteHistoryStream(ctx, symbol, timeframe, from, to, chunk)` → `<-chan *pb.QuoteHistoryData`
+
+Splits `[from, to]` into windows of `chunk` (default 24h), calls `QuoteHistory` per window and sends each non-empty result. Same as `svc.StreamQuoteHistory(...)`.
 
 ---
 
 📌 **Tip:**
 
-* Use `context.WithTimeout` or `WithCancel` to control stream lifetime.
-* Always handle `is_last = true` and error channels in client code.
+* Use `context.WithCancel` (not short timeouts) to control stream lifetime.
+* Always read the error channel and check `ok` when receiving from the data channel.
 * Streaming is ideal for real-time dashboards (quotes, PnL, trades).

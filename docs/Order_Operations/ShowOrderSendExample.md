@@ -9,7 +9,8 @@
 
 ```go
 // --- Quick use (service wrapper) ---
-// Opens a BUY order and prints ticket/price/time.
+// Opens a market BUY of 0.1 lot (slippage 5, comment "Go order test", magic 123456, no SL/TP)
+// and prints ticket/price/time.
 // ⚠️ This places a real trade — use on demo or with caution.
 svc.ShowOrderSendExample(ctx, "EURUSD")
 
@@ -19,18 +20,19 @@ svc.ShowOrderSendExample(ctx, "EURUSD")
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
+// proto.Int32 / proto.Float64 / proto.String come from google.golang.org/protobuf/proto
 result, err := account.OrderSend(
     ctx,
     "EURUSD",
     pb.OrderSendOperationType_OC_OP_BUY, // order type: Buy
     0.1,                                 // lots
     nil,                                 // price (nil = market)
-    ptrInt32(5),                         // slippage
-    ptrFloat64(1.0500),                  // stop loss
-    ptrFloat64(1.0900),                  // take profit
-    ptrString("Go order test"),          // comment
-    ptrInt32(123456),                    // magic number
-    nil,                                 // expiration
+    proto.Int32(5),                      // slippage
+    proto.Float64(1.0500),               // stop loss
+    proto.Float64(1.0900),               // take profit
+    proto.String("Go order test"),       // comment
+    proto.Int32(123456),                 // magic number
+    nil /* expiration */,
 )
 if err != nil {
     log.Fatalf("❌ OrderSend error: %v", err)
@@ -49,19 +51,32 @@ fmt.Printf("✅ Order opened! Ticket: %d, Price: %.5f, Time: %s\n",
 
 ```go
 func (s *MT4Service) ShowOrderSendExample(ctx context.Context, symbol string)
+func (a *MT4Account) OrderSend(
+    ctx context.Context,
+    symbol string,
+    operationType pb.OrderSendOperationType,
+    volume float64,
+    price *float64,
+    slippage *int32,
+    stoploss *float64,
+    takeprofit *float64,
+    comment *string,
+    magicNumber *int32,
+    expiration *timestamppb.Timestamp,
+) (*pb.OrderSendData, error)
 ```
 
 ---
 
 ## 🔽 Input
 
-Required:
+Required (`ShowOrderSendExample` takes only `ctx` and `symbol`):
 
 | Field       | Type                        | Description                         |
 | ----------- | --------------------------- | ----------------------------------- |
 | `ctx`       | `context.Context`           | Timeout or cancellation management. |
 | `symbol`    | `string`                    | Trading symbol (e.g., "EURUSD").    |
-| `orderType` | `pb.OrderSendOperationType` | Type of order (market/pending).     |
+| `operationType` | `pb.OrderSendOperationType` | `OrderSendOperationType_OC_OP_BUY`, `_SELL`, `_BUYLIMIT`, `_SELLLIMIT`, `_BUYSTOP`, `_SELLSTOP`. |
 | `volume`    | `float64`                   | Order volume in lots (e.g., 0.1).   |
 
 Optional (when calling `MT4Account.OrderSend` directly):
@@ -74,7 +89,7 @@ Optional (when calling `MT4Account.OrderSend` directly):
 | `takeProfit` | `*float64`               | Take Profit price.                          |
 | `comment`    | `*string`                | Optional order comment.                     |
 | `magic`      | `*int32`                 | Magic number tag.                           |
-| `expiration` | `*timestamppb.Timestamp` | Expiration (pending orders only).           |
+| `expiration` | `*timestamppb.Timestamp` | Expiration (pending orders only; broker server time). |
 
 ---
 
@@ -82,11 +97,13 @@ Optional (when calling `MT4Account.OrderSend` directly):
 
 Returns `*pb.OrderSendData`:
 
-| Field      | Type        | Description                         |
-| ---------- | ----------- | ----------------------------------- |
-| `Ticket`   | `int32`     | Unique order ID assigned by MT4.    |
-| `Price`    | `float64`   | Actual execution price.             |
-| `OpenTime` | `timestamp` | Time when order was executed (UTC). |
+| Field         | Type                     | Description                         |
+| ------------- | ------------------------ | ----------------------------------- |
+| `Ticket`      | `int32`                  | Unique order ID assigned by MT4.    |
+| `Volume`      | `float64`                | Volume of the order.                |
+| `Price`       | `float64`                | Actual execution price.             |
+| `OpenTime`    | `*timestamppb.Timestamp` | Time when order was executed (broker server time). |
+| `OpenTimeUtc` | `*timestamppb.Timestamp` | The same moment in UTC.             |
 
 ---
 
@@ -98,7 +115,7 @@ Place new trade orders (market or pending), controlling volume, price, and risk 
 
 ## 🧩 Notes & Tips
 
-* **Timeouts:** Your implementation sets a default 5s timeout if none is provided — keep calls bounded.
+* **Timeouts:** The method sets a default 5s timeout if your `ctx` has no deadline — keep calls bounded.
 * **Volume validation:** Ensure `volume` respects `VolumeMin/Max` and `VolumeStep` from `SymbolParams` before sending.
 * **Pending orders:** `price` must be provided for pending types; for market orders it should be `nil`.
 * **Types:** `slippage` is `*int32`, `magic` is `*int32`, `expiration` uses protobuf timestamp.
@@ -107,6 +124,6 @@ Place new trade orders (market or pending), controlling volume, price, and risk 
 
 ## ⚠️ Pitfalls
 
-* **Not connected:** When terminal is not connected, API returns `"not connected"`.
+* **Not connected:** Without a connected terminal the call fails (terminal-not-found after the retries); after `Disconnect` the client returns `"not connected"`.
 * **Rejected by broker:** Invalid SL/TP distances, disabled trading, or wrong price for pending orders will cause API errors.
 * **Races:** Price can move between validation and send; expect slippage/requotes depending on broker settings.

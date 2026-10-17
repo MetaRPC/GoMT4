@@ -4,7 +4,7 @@
 
 > Real code refs:
 >
-> * Account: `examples/mt4/MT4Account.go` (`AccountSummary`, `Quote`, retry/backoff helpers)
+> * Account: `examples/mt4/MT4Account.go` (`AccountSummary`, `Quote`, the health-check inside `ConnectByServerName` / `ConnectByHostPort`)
 > * Service demo: `examples/mt4/MT4_service.go` (summary/quote examples)
 > * Config: `examples/config/config.json`
 
@@ -12,57 +12,73 @@
 
 ## ✅ What we consider "healthy"
 
-* MT4 terminal is running and **connected to broker**.
+* The MT4 terminal MetaRPC runs for your account is up and **connected to the broker**.
 * `AccountSummary` returns within a **short timeout** (≈3s).
 * Optionally: a `Quote(symbol)` succeeds for your `DefaultSymbol` from `config.json`.
 
+`ConnectByServerName` / `ConnectByHostPort` already do the first check: right after connecting they call `AccountSummary` with a 3s timeout and, if it fails, disconnect and return an error. The helpers below repeat it later (e.g. before each trading session).
+
 ---
 
-## ⏱️ Quick summary-based check (3s timeout + retry on transport)
+## ⏱️ Quick summary-based check (3s timeout)
 
 ```go
-func HealthCheck(ctx context.Context, a *MT4Account) error {
+func HealthCheck(ctx context.Context, a *mt4.MT4Account) error {
     // Short deadline: we want a quick yes/no
     hctx, cancel := context.WithTimeout(ctx, 3*time.Second)
     defer cancel()
 
-    // Retry only transient transport errors (codes.Unavailable)
-    return a.callWithRetry(hctx, func(c context.Context) error {
-        _, err := a.AccountSummary(c)
-        return err
-    })
+    // AccountSummary retries transient errors itself (within hctx)
+    _, err := a.AccountSummary(hctx)
+    return err
 }
 ```
 
-**Why this works:** `AccountSummary` is lightweight and exercises the session; your `callWithRetry` already implements exponential backoff + jitter and respects context.
+**Why this works:** `AccountSummary` is lightweight and exercises the whole path (API key, terminal id, terminal, broker connection).
 
 ---
 
 ## 💱 Optional: include a quote probe for DefaultSymbol
 
 ```go
-func HealthCheckWithQuote(ctx context.Context, a *MT4Account, symbol string) error {
+func HealthCheckWithQuote(ctx context.Context, a *mt4.MT4Account, symbol string) error {
     if err := HealthCheck(ctx, a); err != nil { return err }
 
     qctx, cancel := context.WithTimeout(ctx, 2*time.Second)
     defer cancel()
 
-    return a.callWithRetry(qctx, func(c context.Context) error {
-        _, err := a.Quote(c, symbol)
-        return err
-    })
+    _, err := a.Quote(qctx, symbol)
+    return err
 }
 ```
 
-Use the `DefaultSymbol` from `examples/config/config.json`, making sure the symbol is visible in *Market Watch* (suffixes like `EURUSD.m` are broker‑specific).
+Use the `DefaultSymbol` from `examples/config/config.json` (suffixes like `EURUSD.m` are broker‑specific).
+
+---
+
+## 🔎 Optional: ask the server for the terminal state
+
+The generated `ConnectionClient` has `ConnectionStatus` (not wrapped by `MT4Account`). Call it through `ExecuteWithReconnect` so the `apikey` / `id` metadata is attached:
+
+```go
+reply, err := mt4.ExecuteWithReconnect(account, ctx,
+    func(md metadata.MD) (*pb.ConnectionStatusReply, error) {
+        return account.ConnectionClient.ConnectionStatus(metadata.NewOutgoingContext(ctx, md), &pb.ConnectionStatusRequest{})
+    },
+    func(r *pb.ConnectionStatusReply) *pb.Error { return r.GetError() },
+)
+if err != nil { return err }
+d := reply.GetData()
+fmt.Printf("state=%s connected=%v alive=%v server=%s\n", d.GetState(), d.GetIsConnected(), d.GetIsAlive(), d.GetServer())
+```
 
 ---
 
 ## 🧪 Interpreting results
 
-* **OK:** both calls return under the deadlines.
-* **Timeout (`context deadline exceeded`):** terminal is not ready or network stalls — wait a bit and retry; consider higher `backoffMax`.
-* **Business error:** bubble it up (do **not** retry): fix login/server/symbol.
+* **OK:** the calls return under the deadlines.
+* **Timeout (`context deadline exceeded`) / `exceeded retries`:** the terminal is not ready or not connected under this account's id — wait a bit and retry, or connect again (see [HandleReconnect](HandleReconnect.md)).
+* **Business error** (wrong symbol, `API_KEY_INVALID`, …): bubble it up (do **not** retry): fix the API key/login/server/symbol.
 
 ---
 
@@ -79,34 +95,33 @@ const (
 )
 ```
 
-Tune them for your environment (home Wi‑Fi vs VPS/LAN). Timeouts in the health‑check are **per‑call** and independent from backoff caps.
+Tune them for your environment (home Wi‑Fi vs VPS). Timeouts in the health‑check are **per‑call** and independent from backoff caps.
 
 ---
 
-## 🧰 Usage example (service layer)
+## 🧰 Usage example (your own wrapper)
 
-⚠️ Note: Your base project does not include a method named `EnsureHealthy`. This section is shown only as a **convenience wrapper idea** — a way to combine the health‑check calls (`AccountSummary` + `Quote`) into one place. You may add such a method if you want a single entry point to verify that MT4 is ready.
+⚠️ Note: the project does not include a method named `EnsureHealthy`. This section shows a **convenience wrapper idea** — a way to combine the health‑check calls (`AccountSummary` + `Quote`) into one place in your own code.
 
 Why useful?
 
 * Before running strategies or bots, you can call `EnsureHealthy` to quickly confirm the terminal is connected and symbols are available.
 * It saves copy‑pasting the same two checks (`AccountSummary` + `Quote`) everywhere.
-* If something is wrong (wrong server, hidden symbol, no connection) you fail fast with a clear error.
+* If something is wrong (wrong server, wrong symbol, no connection) you fail fast with a clear error.
 
 Example implementation:
 
 ```go
-func (s *MT4Service) EnsureHealthy(ctx context.Context) error {
+func EnsureHealthy(ctx context.Context, account *mt4.MT4Account, defaultSymbol string) error {
     // 1) Summary probe
-    if err := HealthCheck(ctx, s.account); err != nil {
-        return fmt.Errorf("health summary failed: %w", err)")
+    if err := HealthCheck(ctx, account); err != nil {
+        return fmt.Errorf("health summary failed: %w", err)
     }
 
     // 2) Quote probe for default symbol
-    sym := s.cfg.DefaultSymbol
-    if sym != "" {
-        if err := HealthCheckWithQuote(ctx, s.account, sym); err != nil {
-            return fmt.Errorf("health quote failed for %s: %w", sym, err)
+    if defaultSymbol != "" {
+        if err := HealthCheckWithQuote(ctx, account, defaultSymbol); err != nil {
+            return fmt.Errorf("health quote failed for %s: %w", defaultSymbol, err)
         }
     }
 
@@ -119,14 +134,14 @@ func (s *MT4Service) EnsureHealthy(ctx context.Context) error {
 
 ## ⚠️ Pitfalls
 
-* **Hidden symbol / suffix mismatch** → `EURUSD` vs `EURUSD.m`; fix config or show all symbols in MT4.
+* **Suffix mismatch** → `EURUSD` vs `EURUSD.m`; fix config (check names with `account.Symbols(ctx)`).
 * **No cancel** → always `defer cancel()` after `WithTimeout` to avoid leaks.
-* **Retrying business errors** → don’t; adjust credentials/server/symbol.
+* **Retrying business errors** → don’t; adjust credentials/server/symbol/API key.
 
 ---
 
 ## 📎 See also
 
-* `UnaryRetries.md` — per‑call retry wrapper used above.
-* `AccountSummary.md` — details on fields and risk checks.
-* `GetQuote.md` — one‑shot quote used in the probe.
+* [UnaryRetries](UnaryRetries.md) — per‑call retry wrapper.
+* [AccountSummary](../Account/AccountSummary.md) — details on fields and risk checks.
+* [GetQuote](../Market_Info/GetQuote.md) — one‑shot quote used in the probe.

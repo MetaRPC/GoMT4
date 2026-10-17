@@ -4,48 +4,49 @@
 
 > Real code refs:
 >
+> * Batch quote: `examples/mt4/MT4Account.go` (`QuoteMany`)
 > * Single quote: `examples/mt4/MT4Account.go` (`Quote`)
-> * Demo: `examples/mt4/MT4_service.go` (see `ShowQuotesMany` flow)
+> * Demo: `examples/mt4/MT4_service.go` (`ShowQuotesMany`)
 
 ---
 
 ## ✅ 1) Preconditions
 
-* All symbols exist and are visible in MT4 (*Market Watch* → Show All).
+* `account` is connected; all symbols exist on the broker (exact names).
 * `config.json` has at least one known symbol to start with.
 
 ---
 
-## 🚀 2) Fast path A — Batch RPC (if available in your build)
+## 🚀 2) Fast path A — Batch RPC
 
-Some builds expose a **batch** RPC (e.g., `QuotesMany(ctx, symbols)`), mirroring the `ShowQuotesMany` example. If you have it, use it:
+`QuoteMany` gets all quotes in one round‑trip:
 
 ```go
 symbols := []string{"EURUSD", "GBPUSD", "USDJPY"}
-qs, err := account.QuotesMany(ctx, symbols)
+qs, err := account.QuoteMany(ctx, symbols)
 if err != nil { return err }
 for _, q := range qs.GetQuotes() {
-    fmt.Printf("%s Bid=%.5f Ask=%.5f Spread=%.1f pips\n",
-        q.GetSymbol(), q.GetBid(), q.GetAsk(), (q.GetAsk()-q.GetBid())/q.GetPoint())
+    fmt.Printf("%s Bid=%.5f Ask=%.5f Time=%s\n",
+        q.GetSymbol(), q.GetBid(), q.GetAsk(), q.GetDateTime().AsTime().Format(time.RFC3339))
 }
 ```
 
-> If your current API does not expose this convenience call, use **fan‑out** concurrency (next section).
+> An empty `symbols` slice returns `no symbols provided` without calling the server.
 
 ---
 
-## 🧵 3) Fast path B — Fan‑out with goroutines (always works)
+## 🧵 3) Fast path B — Fan‑out with goroutines
 
-Run `Quote` requests in parallel and collect results.
+If you need per‑symbol error handling (one bad symbol should not fail the whole batch), run `Quote` requests in parallel and collect results:
 
 ```go
-func GetQuotesParallel(ctx context.Context, a *MT4Account, syms []string) ([]*pb.Quote, error) {
-    type item struct { q *pb.Quote; err error }
-    out := make([]*pb.Quote, 0, len(syms))
+func GetQuotesParallel(ctx context.Context, a *mt4.MT4Account, syms []string) ([]*pb.QuoteData, error) {
+    type item struct { q *pb.QuoteData; err error }
+    out := make([]*pb.QuoteData, 0, len(syms))
     ch  := make(chan item, len(syms))
     var wg sync.WaitGroup
 
-    // limit concurrency to avoid hammering the terminal
+    // limit concurrency to avoid hammering the API
     sem := make(chan struct{}, 8) // 8 concurrent calls
 
     for _, s := range syms {
@@ -77,7 +78,7 @@ func GetQuotesParallel(ctx context.Context, a *MT4Account, syms []string) ([]*pb
 qs, err := GetQuotesParallel(ctx, account, []string{"EURUSD","GBPUSD","USDJPY"})
 if err != nil { log.Fatal(err) }
 for _, q := range qs {
-    fmt.Printf("%s %.5f/%.5f @ %s\n", q.GetSymbol(), q.GetBid(), q.GetAsk(), q.GetTime().AsTime().Format(time.RFC3339))
+    fmt.Printf("%s %.5f/%.5f @ %s\n", q.GetSymbol(), q.GetBid(), q.GetAsk(), q.GetDateTime().AsTime().Format(time.RFC3339))
 }
 ```
 
@@ -85,17 +86,17 @@ for _, q := range qs {
 
 ## 🧪 4) Validation & fallbacks
 
-* If a symbol fails (hidden or has a suffix), log it and continue.
+* If a symbol fails (wrong name or suffix), log it and continue.
 * Optionally, map missing symbols to their broker‑specific names (`EURUSD` → `EURUSD.m`).
 
 ```go
 for _, s := range syms {
-    q, err := a.Quote(ctx, s)
+    q, err := account.Quote(ctx, s)
     if err != nil {
         log.Printf("skip %s: %v", s, err)
         continue
     }
-    // ...
+    _ = q // ...
 }
 ```
 
@@ -103,14 +104,14 @@ for _, s := range syms {
 
 ## ⚠️ Pitfalls
 
-* **Storming MT4**: keep concurrency reasonable (4–8) to avoid timeouts.
-* **Suffixes**: `EURUSD` vs `EURUSD.m` — normalize names or take from *Market Watch*.
-* **Timeouts**: wrap each call with a short timeout (2–3s) and retry only **transport** errors.
+* **Storming the API**: keep concurrency reasonable (4–8) to avoid timeouts; prefer `QuoteMany`.
+* **Suffixes**: `EURUSD` vs `EURUSD.m` — take the exact names from `account.Symbols(ctx)`.
+* **Timeouts**: each call has a short default timeout (3s); the client retries transient errors itself.
 
 ---
 
 ## 🔗 See also
 
-* `GetQuote.md` — single symbol quote.
-* `StreamQuotes.md` — live stream for continuous updates.
-* `SymbolParams.md` — get `Digits`, `Point`, `LotStep` for rounding & display.
+* [GetQuote](GetQuote.md) — single symbol quote.
+* [StreamQuotes](StreamQuotes.md) — live stream for continuous updates.
+* [SymbolParams](SymbolParams.md) — get `Digits`, `Point`, `VolumeStep` for rounding & display.

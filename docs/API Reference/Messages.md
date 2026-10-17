@@ -1,225 +1,253 @@
 # 📘 API Reference — Messages (GoMT4)
 
-This page documents **message types** used by GoMT4 (from your `.proto`).
-Numbers, names and field order match the source. Enums are on a separate page.
+This page documents the **message types** the client (`MT4Account`) sends and receives, as generated in `github.com/MetaRPC/GoMT4/package` (`pb`).
+Field names and Go types match the generated code. Enums are on a separate page.
 
 ---
 
 ## 🔖 Conventions
 
-* **`google.protobuf.Timestamp`** → ⏰ UTC time; format with `time.RFC3339` for logs.
-* **`google.protobuf.{Double,String,Int32}Value`** → 🎛 optional fields with presence (omit if not set).
-* **Prices & volumes** → 💹 respect `SymbolParams` (`digits`, `point`, `lot_step`, `lot_min/max`).
-* **Currency** → 💵 monetary fields are in **account currency** (see `AccountSummary.currency`).
+* **`*timestamppb.Timestamp`** → ⏰ fields without suffix are broker server time; the `...Utc` sibling is the same moment in UTC.
+* **Pointer scalars (`*float64`, `*int32`, `*string`, `*bool`)** → 🎛 optional fields with presence (`nil` = not set).
+* **Prices & volumes** → 💹 respect `SymbolParamsManyInfo` (`Digits`, `Point`, `VolumeStep`, `VolumeMin`/`VolumeMax`).
+* **Currency** → 💵 monetary fields are in **account currency** (see `AccountSummaryData.AccountCurrency`).
+* **Replies** → every `...Reply` holds either `Data` (the `...Data` message below) or `Error` (`*pb.Error`); `MT4Account` methods return the `Data` part and turn `Error` into a Go error.
 
 ---
 
 ## 🧾 Account & Orders
 
-### 📊 Mt4AccountSummary (AccountSummary)
+### 📊 AccountSummaryData — `account.AccountSummary(ctx)`
 
-|                                                                      # | Field          | Type   |
-| ---------------------------------------------------------------------: | -------------- | ------ |
-|                                                                      1 | `login`        | int64  |
-|                                                                      2 | `name`         | string |
-|                                                                      3 | `server`       | string |
-|                                                                      4 | `currency`     | string |
-|                                                                      5 | `balance`      | double |
-|                                                                      6 | `equity`       | double |
-|                                                                      7 | `margin`       | double |
-|                                                                      8 | `margin_free`  | double |
-|                                                                      9 | `margin_level` | double |
-|                                                                     10 | `leverage`     | int32  |
-|                                                                     11 | `profit`       | double |
-| **Notes:** snapshot for health/risk checks. `margin_level` in percent. |                |        |
+| Field                       | Type                      |
+| --------------------------- | ------------------------- |
+| `AccountLogin`              | `int64`                   |
+| `AccountBalance`            | `float64`                 |
+| `AccountEquity`             | `float64`                 |
+| `AccountCredit`             | `float64`                 |
+| `AccountUserName`           | `string`                  |
+| `AccountLeverage`           | `int64`                   |
+| `AccountTradeMode`          | `pb.EnumAccountTradeMode` |
+| `AccountCompanyName`        | `string`                  |
+| `AccountCurrency`           | `string`                  |
+| `IsInvestor`                | `bool`                    |
+| `ServerTime` / `ServerTimeUtc` | `*timestamppb.Timestamp` |
+| `UtcServerTimeShiftMinutes` | `int32`                   |
+| `ServerUtcOffsetSeconds`    | `*int32` (nil while unknown) |
 
-### 📌 Mt4OpenedOrder (OpenedOrder)
+**Notes:** snapshot for health/risk checks. Margin / free margin / margin level come with the `OnOpenedOrdersProfit` and `OnTrade` streams (`AccountInfo`).
 
-|                                                           # | Field        | Type        |
-| ----------------------------------------------------------: | ------------ | ----------- |
-|                                                           1 | `ticket`     | int64       |
-|                                                           2 | `symbol`     | string      |
-|                                                           3 | `type`       | `OrderType` |
-|                                                           4 | `volume`     | double      |
-|                                                           5 | `open_price` | double      |
-|                                                           6 | `sl`         | double      |
-|                                                           7 | `tp`         | double      |
-|                                                           8 | `open_time`  | Timestamp   |
-|                                                           9 | `commission` | double      |
-|                                                          10 | `swap`       | double      |
-|                                                          11 | `magic`      | int32       |
-|                                                          12 | `comment`    | string      |
-| **Notes:** live positions; use with `OpenedOrders`/streams. |              |             |
+### 📌 OpenedOrderInfo — `account.OpenedOrders(ctx)` → `OpenedOrdersData.OrderInfos`
 
-### 📜 Mt4OrderHistory (OrderHistory)
+| Field            | Type                     |
+| ---------------- | ------------------------ |
+| `Ticket`         | `int32`                  |
+| `Symbol`         | `string`                 |
+| `OrderType`      | `pb.OpenedOrderType`     |
+| `Lots`           | `float64`                |
+| `OpenPrice`      | `float64`                |
+| `StopLoss`       | `float64`                |
+| `TakeProfit`     | `float64`                |
+| `Profit`         | `float64`                |
+| `Swap`           | `float64`                |
+| `Commision`      | `float64` (spelled so in the proto) |
+| `MagicNumber`    | `int32`                  |
+| `Comment`        | `string`                 |
+| `OpenTime` / `OpenTimeUtc` | `*timestamppb.Timestamp` |
+| `ExpirationTime` / `ExpirationTimeUtc` | `*timestamppb.Timestamp` |
+| `PositionIndex`, `SortIndex` | `int32`      |
+| `AccountLogin`   | `int64`                  |
 
-|                                                   # | Field         | Type        |
-| --------------------------------------------------: | ------------- | ----------- |
-|                                                   1 | `ticket`      | int64       |
-|                                                   2 | `symbol`      | string      |
-|                                                   3 | `type`        | `OrderType` |
-|                                                   4 | `volume`      | double      |
-|                                                   5 | `open_price`  | double      |
-|                                                   6 | `close_price` | double      |
-|                                                   7 | `sl`          | double      |
-|                                                   8 | `tp`          | double      |
-|                                                   9 | `open_time`   | Timestamp   |
-|                                                  10 | `close_time`  | Timestamp   |
-|                                                  11 | `commission`  | double      |
-|                                                  12 | `swap`        | double      |
-|                                                  13 | `profit`      | double      |
-|                                                  14 | `magic`       | int32       |
-|                                                  15 | `comment`     | string      |
-| **Notes:** closed deals; combine with history APIs. |               |             |
+**Notes:** live positions and pending orders. `OpenedOrdersTicketsData` (from `account.OpenedOrdersTickets`) has only `Tickets []int32`.
 
-### 📨 Mt4OrderSendRequest (OrderSendRequest)
+### 📜 HistoryOrderInfo — `account.OrdersHistory(...)` → `OrdersHistoryData.OrdersInfo`
 
-|          # | Field        | Type                     | Optional |
-| ---------: | ------------ | ------------------------ | :------: |
-|          1 | `symbol`     | string                   |          |
-|          2 | `operation`  | `OrderSendOperationType` |          |
-|          3 | `volume`     | double                   |          |
-|          4 | `price`      | DoubleValue              |     ✓    |
-|          5 | `slippage`   | int32                    |          |
-|          6 | `sl`         | DoubleValue              |     ✓    |
-|          7 | `tp`         | DoubleValue              |     ✓    |
-|          8 | `comment`    | StringValue              |     ✓    |
-|          9 | `magic`      | Int32Value               |     ✓    |
-|         10 | `expiration` | Timestamp                |     ✓    |
-| **Notes:** |              |                          |          |
+Same fields as `OpenedOrderInfo`, plus:
 
-* Market orders: `price` usually omitted (server uses current Bid/Ask, with `slippage`).
-* Pending orders: set `price` and (optionally) `expiration`.
+| Field                        | Type                     |
+| ---------------------------- | ------------------------ |
+| `ClosePrice`                 | `float64`                |
+| `CloseTime` / `CloseTimeUtc` | `*timestamppb.Timestamp` |
 
-### 📬 Mt4OrderSendResult (OrderSendResult)
+`OrdersHistoryData` also has `TotalCount int32` and `NextPageToken string`.
 
-|                                                   # | Field       | Type         |
-| --------------------------------------------------: | ----------- | ------------ |
-|                                                   1 | `ticket`    | int64        |
-|                                                   2 | `price`     | double       |
-|                                                   3 | `open_time` | Timestamp    |
-|                                                   4 | `error`     | `OrderError` |
-| **Notes:** `error` filled on broker-side rejection. |             |              |
+### 🔎 OrdersHistoryRequest (built by `account.OrdersHistory`)
 
-### ✏️ Mt4OrderModifyRequest (OrderModifyRequest)
+| Field                        | Type                          | Set by the client from |
+| ---------------------------- | ----------------------------- | ---------------------- |
+| `InputSortMode`              | `pb.EnumOrderHistorySortType` | `sortType`             |
+| `InputFrom` / `InputTo`      | `*timestamppb.Timestamp`      | `from` / `to` (order **open** time window, broker server time; nil = no bound) |
+| `PageNumber` / `ItemsPerPage`| `*int32`                      | `page` / `itemsPerPage` |
+| `InputFromUtc` / `InputToUtc`, `PageToken` / `PageSize` | | not used by the client (UTC range, cursor paging) |
 
-|  # | Field        | Type        | Optional |
-| -: | ------------ | ----------- | :------: |
-|  1 | `ticket`     | int64       |          |
-|  2 | `price`      | DoubleValue |     ✓    |
-|  3 | `sl`         | DoubleValue |     ✓    |
-|  4 | `tp`         | DoubleValue |     ✓    |
-|  5 | `expiration` | Timestamp   |     ✓    |
+### 📨 OrderSendRequest (built by `account.OrderSend`)
 
-### ❌ Mt4OrderCloseRequest (OrderCloseRequest)
+| Field           | Type                        | Optional |
+| --------------- | --------------------------- | :------: |
+| `Symbol`        | `string`                    |          |
+| `OperationType` | `pb.OrderSendOperationType` |          |
+| `Volume`        | `float64`                   |          |
+| `Price`         | `*float64`                  |     ✓    |
+| `Slippage`      | `*int32`                    |     ✓    |
+| `Stoploss`      | `*float64`                  |     ✓    |
+| `Takeprofit`    | `*float64`                  |     ✓    |
+| `Comment`       | `*string`                   |     ✓    |
+| `MagicNumber`   | `*int32`                    |     ✓    |
+| `Expiration`    | `*timestamppb.Timestamp`    |     ✓    |
 
-|  # | Field      | Type        | Optional |
-| -: | ---------- | ----------- | :------: |
-|  1 | `ticket`   | int64       |          |
-|  2 | `volume`   | double      |          |
-|  3 | `price`    | DoubleValue |     ✓    |
-|  4 | `slippage` | int32       |          |
+* Market orders: `Price` may be omitted (current market price, with `Slippage`).
+* Pending orders: set `Price` and (optionally) `Expiration` (broker server time).
 
-### 🗑️ Mt4OrderDeleteRequest (OrderDeleteRequest)
+### 📬 OrderSendData — result of `account.OrderSend`
 
-|  # | Field      | Type  |
-| -: | ---------- | ----- |
-|  1 | `ticket`   | int64 |
-|  2 | `slippage` | int32 |
+| Field                        | Type                     |
+| ---------------------------- | ------------------------ |
+| `Ticket`                     | `int32`                  |
+| `Volume`                     | `float64`                |
+| `Price`                      | `float64`                |
+| `OpenTime` / `OpenTimeUtc`   | `*timestamppb.Timestamp` |
 
-### 🔄 Mt4OrderCloseByRequest (OrderCloseByRequest)
+**Notes:** a broker rejection arrives as `Error` in the reply; the client returns it as a Go error.
 
-|  # | Field        | Type  |
-| -: | ------------ | ----- |
-|  1 | `ticket_src` | int64 |
-|  2 | `ticket_dst` | int64 |
-|  3 | `slippage`   | int32 |
+### ✏️ OrderModifyRequest (built by `account.OrderModify`)
 
-### 📑 Mt4OrderActionResult (OrderActionResult)
+| Field           | Type                     | Optional |
+| --------------- | ------------------------ | :------: |
+| `OrderTicket`   | `int32`                  |          |
+| `NewPrice`      | `*float64`               |     ✓    |
+| `NewStopLoss`   | `*float64`               |     ✓    |
+| `NewTakeProfit` | `*float64`               |     ✓    |
+| `NewExpiration` | `*timestamppb.Timestamp` |     ✓    |
 
-|  # | Field    | Type         |
-| -: | -------- | ------------ |
-|  1 | `ticket` | int64        |
-|  2 | `price`  | double       |
-|  3 | `time`   | Timestamp    |
-|  4 | `error`  | `OrderError` |
+Result: `OrderModifyData.OrderWasModified bool` (returned as the method's `bool`).
+
+### ❌ OrderCloseDeleteRequest (built by `account.OrderClose` / `account.OrderDelete`)
+
+| Field          | Type       | Optional |
+| -------------- | ---------- | :------: |
+| `OrderTicket`  | `int32`    |          |
+| `Lots`         | `*float64` |     ✓    |
+| `ClosingPrice` | `*float64` |     ✓    |
+| `Slippage`     | `*int32`   |     ✓    |
+
+Result: `OrderCloseDeleteData` — `Mode pb.OrderCloseDeleteMode` (market order closed / pending order deleted), `HistoryOrderComment *string`.
+
+### 🔄 OrderCloseByRequest (built by `account.OrderCloseBy`)
+
+| Field                     | Type    |
+| ------------------------- | ------- |
+| `TicketToClose`           | `int32` |
+| `OppositeTicketClosingBy` | `int32` |
+
+Result: `OrderCloseByData` — `ClosePrice float64`, `Profit float64`, `CloseTime` / `CloseTimeUtc *timestamppb.Timestamp`.
 
 ---
 
 ## 💹 Quotes & Market Info
 
-### 💱 Mt4Quote (Quote)
+### 💱 QuoteData — `account.Quote(ctx, symbol)`, `account.QuoteMany(...)` → `QuoteManyData.Quotes`
 
-|                                                           # | Field    | Type      |
-| ----------------------------------------------------------: | -------- | --------- |
-|                                                           1 | `symbol` | string    |
-|                                                           2 | `bid`    | double    |
-|                                                           3 | `ask`    | double    |
-|                                                           4 | `point`  | double    |
-|                                                           5 | `digits` | int32     |
-|                                                           6 | `time`   | Timestamp |
-| **Notes:** compute spread in points: `(ask - bid) / point`. |          |           |
+| Field                        | Type                     |
+| ---------------------------- | ------------------------ |
+| `Symbol`                     | `string`                 |
+| `Bid`                        | `float64`                |
+| `Ask`                        | `float64`                |
+| `High` / `Low`               | `float64`                |
+| `DateTime` / `DateTimeUtc`   | `*timestamppb.Timestamp` |
 
-### 📊 Mt4SymbolParams (SymbolParams)
+**Notes:** compute spread in points: `(Ask - Bid) / Point` (`Point` from `SymbolParams`).
 
-|                                                                      # | Field           | Type   |
-| ---------------------------------------------------------------------: | --------------- | ------ |
-|                                                                      1 | `symbol`        | string |
-|                                                                      2 | `digits`        | int32  |
-|                                                                      3 | `point`         | double |
-|                                                                      4 | `lot_step`      | double |
-|                                                                      5 | `lot_min`       | double |
-|                                                                      6 | `lot_max`       | double |
-|                                                                      7 | `stops_level`   | int32  |
-|                                                                      8 | `freeze_level`  | int32  |
-|                                                                      9 | `contract_size` | double |
-| **Notes:** use for rounding, SL/TP distance checks and lot validation. |                 |        |
+### 🗂️ SymbolsData — `account.Symbols(ctx)` / `account.ShowAllSymbols(ctx)`
 
----
+`SymbolNameInfos []*pb.SymbolNameInfo`, each with `SymbolName string`, `SymbolIndex int32`.
 
-## 🔌 Connection & Health
+### 📊 SymbolParamsManyInfo — `account.SymbolParams(ctx, symbol)`, `account.SymbolParamsMany(...)` → `SymbolParamsManyData.SymbolInfos`
 
-### 🔐 Mt4ConnectRequest / Mt4ConnectResponse (Connect)
+Key fields (the message has ~70; see `package/mt4-term-api-account-helper.pb.go`):
 
-* **Request**: `login,password,server`
-* **Response**: `ok,error`.
+| Field               | Type                                |
+| ------------------- | ----------------------------------- |
+| `SymbolName`        | `string`                            |
+| `SymDescription`    | `string`                            |
+| `Digits`            | `int32`                             |
+| `Point`             | `float64`                           |
+| `VolumeMin` / `VolumeMax` / `VolumeStep` | `float64`      |
+| `TradeStopsLevel`   | `int32`                             |
+| `TradeFreezeLevel`  | `int32`                             |
+| `TradeContractSize` | `float64`                           |
+| `TradeTickValue` / `TradeTickSize` | `float64`            |
+| `TradeMode`         | `pb.SP_ENUM_SYMBOL_TRADE_MODE`      |
+| `TradeExeMode`      | `pb.SP_ENUM_SYMBOL_TRADE_EXECUTION` |
+| `TradeCalcMode`     | `pb.SP_ENUM_TRADE_CALC_MODE`        |
+| `CurrencyBase` / `CurrencyProfit` / `CurrencyMargin` | `string` |
+| `Bid` / `Ask`       | `float64`                           |
+| `SwapLong` / `SwapShort` | `float64`                      |
+| `IsSelected` / `Visible` | `bool`                         |
 
-### 📡 Mt4ConnectionState (ConnectionState)
+**Notes:** use for rounding, SL/TP distance checks and lot validation.
 
-* Fields: `connected,login,server`.
+### 💹 SymbolTickValueWithSizeInfo — `account.TickValueWithSize(ctx, symbols)` → `TickValueWithSizeData.Infos`
 
-### 🏓 Mt4PingRequest / Mt4PingResponse (Ping)
+`Index int32`, `SymbolName string`, `TradeTickValue float64`, `TradeTickSize float64`, `TradeContractSize float64`.
 
-* Echo `payload`.
+### 🕯️ HistoryQuote — `account.QuoteHistory(...)` → `QuoteHistoryData.HistoricalQuotes`
 
-### 🖥️ Mt4ServerInfo (ServerInfo)
+| Field                  | Type                     |
+| ---------------------- | ------------------------ |
+| `Symbol`               | `string`                 |
+| `Index`                | `int32`                  |
+| `Time` / `TimeUtc`     | `*timestamppb.Timestamp` (bar open time) |
+| `Open` / `High` / `Low` / `Close` | `float64`     |
+| `TickVolume` / `RealVolume` | `int64`             |
+| `Spread`               | `int32`                  |
 
-* Fields: `name,address,timezone`.
+Request (`QuoteHistoryRequest`, built by the client): `Symbol`, `Timeframe pb.ENUM_QUOTE_HISTORY_TIMEFRAME`, `FromTime`, `ToTime` (broker server time).
 
-### ❤️ Mt4HealthSummary / Mt4HealthCheck (HealthCheck)
-
-* Summary: `ok,error`. Used to quickly verify connection stability.
-
----
-
-## 📡 Streaming payload helpers (overview)
-
-> Detailed stream methods & chunk types are documented on the **Streaming** page.
-
-* **Quotes**: `QuoteUpdate`, `QuoteStream{Request,Chunk}`.
-* **Orders history (paged/stream)**: `OrdersHistoryPaged{Request,Chunk}`.
-* **Trade updates**: `TradeUpdate`, `TradeUpdateStream{Request,Chunk}`.
-* **Opened order tickets**: `OpenedOrdersTicketStream{Request,Chunk}`.
-* **Opened order profits**: `OpenedOrdersProfit{StreamRequest,Snapshot,StreamChunk}`.
-* **Chart streams**: `Chart{StreamRequest,StreamChunk}`, `ChartHistoryStreamRequest`.
-* **Internal charts**: `InternalChart{StreamRequest,StreamChunk,HistoryStreamRequest}`.
+**Notes:** the server marks `MarketInfo.QuoteHistory` deprecated; its paged successor is `QuoteHistory.Bars` (`pb.QuoteHistoryBarsRequest` / `pb.QuoteHistoryBarsData`, client `pb.NewQuoteHistoryClient`), which `MT4Account` does not wrap.
 
 ---
 
-## ⚠️ Errors (messages only)
+## 🔌 Connection
 
-* **MrpcError**: `code:int32, message, details`.
-* **OrderError**: `ticket:int64, reason:int32, text`.
-* **BatchOrderError**: `errors[]` of `MrpcError`.
+### 🔐 ConnectExRequest — `account.ConnectByServerName(ctx, serverName, baseChartSymbol, waitForTerminalIsAlive, timeoutSeconds)`
 
-**See also:** the **Enums** page for error/enum value tables.
+| Field            | Type      | Set by the client from |
+| ---------------- | --------- | ---------------------- |
+| `User`           | `uint64`  | account login          |
+| `Password`       | `string`  | account password       |
+| `MtClusterName`  | `string`  | `serverName` (broker server name as in MetaTrader) |
+| `TimeoutSeconds` | `*uint32` | `timeoutSeconds`       |
+
+### 🔐 ConnectRequest — `account.ConnectByHostPort(ctx, host, port, baseChartSymbol, waitForTerminalIsAlive, timeoutSeconds)`
+
+`User`, `Password`, `Host`, `Port int32`, `TimeoutSeconds *uint32`.
+
+Both replies carry `TerminalInstanceGuid` in their data; the client stores it in `account.TerminalInstanceGuid` and sends it as the `id` metadata on every later call. `baseChartSymbol` is only stored on the account, and `waitForTerminalIsAlive` is not used by the client; readiness is checked with an `AccountSummary` call right after connecting.
+
+### 🆔 GetIdRequest / GetIdData — `account.GetId(ctx...)`
+
+Request: `User string`, `Password string`. Data: `Id string` — a deterministic terminal id for these credentials. If the call fails, the client computes the same id locally (`ComputeDeterministicTerminalId`).
+
+### 📴 DisconnectRequest — `account.Disconnect(args...)`
+
+`Reason *string`, `Delete *bool` (the client sets `Delete` when you pass `true`).
+
+---
+
+## ⚠️ Errors
+
+### Error (`*pb.Error`)
+
+| Field                 | Type               | Meaning                                  |
+| --------------------- | ------------------ | ---------------------------------------- |
+| `Type`                | `pb.ErrorType`     | Where the error comes from (MRPC, validation, timeout, MQL execution, …). |
+| `ErrorCode`           | `string`           | Code, e.g. `TERMINAL_INSTANCE_NOT_FOUND`. |
+| `ErrorMessage`        | `string`           | Human-readable message.                  |
+| `MqlErrorCode`        | `pb.MqlErrorCode`  | MT4 error code (when MT4 refused).        |
+| `MqlErrorIntCode`     | `int32`            | Same as a number.                        |
+| `MqlErrorDescription` | `string`           | MT4 error text.                          |
+| `StackTrace`, `CommandTypeName`, `CommandId`, `Properties` | | Diagnostics. |
+
+The client returns it as `API error (code=<ErrorCode>): <ErrorMessage>`.
+
+**See also:** the **Enums** page for enum value tables.

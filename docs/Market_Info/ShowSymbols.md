@@ -38,7 +38,10 @@ for _, symbolInfo := range data.GetSymbolNameInfos() {
 
 ```go
 func (s *MT4Service) ShowSymbols(ctx context.Context)
+func (a *MT4Account) Symbols(ctx context.Context) (*pb.SymbolsData, error)
 ```
+
+`MT4Account.Symbols` and `MT4Account.ShowAllSymbols` send the same request and return the same data.
 
 ---
 
@@ -56,9 +59,9 @@ Returns `*pb.SymbolsData` with:
 
 | Field             | Type                        | Description                     |
 | ----------------- | --------------------------- | ------------------------------- |
-| `SymbolNameInfos` | `[]*pb.SymbolNameIndexPair` | Pairs of symbol name and index. |
+| `SymbolNameInfos` | `[]*pb.SymbolNameInfo` | Pairs of symbol name and index. |
 
-Each `*pb.SymbolNameIndexPair` includes:
+Each `*pb.SymbolNameInfo` includes:
 
 | Field         | Type     | Description                         |
 | ------------- | -------- | ----------------------------------- |
@@ -88,4 +91,4 @@ Fetch a clean list of symbols from the terminal for:
 ## ⚠️ Pitfalls
 
 * **Large lists:** Avoid printing thousands of lines to stdout; prefer paging or file output.
-* **Empty result:** A stale/disconnected terminal may yield an empty list without error — add a sanity check (expect common pairs).
+* **Empty result:** Treat an empty list as suspicious (e.g. the terminal has just started) — add a sanity check (expect common pairs).

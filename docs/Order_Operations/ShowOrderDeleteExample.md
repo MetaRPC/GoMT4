@@ -15,7 +15,7 @@ svc.ShowOrderDeleteExample(ctx, 123456)
 
 // --- Low-level (direct account call) ---
 // Preconditions: account is already connected.
-// ⚠️ Use only with pending orders. For active Buy/Sell use OrderClose.
+// ⚠️ OrderDelete sends the same request as OrderClose: on a market Buy/Sell it CLOSES the position.
 
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
@@ -37,7 +37,10 @@ fmt.Printf("Order deleted. Mode: %s, Comment: %s\n",
 
 ```go
 func (s *MT4Service) ShowOrderDeleteExample(ctx context.Context, ticket int32)
+func (a *MT4Account) OrderDelete(ctx context.Context, ticket int32) (*pb.OrderCloseDeleteData, error)
 ```
+
+`OrderDelete(ctx, ticket)` is `OrderClose(ctx, ticket, nil, nil, nil)`.
 
 ---
 
@@ -50,7 +53,7 @@ Required:
 | `ctx`    | `context.Context` | Timeout or cancellation management. |
 | `ticket` | `int32`           | Ticket number of the pending order. |
 
-The ticket must reference a **pending** order.
+The ticket should reference a **pending** order — check its type (`OrderSelect` / `OpenedOrders`) first, because a market order with that ticket would be closed.
 
 ---
 
@@ -60,8 +63,8 @@ Returns `*pb.OrderCloseDeleteData`:
 
 | Field                 | Type     | Description                             |
 | --------------------- | -------- | --------------------------------------- |
-| `Mode`                | `string` | Operation result (e.g., "Deleted").     |
-| `HistoryOrderComment` | `string` | Server comment about the deleted order. |
+| `Mode`                | `pb.OrderCloseDeleteMode` | `OCD_PENDING_ORDER` for a deleted pending order (`OCD_MARKET_ORDER` if a market order was closed). |
+| `HistoryOrderComment` | `*string` | Comment of the resulting history order. |
 
 ---
 
@@ -77,6 +80,6 @@ Remove limit/stop orders that are no longer needed:
 
 ## 🧩 Notes & Tips
 
-* **Pending only:** For open market positions use `OrderClose`, not `OrderDelete`.
-* **Idempotency:** If the order is already filled/expired/cancelled, the API may return an error with a broker comment.
-* **No price/slippage:** Delete uses only the ticket; price and slippage parameters are not applicable.
+* **Pending only (by convention):** For open market positions use `OrderClose`; `OrderDelete` would close them too, since both send `OrderCloseDelete`.
+* **Idempotency:** If the order is already filled/expired/deleted, the API returns an error.
+* **No price/slippage:** Delete uses only the ticket; it sends no lots, price or slippage.

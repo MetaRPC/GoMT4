@@ -35,7 +35,10 @@ for _, sym := range data.SymbolNameInfos {
 
 ```go
 func (s *MT4Service) ShowAllSymbols(ctx context.Context)
+func (a *MT4Account) ShowAllSymbols(ctx context.Context) (*pb.SymbolsData, error)
 ```
+
+`MT4Account.ShowAllSymbols` and `MT4Account.Symbols` send the same `Symbols` request and return the same data.
 
 ---
 
@@ -53,9 +56,9 @@ Returns `*pb.SymbolsData`:
 
 | Field             | Type                        | Description                             |
 | ----------------- | --------------------------- | --------------------------------------- |
-| `SymbolNameInfos` | `[]*pb.SymbolNameIndexPair` | List of symbol names with their indices |
+| `SymbolNameInfos` | `[]*pb.SymbolNameInfo` | List of symbol names with their indices |
 
-Each `*pb.SymbolNameIndexPair` includes:
+Each `*pb.SymbolNameInfo` includes:
 
 | Field         | Type     | Description                  |
 | ------------- | -------- | ---------------------------- |
@@ -86,7 +89,7 @@ Enumerate all available trading instruments from the MT4 terminal. Useful for:
 
 * **Large catalogs:** Brokers may expose hundreds/thousands of instruments. Printing/logging all at once can flood output.
 * **Disabled instruments:** Some returned symbols may not be tradable on your account type — check permissions before using.
-* **Empty responses:** A stale/disconnected terminal can return an empty list without error. Add sanity checks.
+* **Empty responses:** Treat an empty list as suspicious (e.g. the terminal has just started) and retry before acting on it.
 
 ---
 

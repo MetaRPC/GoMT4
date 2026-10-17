@@ -1,59 +1,61 @@
 # 🕰️ QuoteHistory (GoMT4)
 
-**Goal:** load **historical quotes** (Bid/Ask with timestamps) for a symbol in a given time range — with safe batching for long periods.
+**Goal:** load **historical OHLC bars** for a symbol in a given time range — with safe batching for long periods.
 
 > Real code refs in this repo:
 >
-> * Market info demo: `examples/mt4/MT4_service.go` (see *ShowQuoteHistory* flow)
-> * Account layer: `examples/mt4/MT4Account.go` (history wrapper & helpers)
+> * Market info demo: `examples/mt4/MT4_service.go` (`ShowQuoteHistory`, `StreamQuoteHistoryExample`)
+> * Account layer: `examples/mt4/MT4Account.go` (`QuoteHistory`, `QuoteHistoryStream`)
 
 ---
 
 ## ✅ 1) Preconditions
 
-* MT4 terminal is connected and the symbol is **visible** in *Market Watch*.
+* `account` is connected; the symbol exists on the broker.
 * `config.json` contains a valid `DefaultSymbol` or you pass a symbol explicitly.
 
 ---
 
 ## 🗓️ 2) Basic request (last N days)
 
-```go
-sym  := "EURUSD"
-from := timestamppb.New(time.Now().AddDate(0, 0, -7))
-to   := timestamppb.New(time.Now())
+`from` / `to` are sent as `FromTime` / `ToTime`, which the server reads as **broker server time**.
 
-hist, err := account.ShowQuoteHistory(ctx, sym, from, to)
+```go
+sym := "EURUSD"
+to := time.Now()
+from := to.AddDate(0, 0, -7)
+
+hist, err := account.QuoteHistory(ctx, sym, pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_H1, from, to)
 if err != nil { return err }
 
-for _, q := range hist.GetQuotes() {
-    t := q.GetTime().AsTime().Format(time.RFC3339)
-    fmt.Printf("%s %s Bid=%.5f Ask=%.5f\n", sym, t, q.GetBid(), q.GetAsk())
+for _, b := range hist.GetHistoricalQuotes() {
+    t := b.GetTime().AsTime().Format("2006-01-02 15:04")
+    fmt.Printf("%s %s O=%.5f H=%.5f L=%.5f C=%.5f\n", sym, t, b.GetOpen(), b.GetHigh(), b.GetLow(), b.GetClose())
 }
 ```
 
-> Mirrors the *ShowQuoteHistory* example flow in `MT4_service.go`.
+> Mirrors the `ShowQuoteHistory` example in `MT4_service.go` (H1, last 5 days).
 
 ---
 
-## 📦 3) Batch long ranges (day-by-day)
+## 📦 3) Batch long ranges (chunked)
 
-Large ranges can be heavy. Split by days (or hours) and append.
+Large ranges can be heavy. `QuoteHistoryStream` splits the range into chunks and calls `QuoteHistory` per chunk:
 
 ```go
-func LoadQuoteHistoryBatched(ctx context.Context, a *MT4Account, sym string, days int) ([]*pb.Quote, error) {
-    var out []*pb.Quote
-    end := time.Now()
-    start := end.AddDate(0, 0, -days)
+func LoadQuoteHistoryBatched(ctx context.Context, a *mt4.MT4Account, sym string, days int) ([]*pb.HistoryQuote, error) {
+    to := time.Now()
+    from := to.AddDate(0, 0, -days)
 
-    for cur := start; cur.Before(end); cur = cur.AddDate(0, 0, 1) {
-        from := timestamppb.New(cur)
-        to   := timestamppb.New(cur.AddDate(0, 0, 1))
-        h, err := a.ShowQuoteHistory(ctx, sym, from, to)
-        if err != nil { return nil, err }
-        out = append(out, h.GetQuotes()...)
-        // Be gentle with terminal
-        if err := waitWithCtx(ctx, 150*time.Millisecond); err != nil { return nil, err }
+    barsCh, errCh := a.QuoteHistoryStream(ctx, sym, pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_M15, from, to, 24*time.Hour)
+
+    var out []*pb.HistoryQuote
+    for batch := range barsCh {
+        out = append(out, batch.GetHistoricalQuotes()...)
+    }
+    // both channels are closed when the helper finishes; errCh holds the error, if any
+    if err, ok := <-errCh; ok && err != nil {
+        return out, err
     }
     return out, nil
 }
@@ -61,14 +63,15 @@ func LoadQuoteHistoryBatched(ctx context.Context, a *MT4Account, sym string, day
 
 ---
 
-## 🧪 4) Validate & compute spread (pips)
+## 🧪 4) Validate & spread (points)
+
+Each bar carries its `Spread` (in points):
 
 ```go
-for _, q := range quotes {
-    if q.GetAsk() <= 0 || q.GetBid() <= 0 { continue }
-    spreadPips := (q.GetAsk() - q.GetBid()) / q.GetPoint()
-    if spreadPips > 50 { // sanity check
-        log.Printf("wide spread @ %s: %.1f pips", q.GetTime().AsTime(), spreadPips)
+for _, b := range bars {
+    if b.GetOpen() <= 0 || b.GetClose() <= 0 { continue }
+    if b.GetSpread() > 50 { // sanity check
+        log.Printf("wide spread @ %s: %d points", b.GetTime().AsTime(), b.GetSpread())
     }
 }
 ```
@@ -78,24 +81,27 @@ for _, q := range quotes {
 ## 📤 5) Export to CSV
 
 ```go
-func SaveQuotesCSV(path, symbol string, quotes []*pb.Quote) error {
+func SaveBarsCSV(path, symbol string, bars []*pb.HistoryQuote) error {
     f, err := os.Create(path)
     if err != nil { return err }
     defer f.Close()
     w := csv.NewWriter(f)
     defer w.Flush()
 
-    _ = w.Write([]string{"time","symbol","bid","ask","spread_pips"})
-    for _, q := range quotes {
-        spread := (q.GetAsk() - q.GetBid()) / q.GetPoint()
+    _ = w.Write([]string{"time","symbol","open","high","low","close","tick_volume","spread"})
+    for _, b := range bars {
         _ = w.Write([]string{
-            q.GetTime().AsTime().Format(time.RFC3339),
+            b.GetTime().AsTime().Format(time.RFC3339),
             symbol,
-            fmt.Sprintf("%.5f", q.GetBid()),
-            fmt.Sprintf("%.5f", q.GetAsk()),
-            fmt.Sprintf("%.1f", spread),
+            fmt.Sprintf("%.5f", b.GetOpen()),
+            fmt.Sprintf("%.5f", b.GetHigh()),
+            fmt.Sprintf("%.5f", b.GetLow()),
+            fmt.Sprintf("%.5f", b.GetClose()),
+            fmt.Sprintf("%d", b.GetTickVolume()),
+            fmt.Sprintf("%d", b.GetSpread()),
         })
     }
+    w.Flush()
     return w.Error()
 }
 ```
@@ -104,15 +110,15 @@ func SaveQuotesCSV(path, symbol string, quotes []*pb.Quote) error {
 
 ## ⚠️ Pitfalls
 
-* **Empty result** → MT4 hasn’t downloaded that range yet; open the symbol chart to force data load.
-* **Timezones** → MT4 server time may differ from local; always log with `time.RFC3339`.
-* **Too big queries** → prefer batching; add tiny sleeps between requests.
-* **Context & retries** → wrap with short timeout (3–6s) and retry only **transport** errors (see *Reliability*).
+* **Empty result** → the terminal may not have downloaded that range yet; repeat the request after a short pause.
+* **Timezones** → `Time` is broker server time (`TimeUtc` is UTC); `from`/`to` are read as broker server time too. `time.RFC3339` output of `Time` shows the broker clock with a `Z` suffix — use `TimeUtc` when you need true UTC.
+* **Too big queries** → prefer chunking (`QuoteHistoryStream`).
+* **Context & retries** → the call has an 8s default timeout and retries transient errors itself (see *Reliability*).
 
 ---
 
 ## 🔗 See also
 
-* `GetQuote.md` — one‑shot live quote.
-* `StreamQuotes.md` — continuous updates.
-* `HistoryOrders.md` — account history records.
+* [GetQuote](GetQuote.md) — one‑shot live quote.
+* [StreamQuotes](StreamQuotes.md) — continuous updates.
+* [HistoryOrders](../Orders/HistoryOrders.md) — account history records.

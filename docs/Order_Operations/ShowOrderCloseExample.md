@@ -25,9 +25,14 @@ if err != nil {
 }
 
 fmt.Printf("Closed: %s | Comment: %s\n",
-    res.GetMode(),
+    res.GetMode(), // OCD_MARKET_ORDER (closed) or OCD_PENDING_ORDER (deleted)
     res.GetHistoryOrderComment(),
 )
+
+// Partial close: 0.05 lot at market with up to 10 points slippage
+lots := 0.05
+slip := int32(10)
+_, err = account.OrderClose(ctx, 123456, &lots, nil, &slip)
 ```
 
 ---
@@ -36,6 +41,7 @@ fmt.Printf("Closed: %s | Comment: %s\n",
 
 ```go
 func (s *MT4Service) ShowOrderCloseExample(ctx context.Context, ticket int32)
+func (a *MT4Account) OrderClose(ctx context.Context, ticket int32, lots, price *float64, slippage *int32) (*pb.OrderCloseDeleteData, error)
 ```
 
 ---
@@ -46,24 +52,26 @@ func (s *MT4Service) ShowOrderCloseExample(ctx context.Context, ticket int32)
 | -------- | ----------------- | ------------------------------- |
 | `ctx`    | `context.Context` | Timeout / cancellation control. |
 | `ticket` | `int32`           | Ticket of the order to close.   |
-| `price`  | `*float64`        | Optional close price.           |
-| `slip`   | `*int32`          | Optional slippage (points).     |
-| `magic`  | `*int32`          | Optional magic ID.              |
+| `lots`   | `*float64`        | Optional volume for a partial close (`nil` = whole order). |
+| `price`  | `*float64`        | Optional close price (`nil` = market). |
+| `slippage` | `*int32`        | Optional slippage (points).     |
+
+`ShowOrderCloseExample` passes `nil` for all three.
 
 ---
 
 ## ⬆️ Output
 
-Result object:
+Returns `*pb.OrderCloseDeleteData`:
 
-| Field                 | Type     | Description                              |
-| --------------------- | -------- | ---------------------------------------- |
-| `Mode`                | `string` | Operation result (e.g., "Closed").       |
-| `HistoryOrderComment` | `string` | Server comment on the closure operation. |
+| Field                 | Type                      | Description                              |
+| --------------------- | ------------------------- | ---------------------------------------- |
+| `Mode`                | `pb.OrderCloseDeleteMode` | `OCD_MARKET_ORDER` (a market order was closed) or `OCD_PENDING_ORDER` (a pending order was deleted). |
+| `HistoryOrderComment` | `*string`                 | Comment of the resulting history order (use `GetHistoryOrderComment()`). |
 
 ---
 
 ## 🎯 Purpose
 
-Close or delete an order by ticket.
-Useful for manual interventions, post-trade cleanup, or testing order workflows.
+Close or delete an order by ticket (one `OrderCloseDelete` request handles both: market orders are closed, pending orders are deleted).
+Useful for manual interventions, post-trade cleanup, or testing order workflows. Default timeout: 5s when your `ctx` has no deadline.

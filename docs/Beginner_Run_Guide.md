@@ -1,23 +1,24 @@
 # 🚦 Beginner Run Guide for GoMT4
 
-This guide is based on your `examples/main.go`. Code is already wired; just enter your credentials in `config/config.json` and uncomment what you want to run.
+This guide is based on `examples/main.go`. Code is already wired; just enter your credentials and API key in `examples/config/config.json` and keep (or comment out) the calls you want to run.
 
 ---
 
 ## ⚡ How to Run
 
 ```bash
-cd examples
+git clone https://github.com/MetaRPC/GoMT4.git
+cd GoMT4/examples
 go run .
 ```
 
-The entry point is `examples/main.go`.
+The entry point is `examples/main.go`. It connects to the MetaRPC cloud API (`mt4.mrpc.pro:443`), which runs the MT4 terminal for your account; nothing else has to be installed or started. You can also pass the API key on the command line: `go run . --api-key=YOUR_KEY`.
 
 ---
 
 ## 🧪 Safe First Steps (read‑only)
 
-Uncomment one or more — these **do not change** account state:
+Start with these — these **do not change** account state:
 
 ```go
 // Account snapshot
@@ -66,7 +67,7 @@ svc.ShowQuoteHistory(ctx, cfg.DefaultSymbol)
 These **modify state** (even on demo). Use real tickets from output of previous steps.
 
 ```go
-// Place an order (order type configured inside helper)
+// Place an order (market BUY, 0.1 lot, on the given symbol)
 svc.ShowOrderSendExample(ctx, cfg.DefaultSymbol)
 
 // Modify SL/TP — requires a valid ticket
@@ -153,6 +154,6 @@ svc.ShowOrdersHistory(ctx)
 
 * Begin with **safe readers** before trading helpers.
 * Never hardcode tickets; copy from console output.
-* Protect `config/config.json` — it contains credentials.
+* Protect `examples/config/config.json` — it contains your MT4 password and API key.
 * Prefer demo until you are confident.
 * For price formatting, use `Digits` from `ShowSymbolParams`; keep raw values for math.

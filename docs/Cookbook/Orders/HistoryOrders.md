@@ -1,75 +1,86 @@
 # 🗂️ HistoryOrders (GoMT4)
 
-**Goal:** load **orders history** for a time range (optionally filtered by symbol), with practical batching and export examples.
+**Goal:** load **orders history** for a time range (optionally filtered by symbol), with practical paging and export examples.
 
 > Real code refs in this repo:
 >
-> * Account methods: `examples/mt4/MT4Account.go` (e.g., `ShowOrdersHistory`, `OrdersHistoryRange`/similar)
-> * Example: `examples/mt4/MT4_service.go` (`ShowOrdersHistory` demo)
+> * Account methods: `examples/mt4/MT4Account.go` (`OrdersHistory`, `OrdersHistoryStream`)
+> * Example: `examples/mt4/MT4_service.go` (`ShowOrdersHistory`, `StreamOrdersHistoryExample`)
 
 ---
 
 ## ✅ 1) Preconditions
 
-* MT4 terminal is connected and has the history for requested dates.
+* `account` is connected.
 * `config.json` is valid and `DefaultSymbol` exists.
 
 ---
 
 ## 🗓️ 2) Basic range query (last 7 days)
 
-```go
-from := timestamppb.New(time.Now().AddDate(0, 0, -7))
-to   := timestamppb.New(time.Now())
+The range filters by order **open** time and is read as broker server time; `nil` means no bound.
 
-hist, err := account.ShowOrdersHistory(ctx, from, to, nil) // nil = all symbols
+```go
+to := time.Now()
+from := to.AddDate(0, 0, -7)
+
+hist, err := account.OrdersHistory(ctx,
+    pb.EnumOrderHistorySortType_HISTORY_SORT_BY_CLOSE_TIME_DESC,
+    &from, &to,
+    nil, nil /* page & itemsPerPage: all at once */,
+)
 if err != nil { return err }
 
-for _, o := range hist.GetOrders() {
+for _, o := range hist.GetOrdersInfo() {
     fmt.Printf("%s ticket=%d symbol=%s lots=%.2f profit=%.2f open=%s close=%s\n",
-        o.GetType().String(), o.GetTicket(), o.GetSymbol(), o.GetVolume(), o.GetProfit(),
+        o.GetOrderType().String(), o.GetTicket(), o.GetSymbol(), o.GetLots(), o.GetProfit(),
         o.GetOpenTime().AsTime().Format(time.RFC3339),
         o.GetCloseTime().AsTime().Format(time.RFC3339))
 }
 ```
 
-> Most brokers keep limited local history by default. If you see too few rows, open the symbol chart in MT4 to force a deeper history download.
-
 ---
 
 ## 🎯 3) Filter by symbol
 
-```go
-sym := ptr.String("EURUSD")
-from := timestamppb.New(time.Now().AddDate(0, 0, -30))
-to   := timestamppb.New(time.Now())
+The request has no symbol filter; filter on the client:
 
-hist, err := account.ShowOrdersHistory(ctx, from, to, sym)
+```go
+sym := "EURUSD"
+to := time.Now()
+from := to.AddDate(0, 0, -30)
+
+hist, err := account.OrdersHistory(ctx, pb.EnumOrderHistorySortType_HISTORY_SORT_BY_OPEN_TIME_ASC, &from, &to, nil, nil)
 if err != nil { return err }
 
-fmt.Printf("%d history orders for %s\n", len(hist.GetOrders()), *sym)
+var mine []*pb.HistoryOrderInfo
+for _, o := range hist.GetOrdersInfo() {
+    if o.GetSymbol() == sym {
+        mine = append(mine, o)
+    }
+}
+fmt.Printf("%d history orders for %s\n", len(mine), sym)
 ```
 
 ---
 
-## 📦 4) Batch by days (for long ranges)
+## 📦 4) Page through long ranges
 
-Long queries can be heavy and slow. Batch by day/week and append results.
+Long queries can be heavy. `OrdersHistoryStream` requests page 1, 2, 3, … until a page comes back empty:
 
 ```go
-func loadHistoryBatched(ctx context.Context, a *MT4Account, sym *string, days int) ([]*pb.Order, error) {
-    var out []*pb.Order
-    end := time.Now()
-    start := end.AddDate(0, 0, -days)
+func loadHistoryPaged(ctx context.Context, a *mt4.MT4Account, days int) ([]*pb.HistoryOrderInfo, error) {
+    to := time.Now()
+    from := to.AddDate(0, 0, -days)
 
-    for cur := start; cur.Before(end); cur = cur.AddDate(0, 0, 1) {
-        from := timestamppb.New(cur)
-        to   := timestamppb.New(cur.AddDate(0, 0, 1))
-        h, err := a.ShowOrdersHistory(ctx, from, to, sym)
-        if err != nil { return nil, err }
-        out = append(out, h.GetOrders()...)
-        // small pause to be gentle with terminal
-        if err := waitWithCtx(ctx, 150*time.Millisecond); err != nil { return nil, err }
+    pagesCh, errCh := a.OrdersHistoryStream(ctx, pb.EnumOrderHistorySortType_HISTORY_SORT_BY_OPEN_TIME_ASC, &from, &to, 500)
+
+    var out []*pb.HistoryOrderInfo
+    for page := range pagesCh {
+        out = append(out, page.GetOrdersInfo()...)
+    }
+    if err, ok := <-errCh; ok && err != nil {
+        return out, err
     }
     return out, nil
 }
@@ -80,7 +91,7 @@ func loadHistoryBatched(ctx context.Context, a *MT4Account, sym *string, days in
 ## 📤 5) Export to CSV (quick ‘n’ dirty)
 
 ```go
-func saveCSV(path string, orders []*pb.Order) error {
+func saveCSV(path string, orders []*pb.HistoryOrderInfo) error {
     f, err := os.Create(path)
     if err != nil { return err }
     defer f.Close()
@@ -90,15 +101,16 @@ func saveCSV(path string, orders []*pb.Order) error {
     _ = w.Write([]string{"ticket","symbol","type","lots","profit","open","close"})
     for _, o := range orders {
         _ = w.Write([]string{
-            strconv.FormatInt(o.GetTicket(), 10),
+            strconv.Itoa(int(o.GetTicket())),
             o.GetSymbol(),
-            o.GetType().String(),
-            fmt.Sprintf("%.2f", o.GetVolume()),
+            o.GetOrderType().String(),
+            fmt.Sprintf("%.2f", o.GetLots()),
             fmt.Sprintf("%.2f", o.GetProfit()),
             o.GetOpenTime().AsTime().Format(time.RFC3339),
             o.GetCloseTime().AsTime().Format(time.RFC3339),
         })
     }
+    w.Flush()
     return w.Error()
 }
 ```
@@ -107,15 +119,15 @@ func saveCSV(path string, orders []*pb.Order) error {
 
 ## ⚠️ Pitfalls
 
-* **Too few results** → MT4 hasn’t downloaded that range yet. Open the symbol chart or split the range into smaller chunks.
-* **Timezones** → server time vs local time may differ; use `time.RFC3339` to avoid confusion.
-* **Performance** → prefer batching for 30+ days ranges; add tiny sleeps between requests.
-* **Context** → wrap calls with `context.WithTimeout` (3–6s) and retry only transport errors (see *Reliability*).
+* **Open-time window** → an order opened before `from` and closed inside the window is **not** returned; widen `from` if you need everything closed in a period.
+* **Timezones** → `OpenTime` / `CloseTime` are broker server time; `OpenTimeUtc` / `CloseTimeUtc` are UTC.
+* **Performance** → prefer paging for 30+ days ranges.
+* **Context** → 8s default timeout per call when `ctx` has no deadline; transport errors are retried inside the client (see *Reliability*).
 
 ---
 
 ## 🔗 See also
 
-* `CloseOrder.md` — verify closed positions appear in history.
-* `ModifyOrder.md` — changes in SL/TP reflected in history records.
-* `Reliability (en)` — timeouts, reconnects & backoff patterns.
+* [CloseOrder](CloseOrder.md) — verify closed positions appear in history.
+* [ModifyOrder](ModifyOrder.md) — changes in SL/TP reflected in history records.
+* [Reliability](../../ReTimeouts_Reconnects_Backoff.md) — timeouts, reconnects & backoff patterns.

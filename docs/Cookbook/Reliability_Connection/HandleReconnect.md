@@ -1,154 +1,139 @@
 # 🔁 HandleReconnect (GoMT4)
 
-**Goal:** robust reconnects for **unary** and **streaming** RPCs using the helpers already present in this repo.
+**Goal:** robust reconnects for **unary** and **streaming** RPCs using the helpers already present in this repo — and what to do when they give up.
 
 > Real code refs:
 >
-> * Backoff & helpers: `examples/mt4/MT4Account.go` (`backoffDelay`, `waitWithCtx`, `maxRetries`, etc.)
-> * Unary pattern: `examples/mt4/MT4Account.go` (retry on `codes.Unavailable`)
-> * Streams: `OnSymbolTick`, `OnOpenedOrdersProfit` wrappers
+> * Backoff & helpers: `examples/mt4/MT4Account.go` (`backoffDelay`, `waitWithCtx`, `maxRetries` — unexported)
+> * Unary pattern: `examples/mt4/MT4Account.go` (`ExecuteWithReconnect`, exported)
+> * Streams: `ExecuteStreamWithReconnect` (exported), used by `OnSymbolTick`, `OnTrade`, `OnOpenedOrdersProfit`, `OnOpenedOrdersTickets`
 
 ---
 
 ## ✅ 1) Principles
 
-* Retry **only transient transport** errors: `codes.Unavailable`, `io.EOF`.
+* Retry **only transient** errors: `codes.Unavailable`, `io.EOF` (streams), and the API errors `TERMINAL_INSTANCE_NOT_FOUND` / `TERMINAL_REGISTRY_TERMINAL_NOT_FOUND` (terminal restarting). The built-in helpers already do exactly this.
 * Respect **context** (timeouts/cancel) to avoid leaks.
 * Use **exponential backoff + jitter** (central constants in `MT4Account.go`).
 
 ---
 
-## 🔹 2) Unary RPC with built-in retry (pattern)
+## 🔹 2) Unary RPC with built-in retry
 
-Most account methods already follow this template: try → on `Unavailable` wait `backoffDelay(attempt)` → retry.
+Every `MT4Account` method runs its RPC through `ExecuteWithReconnect`: try → on a transient error wait `backoffDelay(attempt)` → retry, up to `maxRetries` (10) attempts. The excerpt below is the real `AccountSummary` (inside package `mt4`):
 
 ```go
-func (a *MT4Account) callWithRetry(ctx context.Context, fn func(context.Context) error) error {
-    var last error
-    for attempt := 0; attempt < maxRetries; attempt++ {
-        if err := fn(ctx); err != nil {
-            st, ok := status.FromError(err)
-            if ok && st.Code() == codes.Unavailable {
-                // transient transport → backoff, then retry
-                if err := waitWithCtx(ctx, backoffDelay(attempt)); err != nil { return err }
-                last = err
-                continue
-            }
-            return err // non-transient → bubble up
-        }
-        return nil // success
-    }
-    return fmt.Errorf("max retries reached: %w", last)
+grpcCall := func(headers metadata.MD) (*pb.AccountSummaryReply, error) {
+    c := metadata.NewOutgoingContext(ctx, headers)
+    return a.AccountClient.AccountSummary(c, req)
 }
+errorSelector := func(reply *pb.AccountSummaryReply) *pb.Error {
+    return reply.GetError()
+}
+reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
 ```
 
-**Usage (example: health-check AccountSummary):**
+`ExecuteWithReconnect` is exported, so you can use it for an RPC the client does not wrap (here `ConnectionStatus` from the generated `ConnectionClient`):
 
 ```go
-hctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-defer cancel()
-err := a.callWithRetry(hctx, func(c context.Context) error {
-    _, err := a.AccountSummary(c)
-    return err
-})
+reply, err := mt4.ExecuteWithReconnect(account, ctx,
+    func(md metadata.MD) (*pb.ConnectionStatusReply, error) {
+        return account.ConnectionClient.ConnectionStatus(metadata.NewOutgoingContext(ctx, md), &pb.ConnectionStatusRequest{})
+    },
+    func(r *pb.ConnectionStatusReply) *pb.Error { return r.GetError() },
+)
 if err != nil { return err }
+fmt.Println("terminal state:", reply.GetData().GetState())
 ```
-
-> The same pattern is used internally by methods like `OrderSend`, `Quote`, etc., in your account layer.
 
 ---
 
 ## 🔸 3) Streaming reconnect loop (structure)
 
-Your stream helpers (`OnSymbolTick`, `OnOpenedOrdersProfit`) already encapsulate the reconnect loop. The core logic looks like this:
+The stream helpers (`OnSymbolTick`, `OnOpenedOrdersProfit`, …) encapsulate the reconnect loop in `ExecuteStreamWithReconnect`. Simplified:
 
 ```go
-func (a *MT4Account) runStreamWithReconnect(ctx context.Context, start func(context.Context) (recv func() (*pb.Tick, error), close func() error, err error),
-) (<-chan *pb.Tick, <-chan error) {
-    dataCh := make(chan *pb.Tick, 1024)
-    errCh  := make(chan error, 1)
-
-    go func() {
-        defer close(dataCh)
-        defer close(errCh)
-
-        for attempt := 0; attempt < maxRetries; attempt++ {
-            // (re)open stream
-            recv, closeFn, err := start(ctx)
-            if err != nil {
-                // cannot open → transient?
-                if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
-                    if err := waitWithCtx(ctx, backoffDelay(attempt)); err != nil { errCh <- err; return }
-                    continue
-                }
-                errCh <- err; return
-            }
-
-            // receive loop
-            for {
-                msg, err := recv()
-                if err == nil {
-                    select {
-                    case dataCh <- msg:
-                    case <-ctx.Done(): _ = closeFn(); return
-                    }
-                    continue
-                }
-                // stream error → decide if reconnect
-                if err == io.EOF {
-                    // server closed → reconnect with backoff
-                } else if st, ok := status.FromError(err); ok && st.Code() == codes.Unavailable {
-                    // transient transport → reconnect
-                } else {
-                    // permanent
-                    _ = closeFn(); errCh <- err; return
-                }
-                _ = closeFn()
-                if err := waitWithCtx(ctx, backoffDelay(attempt)); err != nil { errCh <- err; return }
-                break // out to reopen
-            }
-        }
-        errCh <- fmt.Errorf("max stream retries reached")
-    }()
-
-    return dataCh, errCh
-}
-```
-
-> In your repo, this logic is packaged in concrete helpers: `OnSymbolTick(ctx, symbols)`, `OnOpenedOrdersProfit(ctx, bufSize)`.
-
----
-
-## ▶️ 4) Consumer pattern (don’t block!)
-
-```go
-ctx, cancel := context.WithCancel(context.Background())
-defer cancel()
-
-// Example: quotes stream
-dataCh, errCh := account.OnSymbolTick(ctx, []string{"EURUSD","GBPUSD"})
-
 for {
-    select {
-    case <-ctx.Done():
-        return // graceful stop
-    case err := <-errCh:
-        if err != nil { log.Printf("stream stopped: %v", err); return }
-    case t := <-dataCh:
-        // offload heavy work
-        processAsync(t)
+    // (re)open the stream, retrying codes.Unavailable with backoff
+    stream, err := streamInvoker(request, a.getHeaders(), ctx)
+    // ...
+    for {
+        reply := newReply()
+        err := stream.RecvMsg(reply)
+        if err != nil {
+            // codes.Unavailable or io.EOF → wait backoffDelay(attempt), break to reopen
+            // anything else → errCh <- err; return
+        }
+        if apiErr := getError(reply); apiErr != nil {
+            // TERMINAL_INSTANCE_NOT_FOUND / TERMINAL_REGISTRY_TERMINAL_NOT_FOUND → wait, reopen
+            // other API errors → errCh <- wrapAPIError(apiErr); return
+        }
+        // forward data to dataCh (or stop on ctx.Done())
     }
 }
 ```
 
-* Heavy work → send to the worker via a buffered channel.
+After `maxRetries` consecutive failures the helper sends the last error to `errCh` and closes both channels.
+
+---
+
+## ▶️ 4) Consumer pattern with re-subscribe
+
+When a stream ends with an error, the built-in retries are exhausted. Re-subscribe after a pause (or give up):
+
+```go
+func watchTicks(ctx context.Context, account *mt4.MT4Account, symbols []string, handle func(*pb.OnSymbolMqlTickInfo)) error {
+    for {
+        dataCh, errCh := account.OnSymbolTick(ctx, symbols)
+    recv:
+        for {
+            select {
+            case <-ctx.Done():
+                return ctx.Err() // graceful stop
+            case pkt, ok := <-dataCh:
+                if !ok {
+                    break recv
+                }
+                handle(pkt.GetSymbolTick()) // keep it fast; offload heavy work
+            }
+        }
+        if err, ok := <-errCh; ok && err != nil {
+            log.Printf("stream stopped: %v; re-subscribing in 5s", err)
+        }
+        select {
+        case <-ctx.Done():
+            return ctx.Err()
+        case <-time.After(5 * time.Second):
+        }
+    }
+}
+```
+
+* Heavy work → send to a worker via a buffered channel.
 * Don't forget `ctx.Done()` for a clean finish.
 
 ---
 
-## 🧭 5) Tuning backoff (central knobs)
+## 🔌 5) When the terminal itself is gone
 
-Constants found in `examples/mt4/MT4Account.go`:
+If calls keep failing with terminal-not-found after the retries, the terminal for your account is not connected any more. Connect again:
+
+```go
+if err := account.ConnectByServerName(ctx, serverName, "EURUSD", true, 60); err != nil {
+    // A failed connect (or Disconnect) closes the account's gRPC connection:
+    // create a fresh account and connect that one on the next attempt.
+    account, err = mt4.NewMT4Account(login, password, "", uuid.Nil, apiKey)
+    if err != nil { return err }
+}
+```
+
+* After `Disconnect()` / `Close()`, or a connect whose health-check failed, the `MT4Account` cannot be reused; make a new one with `NewMT4Account`.
+
+---
+
+## 🧭 6) Tuning backoff (central knobs)
+
+Constants found in `examples/mt4/MT4Account.go` (unexported — change them in your clone):
 
 ```go
 const (
@@ -160,21 +145,21 @@ const (
 ```
 
 * **Home Wi‑Fi / unstable** → try `backoffMax=8–10s`, `jitterRange=300–400ms`.
-* **VPS / LAN** → `backoffBase=150ms`, `backoffMax=3–5s`.
+* **Fast VPS** → `backoffBase=150ms`, `backoffMax=3–5s`.
 
 ---
 
 ## ⚠️ Pitfalls
 
-* **Retrain business errors** → not allowed. We only use transport options (`Unavailable`, `EOF`).
-* **Forgot to cancel the context** → goroutin leaks. Always `defer cancel()'.
-* **Blocking dataCh** → the stream will stop. Either a buffer or a fast reception.
-* **Endless retreats** → limit `MaxRetries', log the final error.
+* **Retrying business errors** → not allowed (invalid volume, invalid stops, …); the helpers only retry transport and terminal-not-found errors.
+* **Forgot to cancel the context** → goroutine leaks. Always `defer cancel()`.
+* **Blocking dataCh** → the stream stalls (the channel is unbuffered). Read fast and hand work off.
+* **Endless re-subscribe loops** → add a cap or alerting around your own loop, log the final error.
 
 ---
 
 ## 🔗 See also
 
-* `Reliability (en)` — timeouts, reconnects & backoff summary.
-* `StreamQuotes.md `, `StreamOpenedOrderProfits.md ` — ready-made wrappers.
-* `UnaryRetries.md ` — point examples for individual methods.
+* [Reliability](../../ReTimeouts_Reconnects_Backoff.md) — timeouts, reconnects & backoff summary.
+* [StreamQuotes](../Market_Info/StreamQuotes.md), [StreamOpenedOrderProfits](../Account/StreamOpenedOrderProfits.md) — ready-made wrappers.
+* [UnaryRetries](UnaryRetries.md) — extra retries around individual calls.

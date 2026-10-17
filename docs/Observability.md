@@ -9,7 +9,7 @@ You can add lightweight observability to GoMT4:
 - 📊 **Counters** — simple `atomic` metrics for errors, ticks, RPC calls (print every 10s).
 - 🧩 **Prometheus exporter** — optional, if you want Grafana dashboards.
 
-Make GoMT4 **debuggable in minutes**, not hours. Below are pragmatic logging patterns and lightweight metrics that fit your current codebase (`examples/mt4/*.go`, `main.go`) and Windows setup.
+Make GoMT4 **debuggable in minutes**, not hours. Below are pragmatic logging patterns and lightweight metrics that fit your current codebase (`examples/mt4/*.go`, `main.go`).
 
 ---
 
@@ -67,12 +67,12 @@ obs.Info("stream.quotes.end ticks=%d", ticks)
 **`StreamOpenedOrderProfits`**:
 
 ```go
-obs.Info("stream.pnl.start buf=%d", 1000)
+obs.Info("stream.pnl.start interval_ms=%d", 1000)
 if n%50 == 0 { obs.Info("stream.pnl.rate updates=%d", n) }
 if err != nil { obs.Error("stream.pnl.error err=%v", err) }
 ```
 
-**Reconnect/backoff** (Cookbook → `HandleReconnect.md`):
+**Reconnect/backoff** (Cookbook → `HandleReconnect.md`). The built‑in retry loops (`ExecuteWithReconnect`, `ExecuteStreamWithReconnect` in `examples/mt4/MT4Account.go`) do not log; add a line before their `waitWithCtx(...)` calls in your clone:
 
 ```go
 obs.Warn("reconnect reason=%v delay=%s attempt=%d", reason, delay, attempt)
@@ -82,20 +82,20 @@ obs.Warn("reconnect reason=%v delay=%s attempt=%d", reason, delay, attempt)
 
 ## ⏱️ Unary RPCs — latency & outcomes
 
-Wrap calls with a tiny stopwatch.
+Wrap calls with a tiny stopwatch. Time the `MT4Account` methods (they return data and errors; the `MT4Service.Show*` helpers only print):
 
 ```go
 t0 := time.Now()
-q, err := s.ShowQuote(ctx, symbol)
+q, err := account.Quote(ctx, symbol)
 dur := time.Since(t0)
 if err != nil {
-  obs.Error("rpc.show_quote symbol=%s dur=%s err=%v", symbol, dur, err)
+  obs.Error("rpc.quote symbol=%s dur=%s err=%v", symbol, dur, err)
 } else {
-  obs.Info("rpc.show_quote symbol=%s dur=%s digits=%d", symbol, dur, q.Digits)
+  obs.Info("rpc.quote symbol=%s dur=%s bid=%.5f ask=%.5f", symbol, dur, q.GetBid(), q.GetAsk())
 }
 ```
 
-Apply to: `ShowQuotesMany`, `ShowSymbolParams`, `ShowTickValues`, history getters, and order actions (`ShowOrderSend/Modify/Close*`).
+Apply to: `QuoteMany`, `SymbolParams`, `TickValueWithSize`, history getters (`OrdersHistory`, `QuoteHistory`), and order actions (`OrderSend`, `OrderModify`, `OrderClose`, `OrderCloseBy`, `OrderDelete`).
 
 ---
 

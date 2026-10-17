@@ -38,6 +38,7 @@ fmt.Printf("Closed by opposite: Profit=%.2f, Price=%.5f, Time: %s\n",
 
 ```go
 func (s *MT4Service) ShowOrderCloseByExample(ctx context.Context, ticket int32, oppositeTicket int32)
+func (a *MT4Account) OrderCloseBy(ctx context.Context, ticketToClose int32, oppositeTicket int32) (*pb.OrderCloseByData, error)
 ```
 
 ---
@@ -64,7 +65,8 @@ Returns `*pb.OrderCloseByData` with fields:
 | ------------ | ----------- | ----------------------------------- |
 | `Profit`     | `float64`   | Profit/loss realized from closing.  |
 | `ClosePrice` | `float64`   | The closing price of the operation. |
-| `CloseTime`  | `timestamp` | The time the orders were closed.    |
+| `CloseTime`  | `*timestamppb.Timestamp` | The time the orders were closed (broker server time). |
+| `CloseTimeUtc` | `*timestamppb.Timestamp` | The same moment in UTC.        |
 
 ---
 
@@ -81,6 +83,7 @@ Close one position with another opposite-position order. Useful for:
 ## 🧩 Notes & Tips
 
 * **Same symbol required:** Both tickets must be for the **same symbol** and opposite directions.
-* **Partial overlap:** If lot sizes differ, only the overlapping volume is closed; the larger position remains with the residual volume.
-* **Ticket types:** Tickets are `int32` in your API; avoid mixing with `uint64` types used elsewhere.
+* **Partial overlap:** If lot sizes differ, MT4 closes the overlapping volume and the rest of the larger position stays open (under a new ticket).
+* **Ticket types:** Tickets are `int32` everywhere in this API.
+* **Timeout:** 5s default when your `ctx` has no deadline.
 

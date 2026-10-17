@@ -8,9 +8,10 @@ This section demonstrates how to **use GoMT4 directly from the terminal**, witho
 
 | Tool          | Purpose                                      |
 | ------------- | -------------------------------------------- |
-| Go 1.20+      | For building and running the project         |
-| MetaTrader 4  | Terminal with gRPC plugin enabled            |
-| `config.json` | Login credentials and default symbol         |
+| Go 1.23+      | For building and running the project         |
+| MT4 account   | Login, password and broker server name (MetaRPC runs the MT4 terminal for you in the cloud) |
+| API key       | From [https://mrpc.pro/signup](https://mrpc.pro/signup); without one the calls run as a trial |
+| `config.json` | Login credentials, default symbol and API key |
 | Terminal      | All operations are executed via command-line |
 
 ---
@@ -32,7 +33,9 @@ GoMT4/
 │   ├── go.sum                     # Dependency checksums
 │   └── main.go                    # Entry point demonstrating MT4Service usage
 │
-│
+├── package/                       # Generated protobuf/gRPC Go code (module github.com/MetaRPC/GoMT4/package)
+├── docs/                          # This documentation
+├── go.work                        # Go workspace tying examples/ and package/ together
 ├── .gitignore                     # Files/folders to be excluded from Git
 └── mkdocs.yml                     # Documentation config file (for mkdocs or similar tools)
 
@@ -45,19 +48,25 @@ GoMT4/
 
 ```json
 {
-  "Login": 501401178,
-  "Password": "v8gctta",
-  "Server": "RoboForex-Demo",
-  "DefaultSymbol": "EURUSD"
+  "Login": 12345678,
+  "Password": "<your-mt4-password>",
+  "Server": "MetaQuotes-Demo",
+  "DefaultSymbol": "EURUSD",
+  "ApiKey": "<your-mrpc-api-key>"
 }
 ```
+
+With `"Login": 0` the example opens a new demo account on `Server` and uses it.
 
 ---
 
 ## 🚀 Running the App
 
 ```bash
-go run main.go
+cd GoMT4/examples
+go run .
+# or pass the API key on the command line
+go run . --api-key=YOUR_KEY
 ```
 
 > If all goes well, you’ll see:
@@ -100,8 +109,9 @@ go run main.go
 | `ShowQuote("EURUSD")`        | Get live bid/ask quote                 |
 | `ShowQuotesMany([...])`      | Get quotes for multiple symbols        |
 | `ShowQuoteHistory("EURUSD")` | Get last 5 days of OHLC candles        |
-| `ShowAllSymbols()`           | List all available trading instruments |
-| `ShowSymbolParams("EURUSD")` | Get full symbol metadata               |
+| `ShowAllSymbols()`           | List all available trading instruments with their index |
+| `ShowSymbolParams("EURUSD")` | Print key symbol parameters (digits, volume limits, trade mode, currencies) |
+| `ShowSymbols()`              | List symbol names with their index     |
 | `ShowTickValues([...])`      | Get tick/contract values for symbols   |
 
 ---
@@ -110,10 +120,10 @@ go run main.go
 
 | Function                         | Description                                                              |
 | -------------------------------- | ------------------------------------------------------------------------ |
-| `StreamQuotes()`                 | Subscribe to live tick updates                                           |
-| `StreamOpenedOrderProfits()`     | Real-time profit updates per open order                                  |
-| `StreamOpenedOrderTickets()`     | Monitor currently open order tickets                                     |
-| `StreamTradeUpdates()`           | Subscribe to all trading events                                          |
+| `StreamQuotes()`                 | Live ticks for EURUSD and GBPUSD (stops after 3 ticks or 5s without one) |
+| `StreamOpenedOrderProfits()`     | Real-time profit updates per open order (every 1000 ms)                  |
+| `StreamOpenedOrderTickets()`     | Monitor currently open order tickets (every 1000 ms)                     |
+| `StreamTradeUpdates()`           | Trade events; prints the first new order of each event                   |
 | `StreamOrdersHistoryExample()`   | Page-by-page stream of order history (demo; last 30 days, close-time DESC) |
 | `StreamQuoteHistoryExample()`    | Time-chunked OHLC history stream (demo; H1, last 90 days, weekly chunks) |
 
@@ -127,7 +137,7 @@ go run main.go
 
 ## 🧑‍💻 How to Enable a Function
 
-In `main.go`, uncomment the desired method:
+In `examples/main.go`, add (or comment out) the method calls you want:
 
 ```go
 svc.ShowQuote(ctx, "EURUSD")
@@ -141,7 +151,7 @@ You can call multiple methods one after another — for example, open an order a
 ## 🧠 Tips
 
 * Use `context.WithTimeout(...)` to limit long operations.
-* Stop the MT4 terminal gracefully to avoid lingering gRPC connections.
+* End with `account.Disconnect(...)` (the example does `Disconnect(true)`, which also deletes the terminal instance on the MetaRPC side) so no terminal is left running for the account.
 * Even on demo, actions like sending orders are real.
 
 ---

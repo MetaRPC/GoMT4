@@ -1,41 +1,42 @@
 # 👁️ EnsureSymbolVisible (GoMT4)
 
-**Goal:** make sure a symbol is **available/visible** in MT4 *Market Watch* **before** you call `Quote`, `OrderSend`, `SymbolParams`, etc.
+**Goal:** make sure a symbol is **available/visible** in the terminal's *Market Watch* **before** you call `Quote`, `OrderSend`, `SymbolParams`, etc.
 
 > Real code refs you already ship:
 >
-> * Market info demos: `examples/mt4/MT4_service.go` (see *ShowAllSymbols*, *ShowSymbols*, *ShowSymbolParams*)
-> * Account layer: `examples/mt4/MT4Account.go` (e.g., `SymbolParams`, `Quote`)
-> * Docs: `docs/Market_Info/ShowAllSymbols.md`, `ShowSymbols.md`, `ShowSymbolParams.md`
+> * Market info demos: `examples/mt4/MT4_service.go` (`ShowAllSymbols`, `ShowSymbols`, `ShowSymbolParams`)
+> * Account layer: `examples/mt4/MT4Account.go` (`Symbols`, `SymbolParams`, `Quote`, exported `MarketInfoClient`)
+> * Docs: [ShowAllSymbols](../../Market_Info/ShowAllSymbols.md), [ShowSymbols](../../Market_Info/ShowSymbols.md), [ShowSymbolParams](../../Market_Info/ShowSymbolParams.md)
 
 ---
 
 ## ❓ Why this matters
 
-* MT4 hides many instruments by default. Hidden symbols often cause errors like **`symbol not found`** or empty quotes.
-* Brokers may add **suffixes**: `EURUSD` vs `EURUSD.m` / `.pro` are **different** tools.
+* MT4 hides many instruments from *Market Watch* by default. Hidden symbols can cause errors like **`symbol not found`** or empty quotes.
+* Brokers may add **suffixes**: `EURUSD` vs `EURUSD.m` / `.pro` are **different** instruments.
 
 ---
 
 ## ✅ What exists in this repo
 
-Do you already have work calls that you can use to check availability?:
+Calls you can use to check availability:
 
-* `SymbolParams(ctx, symbol)` — if the symbol is unavailable/does not exist, an error will be returned.
-* `Quote(ctx, symbol)` — similarly, returns an error/empty.
-* Demo-*showing* a list of characters: `ShowAllSymbols` / `ShowSymbols` in `MT4_service.go'.
+* `account.Symbols(ctx)` — all symbol names of the broker (visible or not).
+* `account.SymbolParams(ctx, symbol)` — returns an error if the symbol is unknown; its `IsSelected` / `Visible` fields tell whether it is in Market Watch.
+* `account.Quote(ctx, symbol)` — similarly, returns an error for unknown symbols.
+* The generated `MarketInfo.SymbolSelect` RPC (MQL4 `SymbolSelect`) adds a symbol to Market Watch. `MT4Account` has no wrapper for it, but exposes `MarketInfoClient` and the exported `ExecuteWithReconnect`, which attaches the `apikey` / `id` metadata.
 
-> Direct method `EnsureSymbolVisible(...)`there is no ** in the code**. Below is the **optional convenience** wrapper: not part of the auto‑generated pb, but a small utility that can be added to avoid copying checks.
+> There is **no** `EnsureSymbolVisible(...)` method in the code. Below are optional helpers you can add to your own code.
 
 ---
 
 ## 🧪 Minimal check (use existing calls)
 
 ```go
-func CheckSymbolAvailable(ctx context.Context, a *MT4Account, symbol string) error {
+func CheckSymbolAvailable(ctx context.Context, a *mt4.MT4Account, symbol string) error {
     // Fast probe via params; you can also use Quote
     if _, err := a.SymbolParams(ctx, symbol); err != nil {
-        return fmt.Errorf("symbol %s is not available (hidden or wrong suffix): %w", symbol, err)
+        return fmt.Errorf("symbol %s is not available (wrong name or suffix): %w", symbol, err)
     }
     return nil
 }
@@ -46,28 +47,62 @@ Using:
 ```go
 if err := CheckSymbolAvailable(ctx, account, "EURUSD"); err != nil {
     log.Printf("⚠️ %v", err)
-    log.Printf("Hint: open MT4 → Market Watch → Show All, and check actual symbol name (suffix)")
+    log.Printf("Hint: list the exact names with account.Symbols(ctx)")
     return err
 }
 ```
 
 ---
 
-## 🧰 Optional convenience helper (not in pb; you may add)
-
-This utility tries to pick up common suffixes if the base character is not found. This is an add-on, not part of your current API — add it as desired.
+## 🧰 Optional helper: select the symbol in Market Watch
 
 ```go
-// EnsureSymbolVisible tries base symbol, then common suffixes (.m, .pro, .ecn),
-// and returns the first that exists.
-func EnsureSymbolVisible(ctx context.Context, a *MT4Account, base string) (string, error) {
-    candidates := []string{base, base + ".m", base + ".pro", base + ".ecn"}
-    for _, s := range candidates {
-        if _, err := a.SymbolParams(ctx, s); err == nil {
-            return s, nil // found a visible/real symbol
+// SelectSymbol adds the symbol to Market Watch via the generated SymbolSelect RPC.
+func SelectSymbol(ctx context.Context, a *mt4.MT4Account, symbol string) error {
+    reply, err := mt4.ExecuteWithReconnect(a, ctx,
+        func(md metadata.MD) (*pb.SymbolSelectReply, error) {
+            return a.MarketInfoClient.SymbolSelect(metadata.NewOutgoingContext(ctx, md),
+                &pb.SymbolSelectRequest{Symbol: symbol, Select: true})
+        },
+        func(r *pb.SymbolSelectReply) *pb.Error { return r.GetError() },
+    )
+    if err != nil {
+        return err
+    }
+    if !reply.GetData().GetSuccess() {
+        return fmt.Errorf("SymbolSelect(%s) returned false", symbol)
+    }
+    return nil
+}
+```
+
+---
+
+## 🧰 Optional helper: find the broker's name (suffixes)
+
+This utility looks the base name up in the broker's symbol list, accepting common suffixes:
+
+```go
+// EnsureSymbolVisible finds base (or base+suffix) in the broker's symbol list,
+// selects it in Market Watch and returns the exact name.
+func EnsureSymbolVisible(ctx context.Context, a *mt4.MT4Account, base string) (string, error) {
+    syms, err := a.Symbols(ctx)
+    if err != nil {
+        return "", err
+    }
+    names := map[string]bool{}
+    for _, s := range syms.GetSymbolNameInfos() {
+        names[s.GetSymbolName()] = true
+    }
+    for _, s := range []string{base, base + ".m", base + ".pro", base + ".ecn"} {
+        if names[s] {
+            if err := SelectSymbol(ctx, a, s); err != nil {
+                return "", err
+            }
+            return s, nil
         }
     }
-    return "", fmt.Errorf("symbol %s not visible or not found; open Market Watch → Show All and check the exact name", base)
+    return "", fmt.Errorf("symbol %s not found; check the exact name in account.Symbols(ctx)", base)
 }
 ```
 
@@ -81,25 +116,24 @@ q, err := account.Quote(ctx, sym) // safe to proceed
 
 ---
 
-## 🧭 Manual step (for MT4 user)
+## 🧭 Manual step
 
-1. Open MT4 → **Market Watch**.
-2. PCM → **Show All**.
-3. Check your broker's exact symbol name (including the suffix).
-4. Write it in `examples/config/config.json` → `DefaultSymbol`.
+1. Print the broker's names: `svc.ShowAllSymbols(ctx)`.
+2. Check your broker's exact symbol name (including the suffix).
+3. Write it in `examples/config/config.json` → `DefaultSymbol`.
 
 ---
 
 ## ⚠️ Pitfalls
 
 * **Suffix mismatch**: `EURUSD` ≠ `EURUSD.m`. Always check the exact name.
-* **Hidden in Market Watch**: Turn on *Show All* before the first launch.
-* **Wrong symbol case**: Names are case-sensitive in terms of suffixes for some brokers.
+* **Case**: use the name exactly as the broker lists it.
+* **Market Watch limit**: MT4's Market Watch holds a limited number of symbols; select only what you need.
 
 ---
 
 ## 🔗 See also
 
-* `SymbolParams.md ` — tool parameters (Digits/Point/LotStep/StopsLevel).
-* `GetQuote.md ` is a one—time quote.
-* `PlaceMarketOrder.md ` — application after validation of the symbol.
+* [SymbolParams](../Market_Info/SymbolParams.md) — instrument parameters (Digits/Point/VolumeStep/StopsLevel).
+* [GetQuote](../Market_Info/GetQuote.md) — a one‑time quote.
+* [PlaceMarketOrder](../Orders/PlaceMarketOrder.md) — application after validation of the symbol.

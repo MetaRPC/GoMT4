@@ -1,7 +1,7 @@
 # Getting Order History
 
 > **Request:** retrieve historical orders for a specified time range
-> Fetch all closed orders from the trading account history within a defined window.
+> Fetch orders from the trading account history (closed positions and deleted pending orders) whose **open time** falls within a defined window.
 
 ---
 
@@ -25,7 +25,7 @@ history, err := account.OrdersHistory(
     ctx,
     pb.EnumOrderHistorySortType_HISTORY_SORT_BY_CLOSE_TIME_DESC,
     &from, &to,
-    nil, nil, // page & itemsPerPage (optional)
+    nil, nil /* page & itemsPerPage (optional) */,
 )
 if err != nil {
     log.Fatalf("❌ OrdersHistory error: %v", err)
@@ -51,7 +51,13 @@ for _, order := range history.GetOrdersInfo() {
 ### Method Signature
 
 ```go
-func (s *MT4Service) ShowOrdersHistory(ctx context.Context)
+func (s *MT4Service) ShowOrdersHistory(ctx context.Context) // last 7 days, sorted by close time DESC
+func (a *MT4Account) OrdersHistory(
+    ctx context.Context,
+    sortType pb.EnumOrderHistorySortType,
+    from, to *time.Time,
+    page, itemsPerPage *int32,
+) (*pb.OrdersHistoryData, error)
 ```
 
 ---
@@ -67,17 +73,19 @@ Method internally uses (when calling `MT4Account.OrdersHistory`):
 | Field      | Type                          | Description                       |
 | ---------- | ----------------------------- | --------------------------------- |
 | `sortType` | `pb.EnumOrderHistorySortType` | Sorting logic.                    |
-| `from`     | `*time.Time`                  | Start time of the history window. |
-| `to`       | `*time.Time`                  | End time of the history window.   |
-| `page`     | `*int32`                      | Page number (optional).           |
-| `items`    | `*int32`                      | Items per page (optional).        |
+| `from`     | `*time.Time`                  | Start of the window of order **open** times (broker server time; `nil` = no lower bound). |
+| `to`       | `*time.Time`                  | End of the window of order **open** times (broker server time; `nil` = no upper bound). |
+| `page`     | `*int32`                      | Page number, 1-based (optional; needs `itemsPerPage`). |
+| `itemsPerPage` | `*int32`                  | Items per page (optional; needs `page`). |
 
-Possible `EnumOrderHistorySortType` values:
+Possible `pb.EnumOrderHistorySortType` values (Go constants `pb.EnumOrderHistorySortType_<value>`):
 
 * `HISTORY_SORT_BY_OPEN_TIME_ASC`
 * `HISTORY_SORT_BY_OPEN_TIME_DESC`
 * `HISTORY_SORT_BY_CLOSE_TIME_ASC`
 * `HISTORY_SORT_BY_CLOSE_TIME_DESC`
+* `HISTORY_SORT_BY_ORDER_TICKET_ID_ASC`
+* `HISTORY_SORT_BY_ORDER_TICKET_ID_DESC`
 
 ---
 
@@ -86,11 +94,13 @@ Possible `EnumOrderHistorySortType` values:
 Prints closed order information to stdout.
 Underlying response: `*pb.OrdersHistoryData`
 
-| Field        | Type    | Description                         |
-| ------------ | ------- | ----------------------------------- |
-| `OrdersInfo` | (slice) | List of historical (closed) orders. |
+| Field           | Type                     | Description                         |
+| --------------- | ------------------------ | ----------------------------------- |
+| `OrdersInfo`    | `[]*pb.HistoryOrderInfo` | List of historical orders.          |
+| `TotalCount`    | `int32`                  | Total number of matching orders.    |
+| `NextPageToken` | `string`                 | Cursor for the next page (cursor paging, not used by this client). |
 
-Printed fields typically include:
+Each `*pb.HistoryOrderInfo` includes:
 
 | Field        | Type                 | Description                           |
 | ------------ | -------------------- | ------------------------------------- |
@@ -100,14 +110,15 @@ Printed fields typically include:
 | `OpenPrice`  | `float64`            | Entry price of the order.             |
 | `ClosePrice` | `float64`            | Exit price of the order.              |
 | `Profit`     | `float64`            | Final realized profit/loss.           |
-| `OrderType`  | `ENUM_ORDER_TYPE_TF` | Type of order (Buy, Sell, etc.).      |
-| `OpenTime`   | `timestamp`          | Time when the order was opened.       |
-| `CloseTime`  | `timestamp`          | Time when the order was closed.       |
-| `Sl`         | `float64`            | Stop Loss price (if set).             |
-| `Tp`         | `float64`            | Take Profit price (if set).           |
-| `Magic`      | `int32`              | Magic number for programmatic orders. |
+| `Swap` / `Commision` | `float64`    | Swap and commission.                  |
+| `OrderType`  | `pb.OpenedOrderType` | Type of order (`OO_OP_BUY`, `OO_OP_SELL`, …). |
+| `OpenTime` / `OpenTimeUtc`   | `*timestamppb.Timestamp` | Open time (broker server time / UTC). |
+| `CloseTime` / `CloseTimeUtc` | `*timestamppb.Timestamp` | Close time (broker server time / UTC). |
+| `StopLoss`   | `float64`            | Stop Loss price (if set).             |
+| `TakeProfit` | `float64`            | Take Profit price (if set).           |
+| `MagicNumber`| `int32`              | Magic number for programmatic orders. |
 | `Comment`    | `string`             | Custom comment attached to the order. |
-| `Expiration` | `timestamp`          | Expiration time for pending orders.   |
+| `ExpirationTime` | `*timestamppb.Timestamp` | Expiration time for pending orders. |
 
 ---
 
@@ -115,7 +126,8 @@ Printed fields typically include:
 
 * **Pagination:** Use `page` and `itemsPerPage` for large ranges to avoid oversized payloads.
 * **Sorting:** Choose `sortType` based on how you plan to display/export results (by open vs close time).
-* **Time window:** If `from`/`to` are nil, the server may apply defaults; pass both for deterministic results.
+* **Time window:** The window filters by **open** time; `nil` means no bound on that side. The values are read as broker server time.
+* **Paging helper:** `account.OrdersHistoryStream(ctx, sortType, from, to, pageSize)` walks the pages for you ([StreamOrdersHistoryExample](../Streaming/StreamOrdersHistoryExample.md)).
 
 ---
 
@@ -123,7 +135,7 @@ Printed fields typically include:
 
 * **Wide ranges:** Very large windows can be slow/heavy; prefer paged requests.
 * **Broker discrepancies:** History can differ slightly across servers/brokers for the same symbol.
-* **Status vs fills:** This is **order** history; if you need individual fills/deals, use the corresponding deals endpoint.
+* **Orders, not deals:** MT4 has no separate deals; each history order is one closed position or deleted pending order.
 
 ---
 

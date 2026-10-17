@@ -9,7 +9,7 @@
 
 ```go
 // --- Quick use (service wrapper) ---
-// Streams live ticks for default symbols (EURUSD, GBPUSD in demo); stops after ~30s.
+// Streams live ticks for EURUSD and GBPUSD; the demo stops after 3 ticks or 5s without a tick.
 svc.StreamQuotes(ctx)
 
 // --- Low-level (direct account call) ---
@@ -56,6 +56,7 @@ for {
 
 ```go
 func (s *MT4Service) StreamQuotes(ctx context.Context)
+func (a *MT4Account) OnSymbolTick(ctx context.Context, symbols []string) (<-chan *pb.OnSymbolTickData, <-chan error)
 ```
 
 ---
@@ -66,7 +67,7 @@ func (s *MT4Service) StreamQuotes(ctx context.Context)
 | ----- | ----------------- | ------------------------------------------ |
 | `ctx` | `context.Context` | Controls stream lifetime and cancellation. |
 
-> The wrapper uses a predefined symbol list (e.g., `EURUSD`, `GBPUSD`). Adjust as needed.
+> The wrapper uses a fixed symbol list (`EURUSD`, `GBPUSD`). For your own symbols call `account.OnSymbolTick(ctx, symbols)`.
 
 ---
 
@@ -74,12 +75,18 @@ func (s *MT4Service) StreamQuotes(ctx context.Context)
 
 Stream of `*pb.OnSymbolTickData` packets. Each packet may contain `SymbolTick` with:
 
-| Field    | Type        | Description            |
-| -------- | ----------- | ---------------------- |
-| `Symbol` | `string`    | Trading symbol name.   |
-| `Bid`    | `float64`   | Current bid price.     |
-| `Ask`    | `float64`   | Current ask price.     |
-| `Time`   | `timestamp` | UTC time of the quote. |
+| Field     | Type                     | Description                                   |
+| --------- | ------------------------ | --------------------------------------------- |
+| `Symbol`  | `string`                 | Trading symbol name.                          |
+| `Bid`     | `float64`                | Current bid price.                            |
+| `Ask`     | `float64`                | Current ask price.                            |
+| `Last`    | `float64`                | Price of the last deal.                       |
+| `Volume`  | `uint64`                 | Volume for the last price.                    |
+| `Time`    | `*timestamppb.Timestamp` | Time of the tick (broker server time).        |
+| `TimeUtc` | `*timestamppb.Timestamp` | The same moment in UTC.                       |
+| `TimeMsc` / `TimeMscUtc` | `int64`   | Tick time in milliseconds (broker time / UTC). |
+
+The packet also carries `TerminalInstanceGuidId` (the terminal that sent it).
 
 ---
 
@@ -91,7 +98,7 @@ Receive continuous **real-time market data** for selected symbols — ideal for 
 
 ## 🧩 Notes & Tips
 
-* **Per-symbol cache:** Keep a `map[string]Quote]` of last values and update only on change to reduce UI churn.
+* **Per-symbol cache:** Keep a `map[string]*pb.OnSymbolMqlTickInfo` of last values and update only on change to reduce UI churn.
 * **Both channels:** Always consume **data and error** channels to avoid leaks.
 * **Display precision:** Use symbol `Digits` (from `SymbolParams`) for formatting; keep raw doubles for math.
 

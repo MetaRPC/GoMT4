@@ -34,6 +34,7 @@ for _, ticket := range ticketsData.GetTickets() {
 
 ```go
 func (s *MT4Service) ShowOpenedOrderTickets(ctx context.Context)
+func (a *MT4Account) OpenedOrdersTickets(ctx context.Context) (*pb.OpenedOrdersTicketsData, error)
 ```
 
 ---
@@ -53,7 +54,7 @@ Underlying response: `*pb.OpenedOrdersTicketsData`
 
 | Field     | Type       | Description                          |
 | --------- | ---------- | ------------------------------------ |
-| `Tickets` | `[]uint64` | List of ticket IDs for opened orders |
+| `Tickets` | `[]int32`  | List of ticket IDs for opened orders |
 
 ---
 
@@ -69,8 +70,8 @@ Retrieve only **open order IDs** without full details. Useful for:
 
 ## 🧩 Notes & Tips
 
-* **Tickets only:** To inspect volumes, prices, or symbols, follow up with `OpenedOrders` or `HistoryOrderByTicket`.
-* **Uniqueness:** Ticket IDs are unique per account; always treat them as `uint64`.
+* **Tickets only:** To inspect volumes, prices, or symbols, follow up with `OpenedOrders` or `OrderSelect(ctx, ticket)`.
+* **Uniqueness:** Ticket IDs are unique per account; in this API they are `int32`.
 * **Performance:** Ideal for high-frequency polling or lightweight checks.
 
 ---
@@ -78,4 +79,4 @@ Retrieve only **open order IDs** without full details. Useful for:
 ## ⚠️ Pitfalls
 
 * **No orders open:** The API returns an empty slice, not `nil`. Always handle gracefully.
-* **Stale state:** If orders are rapidly opened/closed, snapshot may be outdated in milliseconds. For real-time, use streams if available.
+* **Stale state:** If orders are rapidly opened/closed, snapshot may be outdated in milliseconds. For real-time, use the `OnOpenedOrdersTickets` stream ([StreamOpenedOrderTickets](../Streaming/StreamOpenedOrderTickets.md)).

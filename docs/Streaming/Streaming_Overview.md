@@ -3,6 +3,8 @@
 This section groups together methods for **real-time streaming** from MT4.
 Use them to subscribe to continuous updates: order profits, tickets, quotes, trade events — and now **paged order history** and **chunked quote history**.
 
+The four subscriptions are gRPC server streams (`OnOpenedOrdersProfit`, `OnOpenedOrdersTickets`, `OnSymbolTick`, `OnTrade` on `MT4Account`). The two history "streams" (`OrdersHistoryStream`, `QuoteHistoryStream`, and their `MT4Service` proxies `StreamOrdersHistory`, `StreamQuoteHistory`) are client-side helpers: they page through unary `OrdersHistory` / `QuoteHistory` calls and deliver the results over a channel. All of them return a data channel and an error channel.
+
 ---
 
 ## 📂 Methods in this Section
@@ -31,12 +33,17 @@ Use them to subscribe to continuous updates: order profits, tickets, quotes, tra
 
 ```go
 // Example: subscribe to profit updates and stop when threshold hit
-profitCh, errCh := mt4.OnOpenedOrdersProfit(ctx, 1000)
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+profitCh, errCh := account.OnOpenedOrdersProfit(ctx, 1000)
 
 for {
     select {
-    case pkt := <-profitCh:
-        for _, info := range pkt.OpenedOrdersWithProfitUpdated {
+    case pkt, ok := <-profitCh:
+        if !ok {
+            return
+        }
+        for _, info := range pkt.GetOpenedOrdersWithProfitUpdated() {
             if info.OrderProfit < -100 { // your risk threshold
                 fmt.Println("⚠️ Drawdown alert!", info.Ticket)
                 cancel() // stop the stream
@@ -55,7 +62,7 @@ pagesCh, errCh := svc.StreamOrdersHistory(
     ctx,
     pb.EnumOrderHistorySortType_HISTORY_SORT_BY_CLOSE_TIME_DESC,
     &from, &to,
-    200, // page size
+    200 /* page size */,
 )
 
 for {
@@ -80,7 +87,7 @@ barsCh, errCh := svc.StreamQuoteHistory(
     "EURUSD",
     pb.ENUM_QUOTE_HISTORY_TIMEFRAME_QH_PERIOD_H1,
     from, to,
-    7*24*time.Hour, // weekly chunks
+    7*24*time.Hour /* weekly chunks */,
 )
 
 for {
@@ -105,9 +112,9 @@ for {
 ## ✅ Best Practices
 
 1. Always manage **cancellation** via `context.Context` to avoid goroutine leaks.
-2. Pick sensible **polling intervals** (e.g., `intervalMs`) to balance freshness vs. load.
+2. Pick sensible **intervals** (`intervalMs` of `OnOpenedOrdersProfit` / `OnOpenedOrdersTickets`) to balance freshness vs. load.
 3. Combine multiple streams for dashboards (e.g., trades + quotes + profits).
-4. Always read from the **error channel**; log and exit/cancel on terminal failures.
+4. Always read from the **error channel**; the client already retried transient errors, so an error there is final — log and exit/cancel (or reopen the stream).
 5. For **orders history**, tune **page size** to your throughput (larger pages ⇒ fewer RPCs).
 6. For **quote history**, adjust **chunk duration** to timeframe and volume (bigger chunks ⇒ fewer round-trips).
 7. Keep print/formatting light in the stream loop; offload heavy processing to workers.

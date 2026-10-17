@@ -8,8 +8,8 @@
 ### Code Example
 
 ```go
-// Quick use: prints orders from the last 30 days in pages (size=200)
-// sorted by close time (DESC). Demo loop times out after ~30s.
+// Quick use: prints orders opened in the last 30 days in pages (size=200)
+// sorted by close time (DESC). The demo loop stops after 3s without a page.
 svc.StreamOrdersHistoryExample(ctx)
 ```
 
@@ -27,9 +27,9 @@ func (s *MT4Service) StreamOrdersHistoryExample(ctx context.Context)
 * Date range: `from = now - 30 days`, `to = now`
 * Sort: `HISTORY_SORT_BY_CLOSE_TIME_DESC`
 * Page size: `200`
-* Demo timeout: \~30 seconds (select-case exit)
+* Demo timeout: 3 seconds without a new page (select-case exit)
 
-Under the hood, it calls the service API:
+Under the hood, it calls the service API, which proxies `MT4Account.OrdersHistoryStream`:
 
 ```go
 func (s *MT4Service) StreamOrdersHistory(
@@ -69,26 +69,28 @@ Sample line format:
 [HIST] <OrderType> | Ticket: <id> | <Symbol> | PnL: <profit>
 ```
 
-> Need more detail (open/close prices, times, lots, commission, etc.)? Use the low-level `StreamOrdersHistory` and print the extra fields you need. The proto model exposes them on each order.
+> Need more detail (open/close prices, times, lots, commission, etc.)? Use `StreamOrdersHistory` (or `account.OrdersHistoryStream`) and print the extra fields you need from each `*pb.HistoryOrderInfo`.
+
+How the paging works: `OrdersHistoryStream` calls `OrdersHistory` with page 1, 2, 3, … (`itemsPerPage = pageSize`) and sends each page to the channel; it stops and closes both channels at the first empty page or on an error. `from`/`to` filter by order **open** time and are read as broker server time.
 
 ---
 
 ## ENUM: `pb.EnumOrderHistorySortType`
 
-Common values (check your generated `pb` for exact names):
+Values (Go constants `pb.EnumOrderHistorySortType_<value>`):
 
-* `HISTORY_SORT_BY_CLOSE_TIME_DESC`
-* `HISTORY_SORT_BY_CLOSE_TIME_ASC`
-* (others may exist depending on your schema)
+* `HISTORY_SORT_BY_OPEN_TIME_ASC`, `HISTORY_SORT_BY_OPEN_TIME_DESC`
+* `HISTORY_SORT_BY_CLOSE_TIME_ASC`, `HISTORY_SORT_BY_CLOSE_TIME_DESC`
+* `HISTORY_SORT_BY_ORDER_TICKET_ID_ASC`, `HISTORY_SORT_BY_ORDER_TICKET_ID_DESC`
 
-**Order type enum:** depends on your `pb` (e.g., `ORDER_TYPE_BUY`, `ORDER_TYPE_SELL`, `ORDER_TYPE_BUY_LIMIT`, `ORDER_TYPE_SELL_LIMIT`, `ORDER_TYPE_BUY_STOP`, `ORDER_TYPE_SELL_STOP`).
+**Order type enum:** `pb.OpenedOrderType` (`OpenedOrderType_OO_OP_BUY`, `_OO_OP_SELL`, `_OO_OP_BUYLIMIT`, `_OO_OP_SELLLIMIT`, `_OO_OP_BUYSTOP`, `_OO_OP_SELLSTOP`).
 
 ---
 
 ## 🧩 Notes & Tips
 
-* **Connection required:** Ensure you have called `ConnectByServerName`/`ConnectByHostPort` successfully; otherwise the underlying stream will fail fast.
-* **Auto-reconnect:** The stream layer retries on transient `gRPC`/API errors with backoff + jitter.
+* **Connection required:** Ensure you have called `ConnectByServerName`/`ConnectByHostPort` successfully; otherwise the first page request fails and the error arrives on `errCh`.
+* **Auto-reconnect:** Each page request is a unary `OrdersHistory` call that retries on transient gRPC errors and terminal-not-found errors with backoff + jitter.
 * **Customization:** For production, prefer `StreamOrdersHistory` (service API) and pass your own `from/to`, sorting, and `pageSize`.
 * **Throughput:** If you process heavy pages, do it in a worker to avoid blocking the reader loop.
 

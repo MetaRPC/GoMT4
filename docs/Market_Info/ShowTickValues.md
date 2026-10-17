@@ -42,6 +42,7 @@ for _, info := range data.Infos {
 
 ```go
 func (s *MT4Service) ShowTickValues(ctx context.Context, symbols []string)
+func (a *MT4Account) TickValueWithSize(ctx context.Context, symbolNames []string) (*pb.TickValueWithSizeData, error)
 ```
 
 ---
@@ -61,12 +62,13 @@ Returns `*pb.TickValueWithSizeData` containing:
 
 | Field   | Type                                | Description                   |
 | ------- | ----------------------------------- | ----------------------------- |
-| `Infos` | `[]*pb.TickValueWithSizeSymbolInfo` | Tick-related info per symbol. |
+| `Infos` | `[]*pb.SymbolTickValueWithSizeInfo` | Tick-related info per symbol. |
 
-Each `*pb.TickValueWithSizeSymbolInfo` includes:
+Each `*pb.SymbolTickValueWithSizeInfo` includes:
 
 | Field               | Type      | Description                                |
 | ------------------- | --------- | ------------------------------------------ |
+| `Index`             | `int32`   | Index of the entry.                        |
 | `SymbolName`        | `string`  | Trading symbol (e.g., "EURUSD").           |
 | `TradeTickValue`    | `float64` | Value of one tick in account currency.     |
 | `TradeTickSize`     | `float64` | Smallest possible price movement.          |
@@ -94,6 +96,6 @@ Access **core trading calculations** such as:
 
 ## ⚠️ Pitfalls
 
-* **Empty input:** The API requires at least one symbol — calling with an empty slice returns an error.
+* **Empty input:** At least one symbol is required — with an empty slice the client returns `no symbols provided` without calling the server.
 * **Mixed asset classes:** Contract sizes differ across FX, metals, indices — don’t assume `100000` universally.
 * **Precision:** Use appropriate formatting; keep raw floats for calculations.
