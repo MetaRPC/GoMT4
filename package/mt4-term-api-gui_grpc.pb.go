@@ -22,6 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GuiClient interface {
+	DemoFindCompanies(ctx context.Context, in *GuiDemoFindCompaniesRequest, opts ...grpc.CallOption) (*GuiDemoFindCompaniesReply, error)
+	DemoServersAndTypes(ctx context.Context, in *GuiDemoServersAndTypesRequest, opts ...grpc.CallOption) (*GuiDemoServersAndTypesReply, error)
 	DemoOpenAccount(ctx context.Context, in *GuiDemoOpenAccountRequest, opts ...grpc.CallOption) (*GuiDemoOpenAccountReply, error)
 	DemoOpenAccountInteractive(ctx context.Context, opts ...grpc.CallOption) (Gui_DemoOpenAccountInteractiveClient, error)
 }
@@ -32,6 +34,24 @@ type guiClient struct {
 
 func NewGuiClient(cc grpc.ClientConnInterface) GuiClient {
 	return &guiClient{cc}
+}
+
+func (c *guiClient) DemoFindCompanies(ctx context.Context, in *GuiDemoFindCompaniesRequest, opts ...grpc.CallOption) (*GuiDemoFindCompaniesReply, error) {
+	out := new(GuiDemoFindCompaniesReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Gui/DemoFindCompanies", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *guiClient) DemoServersAndTypes(ctx context.Context, in *GuiDemoServersAndTypesRequest, opts ...grpc.CallOption) (*GuiDemoServersAndTypesReply, error) {
+	out := new(GuiDemoServersAndTypesReply)
+	err := c.cc.Invoke(ctx, "/mt4_term_api.Gui/DemoServersAndTypes", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *guiClient) DemoOpenAccount(ctx context.Context, in *GuiDemoOpenAccountRequest, opts ...grpc.CallOption) (*GuiDemoOpenAccountReply, error) {
@@ -78,6 +98,8 @@ func (x *guiDemoOpenAccountInteractiveClient) Recv() (*GuiDemoInteractiveServerM
 // All implementations should embed UnimplementedGuiServer
 // for forward compatibility
 type GuiServer interface {
+	DemoFindCompanies(context.Context, *GuiDemoFindCompaniesRequest) (*GuiDemoFindCompaniesReply, error)
+	DemoServersAndTypes(context.Context, *GuiDemoServersAndTypesRequest) (*GuiDemoServersAndTypesReply, error)
 	DemoOpenAccount(context.Context, *GuiDemoOpenAccountRequest) (*GuiDemoOpenAccountReply, error)
 	DemoOpenAccountInteractive(Gui_DemoOpenAccountInteractiveServer) error
 }
@@ -86,6 +108,12 @@ type GuiServer interface {
 type UnimplementedGuiServer struct {
 }
 
+func (UnimplementedGuiServer) DemoFindCompanies(context.Context, *GuiDemoFindCompaniesRequest) (*GuiDemoFindCompaniesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DemoFindCompanies not implemented")
+}
+func (UnimplementedGuiServer) DemoServersAndTypes(context.Context, *GuiDemoServersAndTypesRequest) (*GuiDemoServersAndTypesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DemoServersAndTypes not implemented")
+}
 func (UnimplementedGuiServer) DemoOpenAccount(context.Context, *GuiDemoOpenAccountRequest) (*GuiDemoOpenAccountReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DemoOpenAccount not implemented")
 }
@@ -102,6 +130,42 @@ type UnsafeGuiServer interface {
 
 func RegisterGuiServer(s grpc.ServiceRegistrar, srv GuiServer) {
 	s.RegisterService(&Gui_ServiceDesc, srv)
+}
+
+func _Gui_DemoFindCompanies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuiDemoFindCompaniesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuiServer).DemoFindCompanies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Gui/DemoFindCompanies",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuiServer).DemoFindCompanies(ctx, req.(*GuiDemoFindCompaniesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gui_DemoServersAndTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GuiDemoServersAndTypesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GuiServer).DemoServersAndTypes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mt4_term_api.Gui/DemoServersAndTypes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GuiServer).DemoServersAndTypes(ctx, req.(*GuiDemoServersAndTypesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Gui_DemoOpenAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -155,6 +219,14 @@ var Gui_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "mt4_term_api.Gui",
 	HandlerType: (*GuiServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DemoFindCompanies",
+			Handler:    _Gui_DemoFindCompanies_Handler,
+		},
+		{
+			MethodName: "DemoServersAndTypes",
+			Handler:    _Gui_DemoServersAndTypes_Handler,
+		},
 		{
 			MethodName: "DemoOpenAccount",
 			Handler:    _Gui_DemoOpenAccount_Handler,
