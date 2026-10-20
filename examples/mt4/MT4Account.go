@@ -30,6 +30,9 @@ const (
 	backoffMax  = 5 * time.Second        // cap for backoff
 	jitterRange = 200 * time.Millisecond // +/- jitter range
 	maxRetries  = 10                     // attempts before giving up
+	// healthCheckTimeout bounds the AccountSummary probe issued right after Connect/ConnectEx.
+	// A freshly started terminal can take several seconds to answer its first request.
+	healthCheckTimeout = 15 * time.Second
 )
 
 func init() {
@@ -102,6 +105,9 @@ type MT4Account struct {
 	Id                   uuid.UUID
 	TerminalInstanceGuid string
 	ApiKey               string
+	// Name is an optional terminal label (creator identifier) sent with Connect/ConnectEx.
+	// Visible in the gateway's Accounts listing; set it before connecting.
+	Name string
 }
 
 // ParseGuidSafe parses a GUID string into uuid.UUID safely, stripping mt5_live_ or mt4_live_ prefix if present.
@@ -315,6 +321,9 @@ func (a *MT4Account) ConnectByHostPort(
 		Port:           int32(port),
 		TimeoutSeconds: &timeoutSec,
 	}
+	if a.Name != "" {
+		req.Name = proto.String(a.Name)
+	}
 
 	// Call
 	md := a.getHeaders()
@@ -341,10 +350,9 @@ func (a *MT4Account) ConnectByHostPort(
 
 	// --- Health-check: ensure terminal is really ready
 	{
-		hctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		hctx, cancel := context.WithTimeout(ctx, healthCheckTimeout)
 		defer cancel()
 		if _, err := a.AccountSummary(hctx); err != nil {
-			_ = a.Disconnect()
 			return fmt.Errorf("health-check (AccountSummary) failed after ConnectByHostPort: %w", err)
 		}
 	}
@@ -372,6 +380,9 @@ func (a *MT4Account) ConnectByServerName(
 		MtClusterName:  serverName,
 		TimeoutSeconds: &timeoutSec,
 	}
+	if a.Name != "" {
+		req.Name = proto.String(a.Name)
+	}
 
 	md := a.getHeaders()
 	ctx = metadata.NewOutgoingContext(ctx, md)
@@ -395,10 +406,9 @@ func (a *MT4Account) ConnectByServerName(
 
 	// --- Health-check: ensure terminal is really ready
 	{
-		hctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		hctx, cancel := context.WithTimeout(ctx, healthCheckTimeout)
 		defer cancel()
 		if _, err := a.AccountSummary(hctx); err != nil {
-			_ = a.Disconnect()
 			return fmt.Errorf("health-check (AccountSummary) failed after ConnectByServerName: %w", err)
 		}
 	}
@@ -1620,6 +1630,39 @@ func (a *MT4Account) ShowAllSymbols(ctx context.Context) (*pb.SymbolsData, error
 	}
 
 	return reply.GetData(), nil
+}
+
+// SymbolSelect adds (selected=true) or removes (selected=false) a symbol in the terminal's
+// Market Watch. A symbol must be selected before Quote/OnSymbolTick/OrderSend will work for
+// it on most brokers. Returns the terminal's success flag.
+func (a *MT4Account) SymbolSelect(ctx context.Context, symbol string, selected bool) (bool, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+	}
+	if !a.isConnected() {
+		return false, errors.New("not connected")
+	}
+	if err := a.ensureMarketInfoClient(); err != nil {
+		return false, err
+	}
+	req := &pb.SymbolSelectRequest{Symbol: symbol, Select: selected}
+	grpcCall := func(headers metadata.MD) (*pb.SymbolSelectReply, error) {
+		c := metadata.NewOutgoingContext(ctx, headers)
+		return a.MarketInfoClient.SymbolSelect(c, req)
+	}
+	errorSelector := func(reply *pb.SymbolSelectReply) *pb.Error {
+		return reply.GetError()
+	}
+	reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	if err != nil {
+		return false, err
+	}
+	return reply.GetData().GetSuccess(), nil
 }
 
 // SymbolParams retrieves detailed trading parameters for a single symbol.
