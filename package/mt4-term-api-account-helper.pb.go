@@ -590,7 +590,8 @@ type AccountSummaryData struct {
 	AccountCredit float64                `protobuf:"fixed64,10,opt,name=account_credit,json=accountCredit,proto3" json:"account_credit,omitempty"`
 	IsInvestor    bool                   `protobuf:"varint,11,opt,name=is_investor,json=isInvestor,proto3" json:"is_investor,omitempty"`
 	// The broker server's offset from UTC in whole minutes (server_utc_offset_seconds / 60), a multiple of 15. Information,
-	// never converted. 0 while the account is not connected yet.
+	// never converted. While the account is not connected the Terminal Manager answers its last data from while it was
+	// connected, or ACCOUNT_NOT_CONNECTED when it has never been connected.
 	UtcServerTimeShiftMinutes int32 `protobuf:"varint,12,opt,name=utc_server_time_shift_minutes,json=utcServerTimeShiftMinutes,proto3" json:"utc_server_time_shift_minutes,omitempty"`
 	// The broker server's offset from UTC in seconds, positive = ahead of UTC: validated by the terminal (a multiple of 15 minutes).
 	// Information, never converted; it is the offset behind every *_utc field of this API. ABSENT (has_server_utc_offset_seconds is false)
