@@ -83,6 +83,9 @@ type AdminApiClient interface {
 	// records any stop intent). cause is a StopCause name; only customer/API/admin/delete/test stops and
 	// InternalReap are accepted. Callers must check reply.error.
 	StopTerminalLocal(ctx context.Context, in *StopTerminalLocalRequest, opts ...grpc.CallOption) (*StopTerminalLocalReply, error)
+	// Grants or revokes the dedicated-IP add-on entitlement for ONE terminal (see the mt5 admin proto for the canonical
+	// definition; this copy exists for the mt4 client libs). ADMIN_KEY required.
+	SetDedicatedIpEntitlement(ctx context.Context, in *SetDedicatedIpEntitlementRequest, opts ...grpc.CallOption) (*SetDedicatedIpEntitlementReply, error)
 }
 
 type adminApiClient struct {
@@ -246,6 +249,15 @@ func (c *adminApiClient) StopTerminalLocal(ctx context.Context, in *StopTerminal
 	return out, nil
 }
 
+func (c *adminApiClient) SetDedicatedIpEntitlement(ctx context.Context, in *SetDedicatedIpEntitlementRequest, opts ...grpc.CallOption) (*SetDedicatedIpEntitlementReply, error) {
+	out := new(SetDedicatedIpEntitlementReply)
+	err := c.cc.Invoke(ctx, "/mrpc_admin.AdminApi/SetDedicatedIpEntitlement", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminApiServer is the server API for AdminApi service.
 // All implementations should embed UnimplementedAdminApiServer
 // for forward compatibility
@@ -311,6 +323,9 @@ type AdminApiServer interface {
 	// records any stop intent). cause is a StopCause name; only customer/API/admin/delete/test stops and
 	// InternalReap are accepted. Callers must check reply.error.
 	StopTerminalLocal(context.Context, *StopTerminalLocalRequest) (*StopTerminalLocalReply, error)
+	// Grants or revokes the dedicated-IP add-on entitlement for ONE terminal (see the mt5 admin proto for the canonical
+	// definition; this copy exists for the mt4 client libs). ADMIN_KEY required.
+	SetDedicatedIpEntitlement(context.Context, *SetDedicatedIpEntitlementRequest) (*SetDedicatedIpEntitlementReply, error)
 }
 
 // UnimplementedAdminApiServer should be embedded to have forward compatible implementations.
@@ -367,6 +382,9 @@ func (UnimplementedAdminApiServer) Drain(context.Context, *DrainRequest) (*Drain
 }
 func (UnimplementedAdminApiServer) StopTerminalLocal(context.Context, *StopTerminalLocalRequest) (*StopTerminalLocalReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopTerminalLocal not implemented")
+}
+func (UnimplementedAdminApiServer) SetDedicatedIpEntitlement(context.Context, *SetDedicatedIpEntitlementRequest) (*SetDedicatedIpEntitlementReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetDedicatedIpEntitlement not implemented")
 }
 
 // UnsafeAdminApiServer may be embedded to opt out of forward compatibility for this service.
@@ -686,6 +704,24 @@ func _AdminApi_StopTerminalLocal_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminApi_SetDedicatedIpEntitlement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetDedicatedIpEntitlementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminApiServer).SetDedicatedIpEntitlement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/mrpc_admin.AdminApi/SetDedicatedIpEntitlement",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminApiServer).SetDedicatedIpEntitlement(ctx, req.(*SetDedicatedIpEntitlementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminApi_ServiceDesc is the grpc.ServiceDesc for AdminApi service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -760,6 +796,10 @@ var AdminApi_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopTerminalLocal",
 			Handler:    _AdminApi_StopTerminalLocal_Handler,
+		},
+		{
+			MethodName: "SetDedicatedIpEntitlement",
+			Handler:    _AdminApi_SetDedicatedIpEntitlement_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
