@@ -1,3 +1,7 @@
+---
+description: "Build MT4 integrations with the MetaRPC Go SDK. Find setup instructions, account and market data examples, trading methods, streaming, and error handling."
+---
+
 # GoMT4 The documentary BASE
 
 <div class="grid cards" markdown>

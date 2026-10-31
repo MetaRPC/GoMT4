@@ -1,3 +1,7 @@
+---
+description: "Understand MT4 and GoMT4 terminology: symbols, lots, order tickets, stop loss, take profit, margin, equity, quotes, and the account fields used in API examples."
+---
+
 # 📖 Glossary (MT4 Terms)
 
 A quick reference for common MT4/GoMT4 terms used throughout the docs and code.

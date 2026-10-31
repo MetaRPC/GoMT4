@@ -1,3 +1,7 @@
+---
+description: "MetaRPC GoMT4 documentation entry point. Open the Go SDK guide for MT4 cloud connections, account data, trading examples, and API troubleshooting."
+---
+
 <!-- Auto-redirect to the actual home page -->
 <meta http-equiv="refresh" content="0; url=GoMT4_Documentation_Skeleton/">
 

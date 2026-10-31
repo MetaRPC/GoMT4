@@ -1,3 +1,7 @@
+---
+description: "Read MT4 symbol parameters with Go: price digits, point size, minimum and maximum lots, volume steps, and stop levels. Use broker rules to validate requests."
+---
+
 # 🧩 SymbolParams (GoMT4)
 
 **Goal:** read **symbol parameters** (Digits, Point, VolumeStep, Min/Max volume, Stops/Freeze levels, etc.) and use them for rounding & validations.

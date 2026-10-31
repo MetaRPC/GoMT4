@@ -1,3 +1,7 @@
+---
+description: "Run your first MetaRPC MT4 Go example. Configure your API key and demo account, connect to the cloud terminal, and begin with read-only account and market requests."
+---
+
 # 🚦 Beginner Run Guide for GoMT4
 
 This guide is based on `examples/main.go`. Code is already wired; just enter your credentials and API key in `examples/config/config.json` and keep (or comment out) the calls you want to run.

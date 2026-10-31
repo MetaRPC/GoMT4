@@ -1,3 +1,7 @@
+---
+description: "Protect MT4 credentials and MetaRPC API keys in Go applications. Understand TLS transport, configuration files, environment variables, and safe log redaction."
+---
+
 # 🔐 Security & Secrets (GoMT4)
 
 This page explains **how to handle credentials and protect your setup** based on the current GoMT4 codebase (your Go program → gRPC over TLS → MetaRPC cloud API at `mt4.mrpc.pro:443` → MT4 terminal managed by MetaRPC).
