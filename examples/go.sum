@@ -1,5 +1,3 @@
-git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go v0.0.0-20250801133633-34bb1da6e4e5 h1:zS6qtFBcPq0mrdRdWKVcFN0/tlqiAtrGv8plwUXJqGc=
-git.mtapi.io/root/mrpc-proto.git/mt4/libraries/go v0.0.0-20250801133633-34bb1da6e4e5/go.mod h1:EIMNlFssHNEcyIAF1fQOjiJPATkuLCFbflrLA7EO3zw=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
 github.com/go-logr/logr v1.4.3/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-logr/stdr v1.2.2 h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=
