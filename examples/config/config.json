@@ -1,7 +1,7 @@
 {
-  "Login": 0,
-  "Password": "",
-  "Server": "MetaQuotes-Demo",
+  "Login": 1235959737,
+  "Password": "c0efych",
+  "Server": "EGlobal-Demo",
   "DefaultSymbol": "EURUSD",
   "ApiKey": "TRIAL"
 }
