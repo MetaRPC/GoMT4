@@ -12,6 +12,10 @@
 ## 📦 Installation
 
 ```bash
+# the SDK (MT4Account / MT4Service / MT4Sugar); pulls the generated protobuf package too
+go get github.com/MetaRPC/GoMT4/mt4
+
+# (the generated protobuf types live in a sibling module)
 go get github.com/MetaRPC/GoMT4/package
 ```
 
@@ -52,7 +56,7 @@ Connecting to MetaRPC production endpoints (`mt4.mrpc.pro:443`) requires an API 
 ## 🆔 Automatic Account ID & Authentication
 
 MetaRPC endpoints route calls using a terminal session identifier (`id`):
-- When connecting via `Connect` / `ConnectEx`, the server automatically generates and returns a session GUID (`terminalInstanceGuid`).
+- When connecting via `ConnectByServerName` / `ConnectByHostPort` (which issue the `ConnectEx` RPC under the hood), the server automatically generates and returns a session GUID (`terminalInstanceGuid`).
 - The SDK automatically captures this session ID and attaches both the `id` and `APIKey` headers on all subsequent calls (`AccountSummary`, `OrderSend`, streaming, etc.) — no manual `GetId` or `curl` calls required.
 - Pass your API key directly to the Account/Client constructor or via the `MRPC_API_KEY` environment variable.
 

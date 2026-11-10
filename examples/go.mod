@@ -3,6 +3,7 @@ module github.com/MetaRPC/GoMT4/examples
 go 1.23.6
 
 require (
+	github.com/MetaRPC/GoMT4/mt4 v0.0.0
 	github.com/MetaRPC/GoMT4/package v0.0.0
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.74.2
@@ -18,3 +19,5 @@ require (
 )
 
 replace github.com/MetaRPC/GoMT4/package => ../package
+
+replace github.com/MetaRPC/GoMT4/mt4 => ../mt4

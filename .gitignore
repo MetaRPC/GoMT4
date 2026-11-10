@@ -365,3 +365,6 @@ FodyWeavers.xsd
 /.vscode/
 
 site/
+
+# Built example binaries
+*.exe

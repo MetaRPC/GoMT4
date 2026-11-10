@@ -8,11 +8,17 @@
 
 **GoMT4** is a Go client for **MetaTrader 4** accounts through the **MetaRPC** cloud API. Your program talks gRPC over TLS to `mt4.mrpc.pro:443`; MetaRPC runs and manages an MT4 terminal logged in to your account. You do not install MetaTrader or run any server yourself.
 
-### 🌟 What you get
-- 📦 **Generated API package** `github.com/MetaRPC/GoMT4/package` (`pb`): all messages, enums and gRPC clients.
-- 🧩 **Client** in the repository's examples (`examples/mt4`): `MT4Account` (one typed Go method per call: account, quotes, symbols, orders, history, streams) and `MT4Service` (demo methods that print results).
-- 🔄 **Retries built in**: unary calls and streams retry transient errors with exponential backoff and jitter.
-- ▶️ **Runnable example** `examples/main.go` with a JSON config.
+### Three-layer architecture
+
+The SDK (`github.com/MetaRPC/GoMT4/mt4`) is built in three stacked layers — enter at whichever level you need:
+
+| Layer | Type | What you get |
+|-------|------|--------------|
+| [`MT4Account`](../MT4Account/Overview.md) | low | Raw gRPC — build `…Request`, get `(*…Data, error)`. Full control. |
+| [`MT4Service`](../MT4Service/Overview.md) | mid | Clean returns (unwrapped slices/scalars), simpler args. |
+| [`MT4Sugar`](../MT4Sugar/Overview.md) | high | One-liners: buy/sell by side, pip math, risk sizing, trailing, watchers. |
+
+Also in the box: the **generated API package** `github.com/MetaRPC/GoMT4/package` (`pb`) with every message, enum and gRPC client; **built-in retries** (transient errors retry with backoff + jitter); and **runnable examples** under `examples/`, grouped by layer and launched from an interactive menu.
 
 ---
 
@@ -24,12 +30,12 @@ The generated API package can be fetched with Go:
 go get github.com/MetaRPC/GoMT4/package
 ```
 
-The `MT4Account` / `MT4Service` client is part of the examples module and is used from a clone:
+The three-layer SDK lives in the `mt4` module; the quickest way to see it work is to run the examples from a clone:
 
 ```bash
 git clone https://github.com/MetaRPC/GoMT4.git
 cd GoMT4/examples
-go run .
+go run .            # interactive menu of grouped examples
 ```
 
 ---
@@ -67,7 +73,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/MetaRPC/GoMT4/examples/mt4"
+	"github.com/MetaRPC/GoMT4/mt4"
 	"github.com/google/uuid"
 )
 
@@ -82,7 +88,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Disconnect()
+	defer client.Disconnect(true)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -104,9 +110,8 @@ func main() {
 
 To get the most out of GoMT4, follow this suggested reading order:
 
-1. 🚀 **[Your First Project](Your_First_Project.md)** - Build and run a working project in 10 minutes (generated clients only).
-2. 🚦 **[Beginner Run Guide](../Beginner_Run_Guide.md)** - Run the example app from a clone.
-3. 🗺️ **[Architecture & Data Flow](../Architecture_DataFlow.md)** - How the client, the MetaRPC API and the terminal fit together.
-4. 📖 **[Glossary](../Glossary.md)** - Essential MetaTrader 4 terminology.
-5. 📡 **[Streaming](../Streaming/Streaming_Overview.md)** - Subscribe to ticks, trades, and position updates.
-6. 📊 **[API Reference](../API%20Reference/Overview.md)** - Messages, enums and error codes.
+1.  **[Your First Project](Your_First_Project.md)** - Build and run a working project in 10 minutes.
+2.  **[Project Map](PROJECT_MAP.md)** - How the client, the MetaRPC API and the terminal fit together.
+3.  **[Glossary](GLOSSARY.md)** - Essential MetaTrader 4 terminology.
+4.  **API Reference** - [MT4Account](../MT4Account/Overview.md) · [MT4Service](../MT4Service/Overview.md) · [MT4Sugar](../MT4Sugar/Overview.md).
+5.  **[Protobuf Inspector](PROTOBUF_INSPECTOR_GUIDE.md)** - Explore every type, field and enum offline.

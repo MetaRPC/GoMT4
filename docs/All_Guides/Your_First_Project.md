@@ -1,122 +1,104 @@
-# Your First Project in 10 Minutes (Go)
+# Your First Project in 10 Minutes
 
-> **Hands-on Quick Start** - Create a working trading project with MetaTrader 4 and GoMT4 from scratch.
-
----
-
-## Step 0: Obtain Your API Key
-
-To connect to MetaRPC endpoints (`mt4.mrpc.pro:443`), obtain your API key:
-1. Register for free at [https://mrpc.pro/signup](https://mrpc.pro/signup).
-2. Generate your API token in your dashboard at [https://mrpc.pro/my](https://mrpc.pro/my).
-3. Set your token in your environment or connection config.
+> **Hands-on quick start** — connect to MetaTrader 4 and place a demo order with GoMT4, from scratch.
 
 ---
 
-## Step 1: Create Your Project
+## Step 0 — API key
 
-Create a new directory for your trading bot:
+Connecting to `mt4.mrpc.pro:443` needs a key:
+
+1. Register (free): [https://mrpc.pro/signup](https://mrpc.pro/signup).
+2. Generate a token: [https://mrpc.pro/my](https://mrpc.pro/my).
+3. Export it: `set MRPC_API_KEY=...` (Windows) / `export MRPC_API_KEY=...` (bash).
+
+---
+
+## Step 1 — Get the SDK
 
 ```bash
-mkdir my_gomt4_bot
-cd my_gomt4_bot
-go mod init my_gomt4_bot
+git clone https://github.com/MetaRPC/GoMT4.git
+cd GoMT4
 ```
 
-Install the package:
-
-```bash
-go get github.com/MetaRPC/GoMT4/package
-```
+It's a Go workspace (`go.work`) of three modules — the generated `package`, the `mt4` SDK, and the runnable `examples`. The fastest path is to run an example.
 
 ---
 
-## Step 2: Write Your Trading Code
+## Step 2 — The code
 
-Create `main.go`:
+The three-layer client. `MT4Sugar` gives you the shortest path to a trade:
 
 ```go
 package main
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
-	pb "github.com/MetaRPC/GoMT4/package"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
+	"github.com/MetaRPC/GoMT4/mt4"
+	"github.com/google/uuid"
 )
 
 func main() {
-	login, _ := strconv.ParseUint(os.Getenv("MT4_LOGIN"), 10, 64)
-	password := os.Getenv("MT4_PASSWORD")
-	server := os.Getenv("MT4_SERVER") // the broker server name as shown in MetaTrader, e.g. "TeleTrade-Demo"
-	apiKey := os.Getenv("MRPC_API_KEY")
-	grpcServer := os.Getenv("MRPC_GRPC_HOST")
-	if grpcServer == "" {
-		grpcServer = "mt4.mrpc.pro:443"
-	}
-
-	conn, err := grpc.NewClient(grpcServer, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+	// "" = default endpoint mt4.mrpc.pro:443; uuid.Nil = deterministic id from login+password
+	acc, err := mt4.NewMT4Account(12_345_678, "password", "", uuid.Nil, "your-api-key")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer acc.Disconnect(true)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	defer cancel()
+	ctx := context.Background()
+	// login done at construction; connect the terminal by broker server name
+	if err := acc.ConnectByServerName(ctx, "MetaQuotes-Demo", "EURUSD", true, 30); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Connected to MT4!")
 
-	// Connect: every call carries the API key; after connecting, also the terminal id ConnectEx returns.
-	timeout := uint32(120)
-	reply, err := pb.NewConnectionClient(conn).ConnectEx(metadata.AppendToOutgoingContext(ctx, "apikey", apiKey),
-		&pb.ConnectExRequest{User: login, Password: password, MtClusterName: server, TimeoutSeconds: &timeout})
+	// magic, slippage (points), comment stamped on order-entry helpers
+	sugar := mt4.NewMT4Sugar(mt4.NewMT4Service(acc)).SetDefaults(1001, 20, "my-first-bot")
+
+	a, _ := sugar.GetAccountInfo(ctx)
+	fmt.Printf("Balance: %.2f %s\n", a.GetAccountBalance(), a.GetAccountCurrency())
+
+	// make sure the symbol is live, then buy 0.01 lot at market
+	if _, err := sugar.EnsureSymbol(ctx, "EURUSD", 10*time.Second); err != nil {
+		log.Fatal(err)
+	}
+	r, err := sugar.BuyMarket(ctx, "EURUSD", 0.01, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if reply.GetError() != nil {
-		log.Fatal(reply.GetError().GetErrorMessage())
-	}
-	ctx = metadata.AppendToOutgoingContext(ctx, "apikey", apiKey, "id", reply.GetData().GetTerminalInstanceGuid())
-	defer pb.NewConnectionClient(conn).Disconnect(ctx, &pb.DisconnectRequest{})
+	fmt.Printf("Order sent! Ticket #%d @ %.5f\n", r.GetTicket(), r.GetPrice())
 
-	summary, err := pb.NewAccountHelperClient(conn).AccountSummary(ctx, &pb.AccountSummaryRequest{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Balance: %.2f, Equity: %.2f %s\n", summary.GetData().GetAccountBalance(), summary.GetData().GetAccountEquity(), summary.GetData().GetAccountCurrency())
+	// 20-pip stop, 40-pip target (direction-aware, by pips from entry)
+	sl, tp := 20.0, 40.0
+	_ = sugar.ModifySLTPByPips(ctx, r.GetTicket(), &sl, &tp)
 }
 ```
 
-The program calls the generated gRPC clients of `github.com/MetaRPC/GoMT4/package` directly: every call carries your API key, and after
-`ConnectEx` also the terminal id it returns.
+> **Demo accounts only** while you learn — `BuyMarket` sends a real order on whatever account you connect.
 
 ---
 
-## Step 3: Run the Program
+## Step 3 — Run the bundled examples
+
+The repo ships the same flow (and much more) as a runnable app:
 
 ```bash
-export MRPC_API_KEY=your-api-key
-export MT4_LOGIN=12345678
-export MT4_PASSWORD=your-password
-export MT4_SERVER=TeleTrade-Demo
-go run .
+cd examples
+go run .            # interactive menu of grouped examples
 ```
 
-```
-Balance: 10000.00, Equity: 10000.00 USD
-```
+Pick `31` for the MT4Sugar basics, `11` for low-level account info, and so on. Credentials come from `examples/config/config.json` (or the `MRPC_API_KEY` env var) — see the [config loader](PROJECT_MAP.md). Trading demos are off by default; enable them (demo only!) with `MT4_ENABLE_TRADING=1`.
 
 ---
 
-## 🚀 Next Steps
+## 🚀 Next steps
 
-Congratulations! You have successfully established a direct gRPC connection to MetaTrader 4. Next:
-- Explore **[Streaming](../Streaming/Streaming_Overview.md)** to listen to live ticks.
-- Check the **[API Reference](../API%20Reference/Overview.md)** for the messages and enums of `github.com/MetaRPC/GoMT4/package`.
-- Run the full example app with the `MT4Account` / `MT4Service` client from a clone of the repository: **[Beginner Run Guide](../Beginner_Run_Guide.md)**.
+* Stream live prices → **[gRPC Streaming](GRPC_STREAM_MANAGEMENT.md)**.
+* Every terminal method → **[MT4Account API](../MT4Account/Overview.md)**.
+* Risk sizing, trailing, one-liners → **[MT4Sugar API](../MT4Sugar/Overview.md)**.
+* Explore the types → **[Protobuf Inspector](PROTOBUF_INSPECTOR_GUIDE.md)**.
