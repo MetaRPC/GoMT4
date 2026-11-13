@@ -1,3 +1,21 @@
+/*══════════════════════════════════════════════════════════════════════════════
+ FILE: mt4/strategies/bracket_trailing.go - ORCHESTRATOR: Bracket + Trailing
+ PURPOSE:
+   Enters with a pip bracket, then starts trailing only once the trade is
+   activateAtPips in profit - letting the position breathe before the stop
+   follows it. Auto-breakeven (from the preset) still applies earlier.
+   Returns the ticket.
+
+ 📚 FLOW:
+   1. sizeLot()          - fixed or risk-based volume
+   2. BuyMarket()        - open the position at market
+   3. ModifySLTPByPips() - attach the pip SL/TP bracket
+   4. manage()           - breakeven early; trailing arms at +activateAtPips
+   5. Close()            - flatten
+
+ ⚠️  Places a REAL market order - DEMO accounts only.
+══════════════════════════════════════════════════════════════════════════════*/
+
 package strategies
 
 import (
@@ -19,6 +37,7 @@ import (
 func RunBracketTrailing(ctx context.Context, sugar *mt4.MT4Sugar, sp StrategyPreset, rp RiskPreset, activateAtPips float64) (int32, error) {
 	fmt.Printf("── Bracket + Trailing · %s ──\n", sp.Symbol)
 
+	// ── sizeLot() + BuyMarket(): risk-size the lot, then open at market ──
 	lots, err := sizeLot(ctx, sugar, sp, rp)
 	if err != nil {
 		return 0, err
@@ -28,6 +47,7 @@ func RunBracketTrailing(ctx context.Context, sugar *mt4.MT4Sugar, sp StrategyPre
 		return 0, err
 	}
 	ticket := r.GetTicket()
+	// ── ModifySLTPByPips(): attach the pip SL/TP bracket ──
 	if err := sugar.ModifySLTPByPips(ctx, ticket, &rp.SLPips, rp.TPPips); err != nil {
 		return ticket, err
 	}

@@ -1,3 +1,20 @@
+/*══════════════════════════════════════════════════════════════════════════════
+ FILE: mt4/strategies/pending_bracket.go - ORCHESTRATOR: Pending Bracket
+ PURPOSE:
+   Places a BUY LIMIT (at the preset's EntryPrice, or 5 pips below market by
+   default), waits up to timeoutSeconds for the fill, and cancels the pending if
+   it doesn't fill. Once filled it brackets and manages. Returns the ticket.
+
+ 📚 FLOW:
+   1. PipSize() + entry price        - explicit, or 5 pips below market
+   2. sizeLot() + BuyLimit()         - risk-size, then place the pending order
+   3. WaitFilled()                   - wait for the fill, or cancel on timeout
+   4. ModifySLTPByPips() + manage()  - bracket and manage once filled
+   5. Close()                        - flatten
+
+ ⚠️  Places a REAL pending order - DEMO accounts only.
+══════════════════════════════════════════════════════════════════════════════*/
+
 package strategies
 
 import (
@@ -36,6 +53,7 @@ func RunPendingBracket(ctx context.Context, sugar *mt4.MT4Sugar, sp StrategyPres
 		entry = q.GetBid() - 5.0*pip
 	}
 
+	// ── sizeLot() + BuyLimit(): risk-size the lot, then place the pending order ──
 	lots, err := sizeLot(ctx, sugar, sp, rp)
 	if err != nil {
 		return 0, err

@@ -1,3 +1,19 @@
+/*══════════════════════════════════════════════════════════════════════════════
+ FILE: mt4/strategies/market_one_shot.go - ORCHESTRATOR: Market One-Shot
+ PURPOSE:
+   The simplest orchestrator: size → market BUY → pip bracket → manage briefly →
+   close. Returns the ticket.
+
+ 📚 FLOW:
+   1. sizeLot()          - fixed or risk-based volume
+   2. BuyMarket()        - open the position at market
+   3. ModifySLTPByPips() - attach the pip SL/TP bracket
+   4. manage()           - breakeven + (gated) trailing for a few seconds
+   5. Close()            - flatten
+
+ ⚠️  Places a REAL market order - DEMO accounts only.
+══════════════════════════════════════════════════════════════════════════════*/
+
 package strategies
 
 import (
@@ -19,10 +35,12 @@ import (
 func RunMarketOneShot(ctx context.Context, sugar *mt4.MT4Sugar, sp StrategyPreset, rp RiskPreset) (int32, error) {
 	fmt.Printf("── Market One-Shot · %s ──\n", sp.Symbol)
 
+	// ── sizeLot(): fixed lot from the preset, or a risk-based lot over the stop ──
 	lots, err := sizeLot(ctx, sugar, sp, rp)
 	if err != nil {
 		return 0, err
 	}
+	// ── BuyMarket(): open the position at market ──
 	r, err := sugar.BuyMarket(ctx, sp.Symbol, lots, nil, nil)
 	if err != nil {
 		return 0, err

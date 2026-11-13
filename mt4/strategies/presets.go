@@ -1,3 +1,27 @@
+/*══════════════════════════════════════════════════════════════════════════════
+ FILE: mt4/strategies/presets.go - STRATEGY & RISK PRESETS + SHARED HELPERS
+ PURPOSE:
+   The building blocks the orchestrators are made of: a StrategyPreset (WHAT to
+   trade), a RiskPreset (HOW MUCH to risk and how to protect), a small catalog of
+   ready-made presets, and the shared sizeLot / manage helpers.
+
+ 📚 WHAT THIS FILE PROVIDES (3 sections):
+
+   1. TYPES
+      • StrategyPreset - symbol, market/limit, entry price, lots, magic, comment
+      • RiskPreset     - risk %, SL/TP pips, trailing, breakeven
+
+   2. PRESET CATALOG
+      • MarketEURUSD() / LimitEURUSD(price)          - WHAT presets
+      • Conservative() / Balanced() / Aggressive()   - HOW (risk) presets
+
+   3. SHARED HELPERS (used by the orchestrators)
+      • sizeLot() - fixed lot, or a risk-based lot over the stop distance
+      • manage()  - auto-breakeven + gated trailing for a few seconds
+
+ ⚠️  DEMO accounts only - the orchestrators built on these place real orders.
+══════════════════════════════════════════════════════════════════════════════*/
+
 // Package strategies provides ready-made orchestrators and presets (demonstration
 // templates — DEMO accounts only), driven by MT4Sugar.
 //
@@ -11,6 +35,11 @@ import (
 	"github.com/MetaRPC/GoMT4/mt4"
 	pb "github.com/MetaRPC/GoMT4/package"
 )
+
+//#region 1. TYPES
+// ══════════════════════════════════════════════════════════════
+// 1. TYPES
+// ══════════════════════════════════════════════════════════════
 
 // StrategyPreset — WHAT to trade. Use the catalog (MarketEURUSD, LimitEURUSD) or
 // build one by hand:
@@ -41,7 +70,12 @@ type RiskPreset struct {
 	BEPlusPips    float64
 }
 
-// ----- preset catalog -----
+//#endregion 1. TYPES
+
+//#region 2. PRESET CATALOG
+// ══════════════════════════════════════════════════════════════
+// 2. PRESET CATALOG
+// ══════════════════════════════════════════════════════════════
 
 // MarketEURUSD: market EURUSD (magic 777).
 func MarketEURUSD() StrategyPreset {
@@ -71,7 +105,12 @@ func Aggressive() RiskPreset {
 	return RiskPreset{RiskPercent: 2.0, SLPips: 15, TPPips: &tp, TrailingPips: &tr, BETriggerPips: &be, BEPlusPips: 1}
 }
 
-// ----- shared helpers used by the orchestrators -----
+//#endregion 2. PRESET CATALOG
+
+//#region 3. SHARED HELPERS
+// ══════════════════════════════════════════════════════════════
+// 3. SHARED HELPERS (used by the orchestrators)
+// ══════════════════════════════════════════════════════════════
 
 // sizeLot returns the fixed lot from the strategy, or a risk-based lot over the stop.
 func sizeLot(ctx context.Context, sugar *mt4.MT4Sugar, sp StrategyPreset, rp RiskPreset) (float64, error) {
@@ -123,3 +162,5 @@ func manage(ctx context.Context, sugar *mt4.MT4Sugar, ticket int32, symbol strin
 	}
 	return nil
 }
+
+//#endregion 3. SHARED HELPERS
