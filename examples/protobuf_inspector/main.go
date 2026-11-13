@@ -1,3 +1,33 @@
+/*══════════════════════════════════════════════════════════════════════════════
+ FILE: examples/protobuf_inspector/main.go - PROTOBUF INSPECTOR
+
+ PURPOSE:
+   Interactive, OFFLINE explorer for the MT4 gRPC protobuf types. Reads the
+   descriptors the generated package registers (no MT4 connection) and lets you
+   search types, fields and enums, inspect message structures, and export JSON.
+
+ 🎯 WHO SHOULD USE THIS:
+   • Developers exploring the MT4 protobuf API surface
+   • Finding which message declares a field, or where an enum is used
+   • Checking a message's field numbers / types before coding against it
+
+ 📚 WHAT THIS DEMO COVERS (interactive REPL commands):
+   • list / ls [--request|--reply]  - list message types
+   • <TypeName>                      - inspect a type's fields
+   • search / find <text>           - search types by name
+   • field <name>                   - find types containing a field
+   • findtype <type>                - find all fields of a given type
+   • enum <name> / whereenum <name> - enum values / usage
+   • export <TypeName>              - export a type to JSON
+   • stats / help / exit
+
+ 🚀 HOW TO RUN:
+   cd examples && go run ./protobuf_inspector          (interactive REPL)
+   cd examples && go run ./protobuf_inspector stats    (one-shot command)
+
+ ℹ️  SAFE: offline, no connection - only reads registered protobuf descriptors.
+══════════════════════════════════════════════════════════════════════════════*/
+
 // Command protobuf_inspector is an interactive, offline explorer for the MT4
 // gRPC protobuf types. It reads the descriptors registered by the generated
 // package (no MT4 connection needed) and lets you search types, fields and
@@ -26,11 +56,21 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
+//#region ENTRY & REPL
+// ══════════════════════════════════════════════════════════════
+// ENTRY & REPL
+// ══════════════════════════════════════════════════════════════
+
 type inspector struct {
 	msgs  map[string]protoreflect.MessageDescriptor
 	enums map[string]protoreflect.EnumDescriptor
 }
 
+// ──────────────────────────────────────────────────────────────
+// main()
+//   One-shot mode (go run . <cmd>) runs a single command and exits;
+//   otherwise prints the header and loops a stdin REPL until EOF/exit.
+// ──────────────────────────────────────────────────────────────
 func main() {
 	in := load()
 
@@ -60,8 +100,18 @@ func main() {
 	}
 }
 
-// ---- discovery ----
+//#endregion ENTRY & REPL
 
+//#region DISCOVERY
+// ══════════════════════════════════════════════════════════════
+// DISCOVERY - walk the global registry, keep the MT4 proto types
+// ══════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────
+// load() / isMT4Package() / collectMessages() / collectEnums()
+//   Range the registered file descriptors, filter to the MT4 API
+//   packages, and index messages + enums (incl. nested).
+// ──────────────────────────────────────────────────────────────
 func load() *inspector {
 	in := &inspector{
 		msgs:  map[string]protoreflect.MessageDescriptor{},
@@ -103,8 +153,18 @@ func (in *inspector) collectEnums(eds protoreflect.EnumDescriptors) {
 	}
 }
 
-// ---- command dispatch ----
+//#endregion DISCOVERY
 
+//#region COMMAND DISPATCH
+// ══════════════════════════════════════════════════════════════
+// COMMAND DISPATCH
+// ══════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────
+// run()
+//   Parse a command line and route it to the matching command; a
+//   bare word is treated as a type name to inspect.
+// ──────────────────────────────────────────────────────────────
 func (in *inspector) run(cmd string) {
 	parts := strings.Fields(cmd)
 	head := parts[0]
@@ -135,8 +195,17 @@ func (in *inspector) run(cmd string) {
 	}
 }
 
-// ---- commands ----
+//#endregion COMMAND DISPATCH
 
+//#region COMMANDS
+// ══════════════════════════════════════════════════════════════
+// COMMANDS - the individual REPL commands
+// ══════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────
+// header() / help()
+//   The welcome banner and the command reference.
+// ──────────────────────────────────────────────────────────────
 func (in *inspector) header() {
 	line := strings.Repeat("=", 59)
 	fmt.Println(line)
@@ -187,6 +256,9 @@ func (in *inspector) sortedTypeNames() []string {
 	return names
 }
 
+// ──────────────────────────────────────────────────────────────
+// list() / inspect() - list the types, or inspect one type's fields.
+// ──────────────────────────────────────────────────────────────
 func (in *inspector) list(filter string) {
 	names := in.sortedTypeNames()
 	title := fmt.Sprintf("ALL TYPES (%d)", len(names))
@@ -227,6 +299,9 @@ func (in *inspector) inspect(name string) {
 	}
 }
 
+// ──────────────────────────────────────────────────────────────
+// search() / field() / findType() - find types/fields by name or type.
+// ──────────────────────────────────────────────────────────────
 func (in *inspector) search(q string) {
 	q = strings.ToLower(strings.TrimSpace(q))
 	if q == "" {
@@ -287,6 +362,9 @@ func (in *inspector) findType(typ string) {
 	fmt.Printf("  (%d field%s)\n", n, plural(n))
 }
 
+// ──────────────────────────────────────────────────────────────
+// enum() / whereEnum() - an enum's values, or where it is used.
+// ──────────────────────────────────────────────────────────────
 func (in *inspector) enum(name string) {
 	name = strings.TrimSpace(name)
 	ed, ok := in.enums[name]
@@ -332,6 +410,9 @@ func (in *inspector) whereEnum(name string) {
 	fmt.Printf("  (%d field%s)\n", n, plural(n))
 }
 
+// ──────────────────────────────────────────────────────────────
+// export() / stats() - export one type to JSON, or print statistics.
+// ──────────────────────────────────────────────────────────────
 func (in *inspector) export(name string) {
 	md, ok := in.msgs[strings.TrimSpace(name)]
 	if !ok {
@@ -394,7 +475,12 @@ func (in *inspector) stats() {
 	}
 }
 
-// ---- helpers ----
+//#endregion COMMANDS
+
+//#region HELPERS
+// ══════════════════════════════════════════════════════════════
+// HELPERS - field type rendering + small utilities
+// ══════════════════════════════════════════════════════════════
 
 // baseType is the field's element type without repeated/map decoration.
 func baseType(f protoreflect.FieldDescriptor) string {
@@ -425,3 +511,5 @@ func plural(n int) string {
 	}
 	return "s"
 }
+
+//#endregion HELPERS

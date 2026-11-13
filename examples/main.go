@@ -1,3 +1,33 @@
+/*══════════════════════════════════════════════════════════════════════════════
+ FILE: examples/main.go - GoMT4 EXAMPLES LAUNCHER
+ PURPOSE:
+   Interactive entry point for every GoMT4 example. Loads config, connects once,
+   builds the three client layers (Account -> Service -> Sugar) and dispatches
+   the chosen demo from a menu.
+
+ 🎯 WHO SHOULD USE THIS:
+   • Anyone running the examples for the first time
+   • Seeing how the three layers are built and shared across demos
+
+ 📚 WHAT THIS DEMO COVERS (menu):
+   1_lowlevel (MT4Account):  11) General   12) Trading   13) Streaming
+   2_service  (MT4Service):  21) Service demo
+   3_sugar    (MT4Sugar):    31) Basics    32) Trading   33) Positions
+   4_strategies:             41) Orchestrators + presets
+   Suites:                    1) all low-level (read-only)   0) everything   q) quit
+
+ 🔄 API LEVELS:
+   LOW-LEVEL (MT4Account) -> MID-LEVEL (MT4Service) -> HIGH-LEVEL (MT4Sugar)
+
+ ℹ️  SAFE: launcher only. The trading demos it dispatches are gated behind
+     MT4_ENABLE_TRADING=1 (skipped otherwise).
+
+ 🚀 HOW TO RUN:
+   cd examples && go run .                 (interactive menu)
+   cd examples && echo 11 | go run .        (pick one non-interactively)
+   go run . --api-key <key>                 (override the config API key)
+══════════════════════════════════════════════════════════════════════════════*/
+
 package main
 
 import (
@@ -19,6 +49,16 @@ import (
 )
 
 func main() {
+	//#region CONFIG & API KEY
+	// ══════════════════════════════════════════════════════════════
+	// CONFIG & API KEY
+	// ══════════════════════════════════════════════════════════════
+
+	// ──────────────────────────────────────────────────────────────
+	// LoadConfig() + optional API-key override
+	//   Read config/config.json, then let `go run . <api-key>` or
+	//   `--api-key <key>` override the key.
+	// ──────────────────────────────────────────────────────────────
 	cfg, err := config.LoadConfig("config/config.json")
 	if err != nil {
 		log.Fatalf("❌ Failed to load config.json: %v", err)
@@ -41,7 +81,18 @@ func main() {
 	if apiKey != "" {
 		cfg.ApiKey = apiKey
 	}
+	//#endregion CONFIG & API KEY
 
+	//#region CONNECT & BUILD LAYERS
+	// ══════════════════════════════════════════════════════════════
+	// CONNECT & BUILD LAYERS
+	// ══════════════════════════════════════════════════════════════
+
+	// ──────────────────────────────────────────────────────────────
+	// NewMT4Account() + ConnectByServerName()
+	//   Create the low-level client and connect via the broker server
+	//   name; disconnect is deferred.
+	// ──────────────────────────────────────────────────────────────
 	account, err := mt4.NewMT4Account(uint64(cfg.Login), cfg.Password, "", uuid.Nil, cfg.ApiKey)
 	if err != nil {
 		log.Fatalf("❌ Failed to create MT4 account: %v", err)
@@ -54,21 +105,36 @@ func main() {
 	}
 	fmt.Println("✅ Connected to MT4 server")
 
-	// Build the three layers once; the grouped demos pick whichever they show.
+	// ──────────────────────────────────────────────────────────────
+	// Build the three layers once (Account -> Service -> Sugar)
+	//   Each grouped demo picks whichever layer it shows.
+	// ──────────────────────────────────────────────────────────────
 	svc := mt4.NewMT4Service(account)
 	sugar := mt4.NewMT4Sugar(svc).SetDefaults(777, 20, "gomt4-demo")
 	symbol := cfg.DefaultSymbol
 
 	menu(ctx, account, svc, sugar, symbol)
+	//#endregion CONNECT & BUILD LAYERS
 
+	//#region DISCONNECT
+	// ══════════════════════════════════════════════════════════════
+	// DISCONNECT
+	// ══════════════════════════════════════════════════════════════
 	fmt.Println("\n📴 Disconnecting from MT4...")
 	if err := account.Disconnect(true); err != nil {
 		fmt.Printf("⚠️ Disconnect notice: %v\n", err)
 	} else {
 		fmt.Println("✅ Disconnected successfully")
 	}
+	//#endregion DISCONNECT
 }
 
+//#region MENU LOOP
+// ══════════════════════════════════════════════════════════════════
+// MENU LOOP - print the menu and dispatch the chosen demo
+// ══════════════════════════════════════════════════════════════════
+
+// menu prints the interactive menu and runs the selected example until quit/EOF.
 func menu(ctx context.Context, acc *mt4.MT4Account, svc *mt4.MT4Service, sugar *mt4.MT4Sugar, symbol string) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -137,3 +203,5 @@ func menu(ctx context.Context, acc *mt4.MT4Account, svc *mt4.MT4Service, sugar *
 		}
 	}
 }
+
+//#endregion MENU LOOP
