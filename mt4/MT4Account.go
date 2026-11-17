@@ -470,9 +470,41 @@ func (a *MT4Account) Close() error {
 // errorSelector: Function taking response and extracting *pb.Error (returns nil if no API error)
 //
 // Returns the response or error.
+//
+// A refused API key (API_KEY_INVALID / API_KEY_REQUIRED) is never retried.
+// Trade calls (OrderSend, OrderModify, OrderClose/OrderDelete, OrderCloseBy) do not use the
+// transport retry: they go through executeTradeWithReconnect and return a
+// *TradeOutcomeUnknownError instead of re-sending the order.
 func ExecuteWithReconnect[T any](
 	a *MT4Account,
 	ctx context.Context,
+	grpcCall func(metadata.MD) (T, error),
+	errorSelector func(T) *pb.Error,
+) (T, error) {
+	return executeWithReconnect(a, ctx, "", grpcCall, errorSelector)
+}
+
+// executeTradeWithReconnect runs a trade call. A transport failure that may have happened after
+// the request reached the terminal (Unavailable, DeadlineExceeded, Unknown, Internal) is NOT
+// retried - the order may already have been executed - and is returned as
+// *TradeOutcomeUnknownError. Only an in-band TERMINAL_INSTANCE_NOT_FOUND /
+// TERMINAL_REGISTRY_TERMINAL_NOT_FOUND answer (the gateway answered before any terminal saw
+// the request) is re-sent.
+func executeTradeWithReconnect[T any](
+	a *MT4Account,
+	ctx context.Context,
+	operation string,
+	grpcCall func(metadata.MD) (T, error),
+	errorSelector func(T) *pb.Error,
+) (T, error) {
+	return executeWithReconnect(a, ctx, operation, grpcCall, errorSelector)
+}
+
+// executeWithReconnect is the shared loop; tradeOperation != "" marks a trade call.
+func executeWithReconnect[T any](
+	a *MT4Account,
+	ctx context.Context,
+	tradeOperation string,
 	grpcCall func(metadata.MD) (T, error),
 	errorSelector func(T) *pb.Error,
 ) (T, error) {
@@ -488,8 +520,20 @@ func ExecuteWithReconnect[T any](
 
 		res, err := grpcCall(headers)
 		if err != nil {
+			s, isStatus := status.FromError(err)
+			// A refused API key never succeeds on retry.
+			if isStatus && isApiKeyRefused(s.Message()) {
+				return zeroT, err
+			}
+			// Trade call: the outcome is unknown, never re-send it.
+			if tradeOperation != "" {
+				if isStatus && isTradeOutcomeUnknownCode(s.Code()) {
+					return zeroT, newTradeOutcomeUnknownError(tradeOperation, err)
+				}
+				return zeroT, err
+			}
 			// Transient transport error? Retry with backoff.
-			if s, ok := status.FromError(err); ok && s.Code() == codes.Unavailable {
+			if isStatus && s.Code() == codes.Unavailable {
 				lastErr = err
 				if werr := waitWithCtx(ctx, backoffDelay(attempt)); werr != nil {
 					return zeroT, werr // context canceled/deadline
@@ -939,8 +983,8 @@ func (a *MT4Account) TradeUnrealizedPL(ctx context.Context, from, fromUtc *strin
 //   - Error object if the operation fails due to network issues, validation, or terminal errors.
 //
 // The method wraps the gRPC call to the TradeClient.OrderSend method, preparing all optional fields if provided.
-// It uses ExecuteWithReconnect to automatically retry on transient network or session errors,
-// and checks for application-level errors returned by the terminal via the response.Error field.
+// A transport failure (Unavailable, DeadlineExceeded, Unknown, Internal) is NOT retried - the order may
+// already have been executed - and is returned as *TradeOutcomeUnknownError; it then checks for application-level errors returned by the terminal via the response.Error field.
 //
 // Example — market BUY 0.10 lot (price/slippage/sl/tp/comment/magic/expiration are optional pointers):
 //
@@ -1020,7 +1064,7 @@ func (a *MT4Account) OrderSend(
 	}
 
 	// Execute with reconnect/retry semantics.
-	reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	reply, err := executeTradeWithReconnect(a, ctx, "OrderSend", grpcCall, errorSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -1042,8 +1086,8 @@ func (a *MT4Account) OrderSend(
 //
 // This method sends a request to close or delete an order via the TradeClient.OrderCloseDelete RPC call.
 // Optional fields (lots, price, slippage) are only included if explicitly provided.
-// It uses ExecuteWithReconnect to automatically retry on connection or session-related errors,
-// and checks for application-level errors in the gRPC response via the Error field.
+// A transport failure (Unavailable, DeadlineExceeded, Unknown, Internal) is NOT retried - the close may
+// already have been executed - and is returned as *TradeOutcomeUnknownError; it then checks for application-level errors in the gRPC response via the Error field.
 func (a *MT4Account) OrderClose(
 	ctx context.Context,
 	ticket int32,
@@ -1089,7 +1133,7 @@ func (a *MT4Account) OrderClose(
 		return reply.GetError()
 	}
 
-	reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	reply, err := executeTradeWithReconnect(a, ctx, "OrderCloseDelete", grpcCall, errorSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -1172,7 +1216,7 @@ func (a *MT4Account) OrderSelect(ctx context.Context, ticket int32) (*pb.OpenedO
 // typically in hedge-mode accounts. The operation is atomic — both orders are closed simultaneously.
 //
 // It sends a gRPC request to the terminal using TradeClient.OrderCloseBy,
-// and applies automatic retry logic through ExecuteWithReconnect.
+// A transport failure is NOT retried; it is returned as *TradeOutcomeUnknownError.
 // Any application-level errors returned by the terminal are extracted from the reply.
 //
 // Note:
@@ -1213,7 +1257,7 @@ func (a *MT4Account) OrderCloseBy(
 		return reply.GetError()
 	}
 
-	reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	reply, err := executeTradeWithReconnect(a, ctx, "OrderCloseBy", grpcCall, errorSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -1280,8 +1324,8 @@ func (a *MT4Account) OrdersTotal(ctx context.Context) (int32, error) {
 // and sends it to the terminal via the TradeClient.OrderModify RPC call.
 // Fields that are nil are omitted, so only specified parameters are updated.
 //
-// The call is wrapped in ExecuteWithReconnect to automatically retry on transient connection issues,
-// and inspects the gRPC response for any terminal-level errors.
+// A transport failure is NOT retried; it is returned as *TradeOutcomeUnknownError. The method
+// inspects the gRPC response for any terminal-level errors.
 //
 // Note:
 //   - Only pending orders can have price or expiration modified.
@@ -1335,7 +1379,7 @@ func (a *MT4Account) OrderModify(
 		return reply.GetError()
 	}
 
-	reply, err := ExecuteWithReconnect(a, ctx, grpcCall, errorSelector)
+	reply, err := executeTradeWithReconnect(a, ctx, "OrderModify", grpcCall, errorSelector)
 	if err != nil {
 		return false, err
 	}
