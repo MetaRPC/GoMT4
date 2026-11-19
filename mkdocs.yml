@@ -65,6 +65,8 @@ nav:
 
   - Guides:
       - Getting Started: All_Guides/GETTING_STARTED.md
+      - Security & Secrets: Security_Secrets.md
+      - Troubleshooting: Troubleshooting_FAQ.md
       - Your First Project: All_Guides/Your_First_Project.md
       - MT4 for Beginners: All_Guides/MT4_For_Beginners.md
       - Project Map: All_Guides/PROJECT_MAP.md
@@ -115,3 +117,66 @@ markdown_extensions:
 
 plugins:
   - search
+  - redirects:
+      redirect_maps:
+            "API Reference/Enums.md": "All_Guides/ENUMS_USAGE_REFERENCE.md"
+            "API Reference/Messages.md": "All_Guides/PROTOBUF_INSPECTOR_GUIDE.md"
+            "API Reference/Overview.md": "MT4Account/Overview.md"
+            "API Reference/Streaming.md": "All_Guides/GRPC_STREAM_MANAGEMENT.md"
+            "Account/ShowAccountSummary.md": "MT4Account/1. Account_Information/AccountSummary.md"
+            "Architecture_DataFlow.md": "All_Guides/PROJECT_MAP.md"
+            "Beginner_Run_Guide.md": "All_Guides/Your_First_Project.md"
+            "Cookbook/Account/AccountSummary.md": "MT4Account/1. Account_Information/AccountSummary.md"
+            "Cookbook/Account/StreamOpenedOrderProfits.md": "MT4Account/5. Streaming_Methods/OnOpenedOrdersProfit.md"
+            "Cookbook/Market_Info/GetMultipleQuotes.md": "MT4Account/3. Symbols_Quotes/QuoteMany.md"
+            "Cookbook/Market_Info/GetQuote.md": "MT4Account/3. Symbols_Quotes/Quote.md"
+            "Cookbook/Market_Info/QuoteHistory.md": "MT4Account/3. Symbols_Quotes/QuoteHistory.md"
+            "Cookbook/Market_Info/StreamQuotes.md": "MT4Account/5. Streaming_Methods/OnSymbolTick.md"
+            "Cookbook/Market_Info/SymbolParams.md": "MT4Account/3. Symbols_Quotes/SymbolParams.md"
+            "Cookbook/Orders/CloseByOrders.md": "MT4Account/4. Trading_Operations/OrderCloseBy.md"
+            "Cookbook/Orders/CloseOrder.md": "MT4Account/4. Trading_Operations/OrderClose.md"
+            "Cookbook/Orders/DeletePending.md": "MT4Account/4. Trading_Operations/OrderDelete.md"
+            "Cookbook/Orders/HistoryOrders.md": "MT4Account/2. Orders_History/OrdersHistory.md"
+            "Cookbook/Orders/ModifyOrder.md": "MT4Account/4. Trading_Operations/OrderModify.md"
+            "Cookbook/Orders/PlaceMarketOrder.md": "MT4Account/4. Trading_Operations/OrderSend.md"
+            "Cookbook/Orders/PlacePendingOrder.md": "MT4Account/4. Trading_Operations/OrderSend.md"
+            "Cookbook/Reliability_Connection/HandleReconnect.md": "Troubleshooting_FAQ.md"
+            "Cookbook/Reliability_Connection/HealthCheck.md": "Troubleshooting_FAQ.md"
+            "Cookbook/Reliability_Connection/UnaryRetries.md": "Troubleshooting_FAQ.md"
+            "Cookbook/Utils_Helpers/ConfigExample.md": "All_Guides/GETTING_STARTED.md"
+            "Cookbook/Utils_Helpers/EnsureSymbolVisible.md": "MT4Account/3. Symbols_Quotes/SymbolSelect.md"
+            "Cookbook/Utils_Helpers/RoundVolumePrice.md": "MT4Sugar/3. Symbol_Math.md"
+            "Cookbook/index.md": "MT4Sugar/Overview.md"
+            "Glossary.md": "All_Guides/GLOSSARY.md"
+            "GoMT4_Documentation_Skeleton.md": "All_Guides/PROJECT_MAP.md"
+            "Introduction.md": "All_Guides/GETTING_STARTED.md"
+            "Market_Info/Market_Info_Overview.md": "MT4Account/3. Symbols_Quotes/Symbols_Quotes.Overview.md"
+            "Market_Info/ShowAllSymbols.md": "MT4Account/3. Symbols_Quotes/Symbols.md"
+            "Market_Info/ShowQuote.md": "MT4Account/3. Symbols_Quotes/Quote.md"
+            "Market_Info/ShowQuoteHistory.md": "MT4Account/3. Symbols_Quotes/QuoteHistory.md"
+            "Market_Info/ShowQuotesMany.md": "MT4Account/3. Symbols_Quotes/QuoteMany.md"
+            "Market_Info/ShowSymbolParams.md": "MT4Account/3. Symbols_Quotes/SymbolParams.md"
+            "Market_Info/ShowSymbols.md": "MT4Account/3. Symbols_Quotes/Symbols.md"
+            "Market_Info/ShowTickValues.md": "MT4Account/3. Symbols_Quotes/TickValueWithSize.md"
+            "Observability.md": "Troubleshooting_FAQ.md"
+            "Order_Operations/Order_Operations_Overview.md": "MT4Account/4. Trading_Operations/Trading_Operations.Overview.md"
+            "Order_Operations/ShowOpenedOrderTickets.md": "MT4Account/2. Orders_History/OpenedOrdersTickets.md"
+            "Order_Operations/ShowOpenedOrders.md": "MT4Account/2. Orders_History/OpenedOrders.md"
+            "Order_Operations/ShowOrderCloseByExample.md": "MT4Account/4. Trading_Operations/OrderCloseBy.md"
+            "Order_Operations/ShowOrderCloseExample.md": "MT4Account/4. Trading_Operations/OrderClose.md"
+            "Order_Operations/ShowOrderDeleteExample.md": "MT4Account/4. Trading_Operations/OrderDelete.md"
+            "Order_Operations/ShowOrderModifyExample.md": "MT4Account/4. Trading_Operations/OrderModify.md"
+            "Order_Operations/ShowOrderSendExample.md": "MT4Account/4. Trading_Operations/OrderSend.md"
+            "Order_Operations/ShowOrdersHistory.md": "MT4Account/2. Orders_History/OrdersHistory.md"
+            "Performance_Notes.md": "Troubleshooting_FAQ.md"
+            "ReTimeouts_Reconnects_Backoff.md": "Troubleshooting_FAQ.md"
+            "Streaming/StreamOpenedOrderProfits.md": "MT4Account/5. Streaming_Methods/OnOpenedOrdersProfit.md"
+            "Streaming/StreamOpenedOrderTickets.md": "MT4Account/5. Streaming_Methods/OnOpenedOrdersTickets.md"
+            "Streaming/StreamOrdersHistoryExample.md": "MT4Account/5. Streaming_Methods/OrdersHistoryStream.md"
+            "Streaming/StreamQuoteHistoryExample.md": "MT4Account/5. Streaming_Methods/QuoteHistoryStream.md"
+            "Streaming/StreamQuotes.md": "MT4Account/5. Streaming_Methods/OnSymbolTick.md"
+            "Streaming/StreamTradeUpdates.md": "MT4Account/5. Streaming_Methods/OnTrade.md"
+            "Streaming/Streaming_Overview.md": "MT4Account/5. Streaming_Methods/Streaming_Methods.Overview.md"
+            "Your_Easy_Start.md": "All_Guides/Your_First_Project.md"
+            "cli_usage.md": "All_Guides/GETTING_STARTED.md"
+            "setup.md": "All_Guides/GETTING_STARTED.md"

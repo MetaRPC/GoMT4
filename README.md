@@ -1,5 +1,26 @@
 # GoMT4 SDK
 
+## Documentation checks and previews
+
+Use Python 3.12 and the pinned documentation dependencies:
+
+```sh
+python -m pip install -r requirements-docs.txt
+mkdocs build --strict
+python scripts/verify-doc-routes.py
+```
+
+The route check verifies the generated HTML for 61 moved documentation URLs,
+their canonical destinations, and the restored security and troubleshooting
+guides. Preserve old public URLs when reorganizing documentation: add a specific
+mapping in `mkdocs.yml`, or retain useful content at its original path. Do not
+redirect unrelated guides to the homepage.
+
+The **Documentation preview checks** workflow builds pull requests and the
+`codex/traffic-doc-route-recovery` review branch, then uploads a downloadable
+`gomt4-documentation-preview` artifact. It does not deploy GitHub Pages.
+Production Pages deployment remains in the separate main/master workflow.
+
 > Official MetaTrader 4 Go SDK for high-performance trading automation and market data streaming via gRPC.
 
 [![Docs](https://img.shields.io/badge/docs-GoMT4-blue.svg)](https://metarpc.github.io/GoMT4/)

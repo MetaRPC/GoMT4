@@ -22,15 +22,18 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
 
       - name: Install MkDocs
-        run: pip install mkdocs-material pymdown-extensions
+        run: pip install -r requirements-docs.txt
 
     
       
       - name: Build site
-        run: mkdocs build
+        run: mkdocs build --strict
+
+      - name: Verify recovered documentation routes
+        run: python scripts/verify-doc-routes.py
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
